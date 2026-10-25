@@ -27,7 +27,8 @@ python -m optimizador calcular proyecto.json -o resultado.json --html informe.ht
 python -m optimizador calcular proyecto.json --preset lucas --esfuerzo rapido
 python -m optimizador materiales FL5IN        # ver las planchas configuradas de un material
 python -m optimizador banco                   # banco de pruebas (sirve de benchmark)
-python -m optimizador historico               # validación contra los casos viejos (F4)
+python -m optimizador historico --todo --procesos 3 --docs   # contra los casos de Corte Certo
+python -m optimizador optima --docs          # contra los lotes cortados con Optima
 python -m optimizador servidor                # la interfaz en el navegador
 ```
 

@@ -3,6 +3,54 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026 (tarde): respuestas de Juan y validación con los casos reales
+
+**Dónde quedó todo, en una línea**: se aplicaron las respuestas de Juan (preguntas 1 a 27) y se
+corrió por primera vez la validación con datos reales: **78,6 % de los casos da las mismas hojas
+que Corte Certo** (80,2 % si Corte Certo usaba la hoja entera) y contra Optima el programa usa 0,5 %
+menos vidrio en total (5 lotes).
+
+**Hecho en esta etapa**
+- Datos: los casos que subió Juan quedaron en `datos/casos/corte_certo/` (1341 presupuesto +
+  vidrio, exportados de Metrix) y `datos/casos/optima/` (5 lotes). Sin nombres de clientes.
+- Respuestas de Juan aplicadas (detalle en `DECISIONES.md`): "Como Corte Certo hoy" con banda 20 en
+  todos los vidrios; el preset de Lucas pasa a ser **destaque mínimo** ("Reglas de corte (Lucas,
+  como Optima)"); plancha por defecto 3600 × 2500 (si no, 3700 × 2500); columnas de la Interfaz;
+  % de la leyenda redondeado o truncado; casos sin el +3 comparados aparte.
+- `optimizador/historico/exportados.py`: validación con los casos exportados (control del % con
+  banda 20 y hoja entera, medidas de hoja deducidas, cota de piezas por plancha, las dos variantes
+  cuando cierran las dos). `python -m optimizador historico --todo --procesos 3 --docs`.
+- `optimizador/historico/optima.py`: comparación con Optima. `python -m optimizador optima --docs`.
+- Validador: aceptaba mal un empate de redondeo (89,755 %); corregido con test.
+- Tests actualizados a las reglas nuevas; banco sintético: los 85 casos dan lo mismo que antes.
+- `README.md`: el texto que pegó Juan quedó como sección "Qué trae y cómo anda", con los números
+  nuevos.
+
+**Resultados** (`VALIDACION.md` §1 y §1.b)
+- Corte Certo, 1122 casos comparables: 78,6 % iguales, 13,4 % con menos hojas, 8,0 % con más (banda
+  20). Con la hoja entera: 80,2 / 17,6 / 2,1. Hasta 20 piezas: 97,5 % iguales.
+- La primera corrida daba casos con 47 hojas de más (7781): no era el motor, Corte Certo había usado
+  la hoja entera y con 3580 esas piezas no entran 20 por hoja. Por eso la cota nueva en el control.
+- Optima: 3 lotes con los mismos m² de hoja, uno −3,4 % y uno +1,8 % (Optima usó retazos).
+
+**Qué falta**
+1. Que Juan conteste las preguntas 28 (banda 20 u hoja entera en Corte Certo), 29 (medidas de hoja
+   que faltan en `Medidas_hojas.xlsx`; la más importante: LX3+3LOWE no está y Corte Certo usaba
+   3300 × 2440) y 30.
+2. **Motor**: quedan casos chicos muy apretados donde Corte Certo encuentra una hoja menos (ej.
+   7319, 5245) aun con esfuerzo máximo; y "Máximo" con muchas medidas distintas puede tardar
+   minutos (6984: 1364 piezas de 258 medidas, 5 minutos). La meta del brief (90 % iguales, 95 % sin
+   hojas de más) todavía no se cumple con banda 20.
+3. Lo que seguía pendiente de antes: probar en la PC de la oficina (`.bat`, tiempos con
+   `python -m optimizador banco`, una planilla real de la Interfaz) y el "corte perfecto" (50 %).
+4. La página de revisión caso por caso (`salida/historico/revision.html`, con nuestros montajes al
+   lado de los números de Corte Certo) se arma al correr la validación, pero no va a git: pesa
+   9,5 MB (el límite para publicarla es 5 MB). Se arma en la PC con el mismo comando.
+
+**Cómo seguir**: leer `VALIDACION.md` §1 (los peores casos están al final de la tabla) y las
+respuestas a 28–30. Si Juan confirma la hoja entera, cambiar `BANDA_CORTE_CERTO_MM` y volver a
+correr `python -m optimizador historico --todo --procesos 3 --docs` (lo ya calculado no se repite).
+
 ## 25/10/2026: fase F5 (entrega) y correcciones de las revisiones de F1, F3 y F4
 
 **Dónde quedó todo, en una línea**: el optimizador anda de punta a punta (pegar o importar piezas →

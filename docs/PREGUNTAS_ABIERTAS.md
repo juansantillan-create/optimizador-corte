@@ -6,21 +6,35 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 
 ## Abiertas
 
-**28. ¿Corte Certo tenía cargada la plancha con 20 mm de banda en todos los vidrios?**
-- Los casos viejos lo muestran: en los laminados 4+4, 5+5 y 6+6 y en el float de 8, el % de Corte
-  Certo cierra con la plancha de 3580 × 2500 (banda 20) y casi nunca con la banda de la regla de
-  Lucas (30 o 50). Por ejemplo, en 5+5: 75 casos con banda 20 contra 3 con banda 50.
-- **Por qué importa**: con banda 50, un 5+5 tiene 1,4 % menos de vidrio útil por plancha.
-- **Por defecto (cambió el 25/10)**: "Como Corte Certo hoy" usa banda 20 en todos los vidrios. La
-  banda de Lucas (30/50) queda en "Reglas de corte (Lucas, como Optima)".
+**28. ¿Corte Certo tenía cargada la plancha con banda de 20 mm (3580 × 2500) o la hoja entera (3600 × 2500)?**
+- Con la banda de Lucas (30 o 50) el % de Corte Certo casi nunca cierra: eso está claro. Pero entre
+  banda 20 y hoja entera los casos viejos muestran **las dos cosas**:
+  - en 990 de 1122 casos el % cierra con las dos (20 mm en 3600 es apenas 0,5 %);
+  - en 68 solo puede ser banda 20;
+  - en 64 solo puede ser la hoja entera. Por ejemplo, el presupuesto 7781: 7800 piezas de
+    900 × 478 en 412 hojas. En la de 3580 entran como mucho 17 por hoja (harían falta 459); en la
+    de 3600 entran 20 (4 × 900 = 3600 justo). O el 10921: piezas de 2170 y 1430 de ancho, que
+    suman 3600 justo, al 100 %.
+  - Pasa en todas las épocas y en casi todos los vidrios; desde septiembre de 2026 se ven más
+    casos de banda 20.
+- ¿Puede ser que cada PC (o cada comercial) tuviera Corte Certo cargado distinto, o que se haya
+  cambiado en algún momento?
+- **Por qué importa**: con la hoja entera entran 20 mm más por hoja. Casi nunca cambia la cantidad
+  de hojas, pero cuando las piezas suman justo 3600 sí (en el 7781, 47 hojas de diferencia).
+- **Cómo da el programa en cada caso** (`docs/VALIDACION.md` §1): si Corte Certo usaba banda 20,
+  78,6 % de los casos iguales y 8,0 % con más planchas; si usaba la hoja entera, 80,2 % iguales y
+  2,1 % con más.
+- **Por defecto**: "Como Corte Certo hoy" usa banda 20 en todos los vidrios (lo prudente: nunca
+  cotiza menos vidrio del que se puede cortar). Si me decís que se cotiza con la hoja entera, se
+  cambia en una línea (`BANDA_CORTE_CERTO_MM` en `optimizador/configuracion.py`).
 - Respuesta:
 
 **29. Medidas de hoja que Corte Certo usó y no están en `Medidas_hojas.xlsx`**
 - En muchos casos viejos el % de Corte Certo solo cierra con una medida de hoja que la planilla
   no tiene para ese vidrio. La lista (material → medida que cierra, y en cuántos casos) está en
   `docs/VALIDACION.md` §1, tabla "Medidas de hoja que Corte Certo usó y no están en hojas.csv".
-  Las más repetidas: LX3+3LOWE con 3300 × 2440; CK8K1 y CK8K2 con 3210 × 2540; CT6G1 con
-  3210 × 2540; LX4+4ST120 con 3600 × 2140 o 3210 × 2400.
+  Las más repetidas: LX3+3LOWE con 3300 × 2440 (95 casos); LX4+4GC con 3600 × 2500 (26); CK8K1
+  (25), CT6G1 (13) y CK8K2 (12) con 3210 × 2540; LX4+4ST120 con 3600 × 2140 (14) o 3210 × 2400 (7).
 - **Por qué importa**: para cotizar esos vidrios el programa usa la plancha de la planilla (o una
   supuesta de 3600 × 2500), que puede no ser la real.
 - **Por defecto**: no se cambió la planilla. Si me confirmás las medidas (o actualizás
