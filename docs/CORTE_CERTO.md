@@ -84,8 +84,11 @@ obtener más información, revisar, imprimir, etc."*
   - piezas en **bordó**, **verde** y **oliva**;
   - sobrante en **amarillo**;
   - ❓ no sabemos qué distingue bordó, verde y oliva. En un mismo montaje hay piezas que se ven
-    del mismo tamaño y tienen distinto color, así que probablemente no es "un color por medida".
-    Hipótesis: bordó = pieza, verde = pieza girada, oliva = retazo aprovechable.
+    del mismo tamaño y tienen distinto color, así que no es "un color por medida". Medido el
+    25/10: tampoco es "verde = girada, oliva = retazo" (montaje 8: una oliva y dos verdes de la
+    misma medida y orientación). Lo que cierra es "un color por renglón del proyecto, rotando
+    entre 3", sin confirmar. Son los colores 2, 3 y 4 de la paleta de Windows: `(128,0,0)`,
+    `(0,128,0)`, `(128,128,0)`; el amarillo es `(255,255,0)`. Ver pregunta 5.
 
 **Lo que agregamos nosotros**:
 - "×N" visible en cada pila;

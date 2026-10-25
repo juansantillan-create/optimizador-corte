@@ -148,7 +148,7 @@ A production order, typically (~22% of the time) born from an accepted quote.
 | `LOTE` | Production batch grouping |
 | `OPTIMIZACION` | Reference to a cutting-optimization plan |
 | `OCOMPRA` | Client's purchase order — free text. Confirmed exact against the "Tablero Programación 2026" spreadsheet for the order tested. Cleaner source than `CAJAS.NUMOC` (which usually but not always matches). |
-| `ENTRECALLES` | An old Metrix field (originally: spacing between cut panels) that the team **repurposed to write the project/site name** — confirmed with real data (395/500 recent orders have it filled with text like "RECLAMO 931", "COUNTRY GOLF"). Fragile: it only works because staff keep using this convention informally, not because it's a designed field. |
+| `ENTRECALLES` | An old Metrix field (originally: spacing between cut panels) that the team **repurposed to write the project/site name** — confirmed with real data (395/500 recent orders have it filled with text like "RECLAMO 931", "<OBRA>"). Fragile: it only works because staff keep using this convention informally, not because it's a designed field. |
 
 126 columns, 10,685 rows. **No dollar-amount column of its own** — for the
 78% of orders with no linked quote, there is no way to know the order's $

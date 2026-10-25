@@ -6,7 +6,9 @@ mensaje), se clasifica, se guarda donde corresponde y se anota acá (brief §3).
 **25/10/2026 (fase F0)**: los archivos llegaron todos sueltos en la raíz (subidos "planos" a
 GitHub, algunos con nombres como `LEEME (2).md` o `download`). Se ubicaron según el mapa de
 `CLAUDE.md` con `git mv`, así la historia de cada uno se conserva. Ninguno tiene nombres de
-clientes (se buscaron razones sociales, CUIT, mails y teléfonos).
+clientes (se buscaron razones sociales, CUIT, mails y teléfonos), salvo el nombre de una obra en
+`contexto/fabrica/DATA_DICTIONARY.md` que encontró el revisor y se reemplazó por `<OBRA>` (sigue en
+la historia de git; ver `DECISIONES.md`).
 
 ## Raíz
 
@@ -17,6 +19,17 @@ clientes (se buscaron razones sociales, CUIT, mails y teléfonos).
 | `PROMPT_INICIAL.md` | Los 3 prompts para arrancar sesiones en la nube | Lo usa Juan |
 | `.gitignore` | Lo que no va a git (`datos/privado/`, `proyectos/`, `config/local/`, venv…) | Privacidad y limpieza. Llegó como `download (1)` |
 | `.gitattributes` | Fin de línea CRLF para los `.bat`; binarios | Que los `.bat` anden en Windows. Llegó como `download` |
+| `requirements.txt` | Dependencias con versiones fijas (todas con paquetes para Windows) | Instalar el programa |
+| `requirements-dev.txt` | Lo de arriba más pytest e hypothesis | Correr los tests |
+| `pyproject.toml` | Datos del paquete y configuración de pytest | Que el orquestador pueda instalar e importar `optimizador` |
+
+## `optimizador/` (el programa) y `tests/`
+
+| Archivo | Qué es | Para qué sirve |
+|---|---|---|
+| `optimizador/__init__.py`, `__main__.py` | El paquete y la línea de comandos (`python -m optimizador`) | Esqueleto de F0; se completa en F1 |
+| `optimizador/motor/` | El motor de cálculo | F1 |
+| `tests/test_esqueleto.py` | Controles mínimos (el paquete importa, `hojas.csv` tiene las 101 medidas) | `pytest -q` |
 
 ## `docs/`
 
@@ -87,8 +100,9 @@ clientes (se buscaron razones sociales, CUIT, mails y teléfonos).
 
 ## Lo que no llegó
 
-- Había un `LEEME (4).md` y un `LEEME (2).md`, pero no un `LEEME (3).md`. Por el contenido de los
-  que llegaron no falta nada: cubren `config/`, `datos/` y `contexto/`.
+- Llegaron `LEEME.md`, `LEEME (2).md` y `LEEME (4).md` (no `(1)` ni `(3)`), y `download`,
+  `download (1)` y `download (3)` (no `(2)`). Por el contenido de los que llegaron no parece faltar
+  nada (cubren `config/`, `datos/` y `contexto/`), pero quedó la pregunta 22.
 - No llegaron casos históricos ni una planilla de la Interfaz de Metrix (pregunta 13).
 
 ## Lo que se agrega en las fases siguientes

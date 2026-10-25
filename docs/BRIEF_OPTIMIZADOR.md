@@ -311,8 +311,9 @@ Agregados propios (marcados como tales, para no confundir con Corte Certo):
   corridos como pila de chapas, y con "×N" visible (en Corte Certo hay que pasar el mouse).
 - **Colores**:
   - en las capturas, las piezas son bordó, verde y oliva, y el sobrante amarillo;
-  - no sabemos qué distingue bordó, verde y oliva (pregunta abierta). Hipótesis de trabajo:
-    bordó = pieza, verde = pieza girada, oliva = retazo aprovechable, amarillo = desperdicio;
+  - no sabemos qué distingue bordó, verde y oliva (pregunta 5). La hipótesis "verde = girada,
+    oliva = retazo" no cierra con la captura (25/10). Regla propia por defecto: un color por tipo
+    de pieza con la misma paleta, sobrante en amarillo;
   - los colores van en **un solo lugar** del código, para cambiarlos fácil.
 - **Detalle de un montaje**:
   - medidas de cada pieza y número de ítem adentro del rectángulo;

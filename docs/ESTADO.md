@@ -16,6 +16,13 @@ leer toda la conversación. Lo más nuevo, arriba.
   Windows) y un test mínimo. `pytest -q` en verde.
 - Se verificó que `herramientas/importar_medidas_hojas.py` regenera `config/hojas.csv` idéntico.
 
+**Revisión del subagente revisor (F0)**: 1 problema grave (el nombre de una obra en
+`contexto/fabrica/DATA_DICTIONARY.md`: reemplazado por `<OBRA>`; sigue en la historia de git), 4
+medios (inventario incompleto, la regla de colores tampoco cerraba con la captura, el brief con la
+hipótesis vieja, `hypothesis` sin paquete para Python 3.10) y 9 menores. Corregidos todos menos
+los que tiene que decidir Juan (preguntas 21 y 22) y los avisos para F3/F5 (instalación sin
+internet, Python "solo para mí", no usar fuentes de internet en la interfaz).
+
 **Todavía no hay motor.** **Datos históricos**: no llegaron (`datos/casos/` vacío).
 
 **Siguiente paso**: fase F1 (motor + validador + banco sintético + CLI).

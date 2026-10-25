@@ -26,10 +26,11 @@ consumo de hojas). No manda nada a las mesas de corte: eso sigue siendo Optima.
     izquierda, como nuestro origen de coordenadas.
   - **Los colores** son exactamente los de la paleta clásica de Windows: bordó = `(128,0,0)`,
     verde = `(0,128,0)`, oliva = `(128,128,0)` y amarillo = `(255,255,0)`. Son el 2.º, 3.º y 4.º
-    color de esa paleta, en orden. En el montaje 8 hay una pieza oliva y dos verdes **de la
-    misma medida** y en la misma orientación: entonces oliva no es "retazo" y verde no es
-    "girada". Lo más probable es que Corte Certo pinte **por tipo de pieza**, recorriendo la
-    paleta. Uso eso por defecto (pregunta 5 actualizada).
+    color de esa paleta, en orden. No es "oliva = retazo" ni "verde = girada" (en el montaje 8
+    hay una oliva y dos verdes de la misma medida y orientación), ni "un color por medida" (el
+    bordó aparece en al menos 3 medidas). Lo que cierra con todo es "un color por renglón del
+    proyecto, rotando entre 3", pero es una suposición. Para nuestro dibujo uso una regla propia
+    que se lee mejor: un color por tipo de pieza con la misma paleta (pregunta 5).
 - **Propiedades físicas (captura 4)**: todo en 0 (sierra, destaque, constante, márgenes). En
   Corte Certo la única regla es la plancha ya achicada a 3580 × 2500.
 
@@ -44,14 +45,15 @@ consumo de hojas). No manda nada a las mesas de corte: eso sigue siendo Optima.
 
 | Duda | Qué hago por defecto | Dónde |
 |---|---|---|
-| Qué significan los colores | Un color por tipo de pieza, con la paleta de Corte Certo | Pregunta 5 |
+| Qué significan los colores | Regla propia: un color por tipo de pieza, con la paleta de Corte Certo | Pregunta 5 |
 | Con textura, qué lado de la pieza va con la veta (Metrix no dice la orientación) | Veta horizontal: el **largo** de la pieza va a lo largo de la plancha (eje X); vertical: a lo ancho (eje Y) | Pregunta 18 (nueva) |
 | Varias medidas de plancha en un material | Todas habilitadas, se mezclan y gana la de menos m² | Pregunta 3 |
 | "Destaque mínimo" exacto | Ningún sobrante que haya que separar con un corte puede medir menos que el destaque (salvo 0) | Pregunta 2 |
-| Cuántas etapas de corte | Por defecto, las que salen del generador (hasta 3 etapas, como la captura); el validador acepta guillotina libre | Pregunta 16 |
+| Cuántas etapas de corte | No se configura un límite: el generador arma montajes de 3 o 4 etapas (como la captura) y el validador acepta cualquier guillotina | Pregunta 16 |
 | Corte Certo usa la plancha "acostada" y el primer corte vertical | Igual: primero se prueban tiras verticales y después horizontales, y se queda con lo mejor | — |
-| Reproducibilidad entre la nube y la PC | Límites por cantidad de trabajo (iteraciones, nodos), no por reloj; versiones fijas de numpy/scipy | Decisiones |
-| Python de la PC de Juan | Funciona con 3.10 o más nuevo; se recomienda 3.12 o 3.13 (mismas versiones que en la nube) | `requirements.txt` |
+| Reproducibilidad entre la nube y la PC | Límites por cantidad de trabajo (iteraciones, nodos), no por reloj; versiones fijas de numpy/scipy. Igual puede haber diferencias mínimas entre Linux y Windows: se controla con el banco de pruebas | Decisiones |
+| Python de la PC de Juan | Funciona con 3.10 o más nuevo; se recomienda 3.12 o 3.13 (mismas versiones que en la nube), instalado "solo para mí" | `requirements.txt`, pregunta 20 |
+| Instalación sin internet | La primera instalación baja los paquetes de internet; para la PC sin internet se puede llevar una carpeta con los paquetes ya bajados (F5) | `INSTALACION.md` |
 
 ## Cómo lo voy a encarar (el motor)
 

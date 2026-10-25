@@ -39,12 +39,16 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 **5. En los montajes de Corte Certo, ¿qué quieren decir los colores bordó, verde y oliva?**
 - El amarillo es sobrante.
 - Lo que se ve midiendo la captura (25/10): son los colores 2, 3 y 4 de la paleta clásica de
-  Windows, en orden. En el montaje 8 hay una pieza oliva y dos verdes **de la misma medida y en la
-  misma orientación**, así que oliva no parece "retazo" ni verde "girada". Lo más probable: un
-  color por tipo de pieza (o por renglón del proyecto).
-- **Por defecto** (cambió el 25/10): un color por tipo de pieza, recorriendo la misma paleta
-  (bordó, verde, oliva, azul marino, violeta, verde azulado…); amarillo = sobrante; un tono más
-  claro de amarillo = sobrante que sirve como retazo.
+  Windows, en orden. Pero ninguna regla simple cierra:
+  - en el montaje 8 hay una pieza oliva y dos verdes **de la misma medida y orientación** (no es
+    "oliva = retazo" ni "verde = girada");
+  - en los montajes 1, 9 y 11 hay piezas bordó y verdes del mismo tamaño, y el bordó aparece en al
+    menos 3 medidas distintas (no es "un color por medida": habría más de 3 colores).
+  - Lo que sí cierra con todo: **un color por renglón del proyecto, rotando entre esos 3**. Es una
+    suposición.
+- **Por defecto** (cambió el 25/10): regla propia, para que se lea bien: un color por tipo de
+  pieza, recorriendo la misma paleta (bordó, verde, oliva, azul marino, violeta, verde azulado…);
+  todo el sobrante en amarillo. No pretende copiar la regla de Corte Certo.
 - Respuesta:
 
 **6. "Cálculo especial de perímetro": ¿se usa? ¿para qué?**
@@ -100,7 +104,8 @@ float o del laminado del mismo espesor?**
 
 **16. ¿Las mesas u Optima limitan las etapas de corte (X, Y, Z)?**
 - Para cotizar no cambia tanto, pero sirve para que el montaje sea cortable de verdad.
-- **Por defecto**: sin límite (guillotina libre).
+- **Por defecto**: no se configura un límite. El generador arma montajes de 3 o 4 etapas (como
+  los de la captura de Corte Certo) y el validador acepta cualquier guillotina.
 - Respuesta:
 
 **17. Corte Certo usa códigos de material propios (5 = "5 mm Incoloro", 2004 = ?). ¿Hay una
@@ -113,6 +118,8 @@ tabla que los relacione con los códigos de Metrix?**
   con veta, no.
 - **Por defecto**: veta "Horizontal" = el **largo** de la pieza va a lo largo de la plancha (el
   lado de 3580); "Vertical" = el largo va a lo ancho (el lado de 2500). La pieza no se gira.
+- Ojo: sin veta y sin rotación, la pieza va como se cargó, con su **ancho** a lo largo de la
+  plancha (la convención de `CLAUDE.md`). Con veta horizontal queda al revés (el largo en X).
 - Respuesta:
 
 **19. Cuando se mezclan planchas de distinta medida en un material, ¿alcanza con que el
@@ -124,7 +131,22 @@ programa elija la combinación de menos m²?**
 **20. ¿Qué Python tiene (o puede tener) la PC de la oficina?**
 - El programa anda con Python 3.10 o más nuevo, pero los resultados son idénticos a los de la
   nube solo con 3.12 o más nuevo (mismas versiones de las librerías de cálculo).
-- **Por defecto**: la instalación recomienda Python 3.12 o 3.13 de python.org.
+- **Por defecto**: la instalación recomienda Python 3.12 o 3.13 de python.org, instalado "solo
+  para mí" (no pide permisos de administrador).
+- Respuesta:
+
+**21. Nombres de compañeros en los documentos de la fábrica: ¿los dejamos?**
+- No son clientes, pero el revisor encontró en `contexto/fabrica/` el usuario de Windows de un
+  compañero (en rutas como `C:\Users\…`) y nombres de pila de empleados, y en las propiedades de
+  `config/fuentes/Medidas_hojas.xlsx` figura quién lo creó.
+- **Por defecto**: se dejan como están (la regla de `CLAUDE.md` es sobre clientes).
+- Respuesta:
+
+**22. ¿Faltó subir algún archivo?**
+- Llegaron `download`, `download (1)` y `download (3)` (falta un `(2)`), y `LEEME.md`, `LEEME (2)`
+  y `LEEME (4)` (faltan `(1)` y `(3)`). Por el contenido no parece faltar nada, pero conviene
+  confirmarlo.
+- **Por defecto**: se sigue con lo que hay.
 - Respuesta:
 
 ## Respondidas
