@@ -67,17 +67,17 @@ def test_detalle_tiene_medidas_y_cortes():
     m = res["materiales"][0]["montajes"][0]
     svg = dibujo.detalle(m)
     assert "1150 × 2400" in svg or "2400 × 1150" in svg
-    assert svg.count("<line") == len(m["cortes"])
+    assert svg.count('class="corte"') == len(m["cortes"])
 
 
 def test_exportar_csv_y_xlsx():
     res = _resultado()
     csv = exportar.a_csv(res)
-    assert csv.startswith("﻿proyecto;material;")
+    assert csv.startswith("\ufeffProyecto;Material;")
     filas = csv.strip().splitlines()
     assert len(filas) == 2 and ";FL5IN;" in filas[1]
     datos = exportar.a_xlsx(res)
     libro = openpyxl.load_workbook(io.BytesIO(datos))
     hoja = libro["Consumo"]
-    assert hoja.cell(1, 2).value == "material" and hoja.cell(2, 2).value == "FL5IN"
+    assert hoja.cell(1, 2).value == "Material" and hoja.cell(2, 2).value == "FL5IN"
     assert hoja.cell(2, 9).value == res["materiales"][0]["planchas"]

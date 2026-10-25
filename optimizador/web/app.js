@@ -361,7 +361,7 @@ $("#r-imp-informe").addEventListener("click", () => imprimir("informe"));
 $("#r-imp-miniaturas").addEventListener("click", () => imprimir("miniaturas"));
 $("#r-imp-detalle").addEventListener("click", () => imprimir("detalle"));
 $("#r-xlsx").addEventListener("click", () => (location.href = `/api/calculo/${estado.calculo}/consumo.xlsx`));
-$("#r-csv").addEventListener("click", () => (location.href = `/api/calculo/${estado.calculo}/consumo.csv?coma=${$("#decimal").value}`));
+$("#r-csv").addEventListener("click", () => (location.href = `/api/calculo/${estado.calculo}/consumo.csv?coma=1`));
 $("#r-json").addEventListener("click", () => window.open(`/api/calculo/${estado.calculo}/resultado.json`, "_blank"));
 $("#decimal").addEventListener("change", () => { if (estado.resultado) mostrarResultados(); totales(); });
 

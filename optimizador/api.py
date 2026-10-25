@@ -142,7 +142,8 @@ def armar_tipos(mat: Material, piezas: list[Pieza], stocks: list[Stock]):
         if clave not in grupos:
             grupos[clave] = Tipo(indice=len(grupos), ancho=a_m2, largo=l_m2, ancho_corte=a_c,
                                  largo_corte=l_c, cantidad=0, rota=len(entra) > 1 or rota,
-                                 orientaciones=tuple(entra))
+                                 orientaciones=tuple(entra),
+                                 medida_presupuesto=(pz.ancho, pz.largo))
         tipo = grupos[clave]
         tipo.cantidad += pz.cantidad
         tipo.items.append((pz.item, pz.cantidad))
@@ -172,6 +173,7 @@ def _redondear(x: float, decimales: int) -> float:
 
 def config_material(mat: Material) -> dict:
     return {
+        "color": mat.color,
         "separacion_piezas_mm": mat.separacion_piezas_mm,
         "destaque_min_mm": mat.destaque_min_mm,
         "genera_retazo": mat.genera_retazo,
@@ -277,6 +279,7 @@ def informe_material(mat: Material, piezas: list[Pieza], res: ResultadoMaterial 
         "perimetro_m": _redondear(perimetro, 2),
         "calculo_especial_perimetro_m": 0.0,
         "tipos": [{"tipo": t.indice + 1, "items": [{"item": i, "cantidad": c} for i, c in t.items],
+                   "ancho_presupuesto": t.medida_presupuesto[0], "largo_presupuesto": t.medida_presupuesto[1],
                    "ancho": t.ancho, "largo": t.largo, "ancho_corte": t.ancho_corte,
                    "largo_corte": t.largo_corte, "cantidad": t.cantidad, "rota": t.rota,
                    "color": colores.color_pieza(t.indice + 1)} for t in calculadas],

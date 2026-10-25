@@ -59,7 +59,8 @@ la Interfaz (no hay planilla de ejemplo).
   números en color, miniaturas apiladas con ×N, 6 por fila; detalle de cada montaje con medidas,
   ítems, sobrantes y cortes numerados (rojo = de lado a lado, azul = adentro de una tira).
 - Impresión A4 apaisada por CSS: informe solo, montajes varios por hoja, o uno por hoja (se
-  verificó a PDF: cada detalle entra en una hoja).
+  verificó a PDF: un detalle normal entra en una hoja; uno con muchísimas piezas y cortes puede
+  ocupar más, porque la lista de cortes es larga).
 - `docs/API.md`: entrada, salida y ejemplo completo; CLI `--html`.
 - `optimizador/exportar.py`: consumo por material a CSV (`;`, UTF-8 con BOM) y XLSX.
 

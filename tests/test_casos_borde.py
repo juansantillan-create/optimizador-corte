@@ -176,3 +176,32 @@ def test_reproducible():
         for mat in m["materiales"]:
             mat.pop("calculo", None)
     assert a == b
+
+
+def test_nunca_mas_piezas_que_las_pedidas():
+    # Regresión (revisor F2): con 1000 × 700 entran 11 mezclando orientaciones y la caché del
+    # generador reusaba ese montaje para una cota menor.
+    for cantidad in (9, 10, 11, 13, 20, 21, 22):
+        for esfuerzo in ("rapido", "normal"):
+            res = calcular([{"item": "1", "material": "FL5IN", "cantidad": cantidad, "ancho": 1000, "largo": 700}],
+                           esfuerzo=esfuerzo)
+            assert material(res, "FL5IN")["piezas"] == cantidad
+
+
+def test_generador_respeta_cotas_con_cache():
+    import random
+
+    from optimizador.motor import arbol
+    from optimizador.motor.generador import Generador, TipoGen
+
+    r = random.Random(3)
+    for _ in range(30):
+        tipos = [TipoGen(((a, b), (b, a))) for a, b in
+                 [(r.randint(200, 1500), r.randint(200, 1500)) for _ in range(r.randint(1, 4))]]
+        g = Generador(3580, 2500, tipos, 0)
+        valores = [float(r.randint(1, 5)) for _ in tipos]
+        for _ in range(6):  # varias llamadas seguidas: la caché se reusa
+            cotas = [r.randint(0, 25) for _ in tipos]
+            for nodo in g.generar(valores, cotas):
+                usadas = arbol.contar(nodo)
+                assert all(usadas.get(i, 0) <= c for i, c in enumerate(cotas)), (cotas, usadas)

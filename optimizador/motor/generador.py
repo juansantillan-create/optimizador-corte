@@ -144,7 +144,9 @@ class Generador:
         """
         maximos = []
         for c, ors in zip(cotas, orients):
-            entra = max(((A // a) * (B // b) for a, b in ors if a <= A and b <= B), default=0)
+            # Cota segura de cuántas entran (por área): mezclando orientaciones pueden entrar más
+            # que en una grilla de una sola orientación, así que esa no sirve para el caché.
+            entra = max(((A * B) // (a * b) for a, b in ors if a <= A and b <= B), default=0)
             maximos.append(min(c, entra))
         clave = ("plancha", orients is self._transpuesta, A, B, prof, tuple(maximos))
         guardado = self._cache.get(clave)
@@ -293,7 +295,8 @@ class Generador:
         if entran is None:
             entran = []
             for t, ors in enumerate(orients):
-                maximo = max(((l // a) * (B // b) for a, b in ors if a <= l and b <= B), default=0)
+                # Cota segura (por área), igual que en `_plancha`.
+                maximo = max(((l * B) // (a * b) for a, b in ors if a <= l and b <= B), default=0)
                 if maximo > 0:
                     entran.append((t, maximo))
             self._entran[clave_entran] = entran

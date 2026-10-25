@@ -76,7 +76,7 @@ def test_calcular_informe_y_exportar(servidor):
     assert c["estado"] == "listo" and c["verificado"] is True
     html = pedir(base, f"/api/calculo/{c['id']}/informe.html?modo=detalle").decode()
     assert "Informe de cálculo" in html and "Cdad. de montajes:" in html
-    assert pedir(base, f"/api/calculo/{c['id']}/consumo.csv").decode("utf-8-sig").startswith("proyecto;")
+    assert pedir(base, f"/api/calculo/{c['id']}/consumo.csv").decode("utf-8-sig").startswith("Proyecto;")
     assert pedir(base, f"/api/calculo/{c['id']}/consumo.xlsx")[:2] == b"PK"
     assert pedir(base, f"/api/calculo/{c['id']}/resultado.json")["verificado"] is True
 

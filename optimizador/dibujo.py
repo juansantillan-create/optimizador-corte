@@ -22,10 +22,14 @@ def _f(x: float) -> str:
     return f"{x:.2f}".rstrip("0").rstrip(".")
 
 
-def miniatura(montaje: dict, ancho_px: float = 158, max_pila: int = 12, numero: bool = True) -> str:
+def miniatura(montaje: dict, ancho_px: float = 158, max_pila: int = 12, numero: bool = True,
+              ancho_referencia: int | None = None) -> str:
+    """`ancho_referencia`: el ancho de la plancha más grande del material, para que las miniaturas
+    de planchas distintas se vean en la misma escala (y se note cuál es más chica)."""
     pl = montaje["plancha"]
     W, H = pl["ancho"], pl["largo"]
-    k = ancho_px / W
+    k = ancho_px / (ancho_referencia or W)
+    ancho_px = W * k
     alto_px = H * k
     reps = montaje.get("repeticiones", 1)
     capas = min(max(reps - 1, 0), max_pila)
@@ -95,22 +99,32 @@ def detalle(montaje: dict, ancho_px: float = 1000, cortes: bool = True) -> str:
                               s["largo"] * k, f'{s["ancho"]} × {s["largo"]}',
                               "retazo" if s.get("tipo") == "retazo" else "", "#000000"))
     if cortes:
+        rotulos = []
+        ocupados: list[tuple[float, float]] = []
         for n, c in enumerate(montaje.get("cortes", []), start=1):
             if c["vertical"]:
                 x1 = x2 = x0 + c["posicion"] * k
                 ya, yb = y0 + (H - c["desde"]) * k, y0 + (H - c["hasta"]) * k
-                cx, cy = x1, min(ya, yb) + 9
+                lugares = [(x1, min(ya, yb) + f * abs(yb - ya)) for f in (0.08, 0.5, 0.3, 0.7, 0.92)]
             else:
                 ya = yb = y0 + (H - c["posicion"]) * k
                 x1, x2 = x0 + c["desde"] * k, x0 + c["hasta"] * k
-                cx, cy = max(x1, x2) - 9, ya
-                yb = ya
+                lugares = [(min(x1, x2) + f * abs(x2 - x1), ya) for f in (0.92, 0.5, 0.7, 0.3, 0.08)]
+            # El número va donde no se pise con otro.
+            cx, cy = next(((x, y) for x, y in lugares if all(abs(x - ox) > 20 or abs(y - oy) > 20
+                                                             for ox, oy in ocupados)), lugares[0])
+            ocupados.append((cx, cy))
             color = "#d00000" if c["nivel"] == 1 else "#0050d0"
-            partes.append(f'<line x1="{_f(x1)}" y1="{_f(ya)}" x2="{_f(x2)}" y2="{_f(yb)}" stroke="{color}" '
-                          f'stroke-width="{1.6 if c["nivel"] == 1 else 1}" stroke-dasharray="6 3"/>')
-            partes.append(f'<circle cx="{_f(cx)}" cy="{_f(cy)}" r="7" fill="#ffffff" stroke="{color}"/>'
-                          f'<text x="{_f(cx)}" y="{_f(cy + 3)}" font-size="8" text-anchor="middle" '
-                          f'fill="{color}">{n}</text>')
+            ancho_linea = 2 if c["nivel"] == 1 else 1.4
+            # Primero un borde blanco, así la línea se ve sobre cualquier color.
+            partes.append(f'<line x1="{_f(x1)}" y1="{_f(ya)}" x2="{_f(x2)}" y2="{_f(yb)}" stroke="#ffffff" '
+                          f'stroke-width="{ancho_linea + 2.4}"/>')
+            partes.append(f'<line class="corte" x1="{_f(x1)}" y1="{_f(ya)}" x2="{_f(x2)}" y2="{_f(yb)}" '
+                          f'stroke="{color}" stroke-width="{ancho_linea}" stroke-dasharray="7 3"/>')
+            rotulos.append(f'<circle cx="{_f(cx)}" cy="{_f(cy)}" r="9" fill="#ffffff" stroke="{color}" stroke-width="1.5"/>'
+                           f'<text x="{_f(cx)}" y="{_f(cy + 4)}" font-size="11" font-weight="bold" '
+                           f'text-anchor="middle" fill="{color}">{n}</text>')
+        partes += rotulos
     partes.append(f'<text x="{x0}" y="{_f(y0 + H * k + 20)}" font-size="12">'
                   f'Plancha útil {W} × {H} (hoja {pl["hoja_ancho"]} × {pl["hoja_largo"]}). '
                   f'Cortes: rojo = de lado a lado de la plancha, azul = adentro de una tira. '

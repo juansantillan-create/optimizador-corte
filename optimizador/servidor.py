@@ -278,7 +278,7 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
         return HTMLResponse(informe.html_resultado(resultado(id_), modo_impresion=modo, coma=bool(coma)))
 
     @app.get("/api/calculo/{id_}/consumo.csv")
-    def consumo_csv(id_: str, coma: int = 0):
+    def consumo_csv(id_: str, coma: int = 1):
         r = resultado(id_)
         nombre = _nombre_archivo(f"consumo_{r['proyecto']['codigo']}") + ".csv"
         return Response(exportar.a_csv(r, coma=bool(coma)), media_type="text/csv; charset=utf-8",

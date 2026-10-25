@@ -14,6 +14,15 @@ from pathlib import Path
 COLUMNAS = ["proyecto", "material", "descripcion", "hoja_ancho", "hoja_largo", "util_ancho",
             "util_largo", "supuesta", "planchas", "m2_planchas_util", "m2_hoja_entera", "montajes",
             "piezas", "m2_piezas", "aprovechamiento_material", "preset"]
+# Encabezados para la planilla. Las últimas columnas son DEL MATERIAL (se repiten en cada medida de
+# plancha): no hay que sumarlas.
+TITULOS = {"proyecto": "Proyecto", "material": "Material", "descripcion": "Descripción",
+           "hoja_ancho": "Hoja ancho (mm)", "hoja_largo": "Hoja largo (mm)", "util_ancho": "Útil ancho (mm)",
+           "util_largo": "Útil largo (mm)", "supuesta": "Plancha supuesta", "planchas": "Planchas",
+           "m2_planchas_util": "m² planchas (útil)", "m2_hoja_entera": "m² hoja entera",
+           "montajes": "Montajes con esta plancha", "piezas": "Piezas del material (no sumar)",
+           "m2_piezas": "m² piezas del material (no sumar)",
+           "aprovechamiento_material": "Aprov. del material % (no sumar)", "preset": "Configuración"}
 
 
 def filas_consumo(res: dict) -> list[dict]:
@@ -49,15 +58,16 @@ def filas_consumo(res: dict) -> list[dict]:
     return filas
 
 
-def a_csv(res: dict, coma: bool = False) -> str:
+def a_csv(res: dict, coma: bool = True) -> str:
+    """Con coma decimal por defecto (Excel con configuración argentina)."""
     salida = io.StringIO()
     w = csv.DictWriter(salida, fieldnames=COLUMNAS, delimiter=";", extrasaction="ignore")
-    w.writeheader()
+    w.writerow(TITULOS)
     for fila in filas_consumo(res):
         if coma:
             fila = {k: (str(v).replace(".", ",") if isinstance(v, float) else v) for k, v in fila.items()}
         w.writerow(fila)
-    return "﻿" + salida.getvalue()
+    return "\ufeff" + salida.getvalue()
 
 
 def a_xlsx(res: dict, ruta: Path | None = None) -> bytes:
@@ -67,7 +77,7 @@ def a_xlsx(res: dict, ruta: Path | None = None) -> bytes:
     libro = Workbook()
     hoja = libro.active
     hoja.title = "Consumo"
-    hoja.append(COLUMNAS)
+    hoja.append([TITULOS[c] for c in COLUMNAS])
     for celda in hoja[1]:
         celda.font = Font(bold=True)
     for fila in filas_consumo(res):

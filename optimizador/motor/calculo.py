@@ -46,6 +46,7 @@ class Tipo:
     orientaciones: tuple[tuple[int, int], ...]  # reales (dx, dy) permitidas
     items: list[tuple[str, int]] = field(default_factory=list)  # (ítem, cantidad)
     mm2_presupuesto: int = 0  # con las medidas del presupuesto (sin +3 ni constantes)
+    medida_presupuesto: tuple[int, int] = (0, 0)  # ancho × largo del primer renglón, como se cargó
 
     @property
     def etiqueta(self) -> str:
@@ -199,6 +200,14 @@ def secuencial(p: Problema, potencia: float = 1.0, restante: list[int] | None = 
             # Se devuelve lo armado; `calcular` lo informa como error.
             break
         _, k, nodo, cuenta = mejor
+        exceso = [max(0, n - r) for n, r in zip(cuenta, rem)]
+        if any(exceso):
+            # No debería pasar (el generador respeta las cotas), pero si pasa, las piezas de más
+            # se sacan acá: las cantidades tienen que dar exactas.
+            nodo = sacar_piezas(nodo, exceso)
+            cuenta = p.cuenta(nodo)
+            if not any(cuenta):
+                break
         reps = min(rem[i] // n for i, n in enumerate(cuenta) if n > 0)
         reps = max(reps, 1)
         usos.append(Uso(k, nodo, reps, cuenta))

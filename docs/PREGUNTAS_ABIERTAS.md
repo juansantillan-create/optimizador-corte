@@ -48,9 +48,9 @@ pulido recto se cargaba en las medidas de las piezas en Corte Certo?**
     menos 3 medidas distintas (no es "un color por medida": habría más de 3 colores).
   - Lo que sí cierra con todo: **un color por renglón del proyecto, rotando entre esos 3**. Es una
     suposición.
-- **Por defecto** (cambió el 25/10): regla propia, para que se lea bien: un color por tipo de
-  pieza, recorriendo la misma paleta (bordó, verde, oliva, azul marino, violeta, verde azulado…);
-  todo el sobrante en amarillo. No pretende copiar la regla de Corte Certo.
+- **Por defecto** (cambió el 25/10): como se ve en la captura, solo esos 3 colores: cada tipo de
+  pieza toma uno, rotando (tipo 1 bordó, 2 verde, 3 oliva, 4 bordó…); todo el sobrante en amarillo.
+  Para saber qué pieza es cada una, el detalle del montaje muestra la medida y el ítem.
 - Respuesta:
 
 **6. "Cálculo especial de perímetro": ¿se usa? ¿para qué?**
@@ -117,6 +117,11 @@ float o del laminado del mismo espesor?**
 **17. Corte Certo usa códigos de material propios (5 = "5 mm Incoloro", 2004 = ?). ¿Hay una
 tabla que los relacione con los códigos de Metrix?**
 - Sirve si las leyendas viejas nombran el material con el código de Corte Certo.
+- Respuesta:
+
+**23. Con varios materiales, ¿el "Perímetro - Piezas" de Corte Certo es por material o el total?**
+- En la captura hay un solo material y no se puede saber.
+- **Por defecto**: por material, debajo de cada uno.
 - Respuesta:
 
 **18. Con textura (veta), ¿qué lado de la pieza va con la veta?**

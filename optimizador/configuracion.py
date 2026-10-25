@@ -178,18 +178,31 @@ def _aplicar(mat: Material, valores: dict, origen: str) -> None:
     """Pisa campos del material. `planchas` reemplaza la lista entera."""
     for campo, valor in valores.items():
         if campo == "planchas":
-            mat.planchas = [Plancha(**p) if isinstance(p, dict) else p for p in valor]
+            planchas = []
+            for p in valor:
+                pl = Plancha(**p) if isinstance(p, dict) else p
+                if pl.ancho < pl.largo:
+                    mat.avisos.append(f"{mat.codigo}: la plancha {pl.ancho} × {pl.largo} venía parada; "
+                                      f"se toma {pl.largo} × {pl.ancho} (el ancho es el lado largo)")
+                    pl.ancho, pl.largo = pl.largo, pl.ancho
+                planchas.append(pl)
+            mat.planchas = planchas
         elif campo == "comercial":
             continue  # precios provisorios: se guardan, todavía no se usan en el cálculo
         elif campo == "planchas_habilitadas":
             # {"3600x2500": true, "3600x2200": false}
-            for p in mat.planchas:
-                if p.clave() in valor:
-                    p.habilitada = bool(valor[p.clave()])
+            claves = {p.clave(): p for p in mat.planchas}
+            for clave, habilitada in valor.items():
+                normal = str(clave).lower().replace(" ", "").replace("×", "x")
+                if normal not in claves:
+                    mat.avisos.append(f"{mat.codigo}: no tiene la plancha {clave!r} ({origen}); se ignora "
+                                      f"(tiene: {', '.join(claves)})")
+                    continue
+                claves[normal].habilitada = _booleano(habilitada)
         elif campo in CAMPOS_EDITABLES:
             actual = getattr(mat, campo)
             if isinstance(actual, bool):
-                valor = bool(valor)
+                valor = _booleano(valor)
             elif isinstance(actual, int):
                 valor = int(valor)
             elif isinstance(actual, float):
@@ -197,6 +210,13 @@ def _aplicar(mat: Material, valores: dict, origen: str) -> None:
             setattr(mat, campo, valor)
         else:
             mat.avisos.append(f"ajuste desconocido para {mat.codigo} ({origen}): {campo!r}, se ignora")
+
+
+def _booleano(valor) -> bool:
+    """True/False, también desde texto ("false", "no", "0" son falso)."""
+    if isinstance(valor, str):
+        return valor.strip().lower() in ("true", "si", "sí", "s", "1", "x", "verdadero")
+    return bool(valor)
 
 
 def composicion_de_codigo(codigo: str) -> tuple[str | None, float]:

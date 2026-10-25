@@ -76,10 +76,18 @@ table.lista { border-collapse: collapse; font-size: 11px; margin: 4px 12px 4px 0
 table.lista th, table.lista td { border: 1px solid #c8c8c8; padding: 1px 5px; text-align: right; }
 table.lista th { background: #eee; }
 .listas { display: flex; flex-wrap: wrap; align-items: flex-start; }
-.color { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; vertical-align: middle; }
+.color { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; vertical-align: middle;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.alarma { background: #b00000; color: #fff; font-weight: bold; padding: 8px 12px; margin: 0 0 10px; font-size: 15px;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.error-material td { color: #b00000; font-size: 12px; }
+.medida-plancha { font-size: 10px; color: #444; text-align: center; }
 @page { size: A4 landscape; margin: 9mm; }
 @media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff; }
+  .grilla { gap: 3mm 3mm; }
+  .grilla svg.miniatura { width: 41mm; height: auto; }
   .hoja { margin: 0; padding: 0; max-width: none; }
   .no-imprimir { display: none !important; }
   .salto { break-before: page; }
@@ -112,7 +120,7 @@ def html_resultado(res: dict, modo_impresion: str = "detalle", coma: bool = Fals
 def seccion_informe(res: dict, coma: bool = False) -> str:
     n = lambda x, d, s=False: numero(x, d, coma, s)  # noqa: E731
     proy = res["proyecto"]
-    p = ["<div class='hoja'>",
+    p = ["<div class='hoja'>", _alarma(res),
          "<div class='cabecera'>",
          f"<div class='programa'>Optimizador de corte Cristalux v.{escape(__version__)}</div>",
          f"<div class='titulo-informe'><h1>Informe de cálculo</h1>{fecha_corte_certo(res.get('fecha', ''))}</div>",
@@ -128,11 +136,7 @@ def seccion_informe(res: dict, coma: bool = False) -> str:
              "<tr><th style='width:7%'>Código</th><th style='width:25%'>Descripción</th>"
              "<th style='width:14%'>Piezas</th><th>(m2)</th><th>Layouts</th><th>Planchas</th>"
              "<th>(m2)</th><th>Aprov.</th></tr>")
-    perimetro = 0.0
-    especial = 0.0
     for mat in res["materiales"]:
-        perimetro += mat["perimetro_m"]
-        especial += mat.get("calculo_especial_perimetro_m", 0.0)
         p.append(f"<tr><td>{escape(mat['codigo'])}</td><td>{escape(mat['descripcion'])}</td>"
                  f"<td>{mat['piezas']}</td><td>{n(mat['m2_piezas'], 6)}</td><td>{mat['layouts']}</td>"
                  f"<td>{mat['planchas']}</td><td>{n(mat['m2_planchas'], 6, True)}</td>"
@@ -143,9 +147,12 @@ def seccion_informe(res: dict, coma: bool = False) -> str:
             tipo = u["tipo"] + (" (supuesta)" if u.get("supuesta") else "")
             p.append(f"<tr><td colspan='2'></td><td>{u['cantidad']}</td><td>{n(u['ancho'], 1)}</td>"
                      f"<td>{n(u['largo'], 1)}</td><td>{escape(tipo)}</td><td></td><td></td></tr>")
+        if mat["errores"]:
+            p.append(f"<tr class='error-material'><td colspan='8'>⚠ {len(mat['errores'])} renglón(es) de "
+                     f"este material no se calcularon (ver avisos)</td></tr>")
+        p.append(f"<tr><td colspan='8'>Perímetro - Piezas: {n(mat['perimetro_m'], 2)} m<br>"
+                 f"Cálculo especial de perímetro: {n(mat.get('calculo_especial_perimetro_m', 0.0), 2)} m</td></tr>")
     p.append("</table>")
-    p.append(f"<div style='margin-top:6px'>Perímetro - Piezas: {n(perimetro, 2)} m<br>"
-             f"Cálculo especial de perímetro: {n(especial, 2)} m</div>")
     p.append(_agregados(res, coma))
     p.append("<div class='barra-negra'>Elija el material para visualizar:</div>"
              "<table class='elegir'><tr><th style='width:20%'>Código</th><th>Descripción</th>"
@@ -157,6 +164,13 @@ def seccion_informe(res: dict, coma: bool = False) -> str:
                  f"<td>{escape(mat['configuracion'].get('color', '') if isinstance(mat.get('configuracion'), dict) else '')}</td></tr>")
     p.append("</table></div>")
     return "".join(p)
+
+
+def _alarma(res: dict) -> str:
+    if res.get("verificado") is False:
+        return ("<div class='alarma'>⚠ EL VALIDADOR ENCONTRÓ UN PROBLEMA EN ESTE RESULTADO: NO USARLO PARA "
+                "COTIZAR. El detalle está en el recuadro de abajo.</div>")
+    return ""
 
 
 def _agregados(res: dict, coma: bool) -> str:
@@ -172,7 +186,8 @@ def _agregados(res: dict, coma: bool) -> str:
         p.append("</ul>")
     p.append(f"<div>Configuración: <b>{escape(res.get('preset_nombre', ''))}</b> "
              f"(esfuerzo {escape(res.get('esfuerzo', ''))})</div>")
-    p.append("<table class='lista'><tr><th>Material</th><th>Mínimo teórico</th><th>m² hoja entera</th>"
+    p.append("<table class='lista'><tr><th>Material</th><th>m² piezas (medida del presupuesto, sin +3)</th>"
+             "<th>Mínimo teórico</th><th>m² hoja entera</th>"
              "<th>Peso planchas (kg)</th><th>Sierra</th><th>Destaque</th><th>+ pulido recto</th>"
              "<th>Rotación</th><th>Textura</th><th>Planchas (hoja − banda)</th></tr>")
     for mat in res["materiales"]:
@@ -180,7 +195,8 @@ def _agregados(res: dict, coma: bool) -> str:
         planchas = ", ".join(f"{pl['ancho']}×{pl['largo']} − {pl['corte_banda']}"
                              + ("" if pl.get("habilitada", True) else " (deshabilitada)")
                              + (" SUPUESTA" if pl.get("supuesta") else "") for pl in c["planchas"])
-        p.append(f"<tr><td>{escape(mat['codigo'])}</td><td>{mat.get('minimo_teorico_planchas', '-')}</td>"
+        p.append(f"<tr><td>{escape(mat['codigo'])}</td><td>{n(mat.get('m2_piezas_presupuesto', 0), 6)}</td>"
+                 f"<td>{mat.get('minimo_teorico_planchas', '-')}</td>"
                  f"<td>{n(mat.get('m2_hoja_entera', 0), 6, True)}</td>"
                  f"<td>{n(mat.get('peso_planchas_kg', 0), 1)}</td>"
                  f"<td>{c['separacion_piezas_mm']} mm</td><td>{c['destaque_min_mm']} mm</td>"
@@ -204,7 +220,7 @@ def seccion_montajes(res: dict, mat: dict, coma: bool = False, con_detalle: bool
     n = lambda x, d: numero(x, d, coma)  # noqa: E731
     i = res["materiales"].index(mat)
     proy = res["proyecto"]
-    p = [f"<div class='hoja salto' id='material-{i}'>",
+    p = [f"<div class='hoja salto' id='material-{i}'>", _alarma(res),
          f"<div class='encabezado-montajes'>Proyecto : {escape(proy['codigo'])} {escape(proy['descripcion'])}"
          f"&nbsp;&nbsp;&nbsp; {mat['piezas']} &nbsp;&nbsp;&nbsp; Material : ({escape(mat['codigo'])}) "
          f"{escape(mat['descripcion'])}</div>",
@@ -216,9 +232,18 @@ def seccion_montajes(res: dict, mat: dict, coma: bool = False, con_detalle: bool
          "</table><div class='lamparita'>💡 Hacé clic en un montaje para ver el detalle: medidas, "
          "cortes en orden y lista de piezas. ×N = cantidad de planchas que se cortan así.</div></div>",
          "<div class='grilla'>"]
+    referencia = max(m["plancha"]["ancho"] for m in mat["montajes"])
+    varias = len({(m["plancha"]["ancho"], m["plancha"]["largo"]) for m in mat["montajes"]}) > 1
     for m in mat["montajes"]:
-        p.append(f"<a href='#m-{i}-{m['numero']}' title='Montaje {m['numero']}: {m['repeticiones']} "
-                 f"plancha(s), aprovechamiento {n(m['aprovechamiento'], 2)} %'>{dibujo.miniatura(m)}</a>")
+        titulo = (f"Montaje {m['numero']}: {m['repeticiones']} plancha(s) de {m['plancha']['ancho']} × "
+                  f"{m['plancha']['largo']}, aprovechamiento {n(m['aprovechamiento'], 2)} %")
+        medida = (f"<div class='medida-plancha'>{m['plancha']['ancho']} × {m['plancha']['largo']}</div>"
+                  if varias else "")
+        dib = dibujo.miniatura(m, ancho_referencia=referencia)
+        if con_detalle:
+            p.append(f"<a href='#m-{i}-{m['numero']}' title='{titulo}'>{dib}{medida}</a>")
+        else:
+            p.append(f"<div title='{titulo}'>{dib}{medida}</div>")
     p.append("</div>")
     p.append(_leyenda_tipos(mat))
     p.append("</div>")
@@ -230,12 +255,13 @@ def seccion_montajes(res: dict, mat: dict, coma: bool = False, con_detalle: bool
 
 def _leyenda_tipos(mat: dict) -> str:
     p = ["<div class='listas'><table class='lista'><tr><th>Color</th><th>Tipo</th><th>Ítems</th>"
-         "<th>Medida</th><th>Medida de corte</th><th>Cantidad</th></tr>"]
+         "<th>Medida del presupuesto</th><th>Medida de corte</th><th>Cantidad</th></tr>"]
     for t in mat["tipos"]:
         items = ", ".join(f"{it['item']} ({it['cantidad']})" for it in t["items"])
         p.append(f"<tr><td><span class='color' style='background:{t['color']}'></span></td>"
                  f"<td>{t['tipo']}</td><td style='text-align:left'>{escape(items)}</td>"
-                 f"<td>{t['ancho']} × {t['largo']}</td><td>{t['ancho_corte']} × {t['largo_corte']}</td>"
+                 f"<td>{t.get('ancho_presupuesto', t['ancho'])} × {t.get('largo_presupuesto', t['largo'])}</td>"
+                 f"<td>{t['ancho_corte']} × {t['largo_corte']}</td>"
                  f"<td>{t['cantidad']}</td></tr>")
     p.append("</table></div>")
     return "".join(p)
@@ -245,7 +271,7 @@ def detalle_montaje(res: dict, mat: dict, m: dict, coma: bool = False) -> str:
     n = lambda x, d: numero(x, d, coma)  # noqa: E731
     i = res["materiales"].index(mat)
     pl = m["plancha"]
-    p = [f"<div class='hoja salto detalle-montaje' id='m-{i}-{m['numero']}'>",
+    p = [f"<div class='hoja salto detalle-montaje' id='m-{i}-{m['numero']}'>", _alarma(res),
          f"<h3>{escape(mat['codigo'])} — Montaje {m['numero']} — se corta en {m['repeticiones']} "
          f"plancha(s) de {pl['ancho']} × {pl['largo']} — aprovechamiento {n(m['aprovechamiento'], 2)} %</h3>",
          dibujo.detalle(m)]
