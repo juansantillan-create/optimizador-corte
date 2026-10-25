@@ -13,6 +13,7 @@ Pegás las piezas desde Excel, apretás **Calcular** y ves el informe y los mont
 
 - Instalación paso a paso: [`docs/INSTALACION.md`](docs/INSTALACION.md)
 - Cómo cotizar: [`docs/USO.md`](docs/USO.md)
+- **Informe general** (resultados, uso y cómo seguir): [`docs/INFORME.md`](docs/INFORME.md)
 - Qué tan confiable es (números): [`docs/VALIDACION.md`](docs/VALIDACION.md)
 - Para el orquestador (función de Python, CLI y JSON): [`docs/API.md`](docs/API.md)
 
@@ -33,8 +34,8 @@ Pegás las piezas desde Excel, apretás **Calcular** y ves el informe y los mont
 
 **Números** (detalle en [`docs/VALIDACION.md`](docs/VALIDACION.md)):
 
-- Contra Corte Certo (1081 casos comparables): **80,3 % da las mismas planchas**, 16,7 % menos y
-  3,1 % más. Hasta 20 piezas: 98,5 % iguales. Corte Certo parece haber pasado de la hoja entera
+- Contra Corte Certo (1089 casos comparables): **80,0 % da las mismas planchas**, 16,5 % menos y
+  3,5 % más. Hasta 20 piezas: 97,5 % iguales. Corte Certo parece haber pasado de la hoja entera
   (3600) a la plancha achicada (3580) en agosto de 2026: calculados con 3580, el 11 % de los casos
   viejos da más hojas (pregunta 28).
 - Contra Optima (5 lotes, con la banda y el destaque de la regla de Lucas): con esfuerzo normal, 3
