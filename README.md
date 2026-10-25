@@ -33,14 +33,15 @@ Pegás las piezas desde Excel, apretás **Calcular** y ves el informe y los mont
 
 **Números** (detalle en [`docs/VALIDACION.md`](docs/VALIDACION.md)):
 
-- Contra Corte Certo (1081 casos comparables): **79,5 % da las mismas planchas**, 15,5 % menos y
-  5,0 % más. Hasta 20 piezas: 98,2 % iguales. Los casos viejos muestran que Corte Certo cortaba
-  sobre la hoja entera de 3600; si se cotiza siempre con 3580, da más hojas en el 7,4 % (pregunta 28).
+- Contra Corte Certo (1081 casos comparables): **80,3 % da las mismas planchas**, 16,7 % menos y
+  3,1 % más. Hasta 20 piezas: 98,5 % iguales. Corte Certo parece haber pasado de la hoja entera
+  (3600) a la plancha achicada (3580) en agosto de 2026: calculados con 3580, el 11 % de los casos
+  viejos da más hojas (pregunta 28).
 - Contra Optima (5 lotes, con la banda y el destaque de la regla de Lucas): con esfuerzo normal, 3
   lotes con los mismos m² de hoja y en total 0,9 % más vidrio (Optima usó retazos en un lote); con
   esfuerzo máximo, 0,5 % menos.
 - Todo resultado pasa el validador: los 85 casos del banco sintético, 500 de la prueba de estrés y
-  los 2003 cálculos contra Corte Certo.
+  los 2132 cálculos contra Corte Certo.
 - "Corte perfecto" (piezas todas distintas que llenan justo k planchas), hasta 100 piezas: óptimo
   en 30 de 60 (36 con esfuerzo "Máximo"). La meta del brief es 95 %: no se cumple.
 - Tiempos en la nube: típico (300 piezas, 30 medidas) 1,2 s la primera solución y 5–8 s el final;

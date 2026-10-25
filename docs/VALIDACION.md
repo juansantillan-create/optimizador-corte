@@ -8,28 +8,33 @@ Qué tan confiable es el optimizador, en palabras simples. Se actualiza cada vez
 **En pocas palabras** (corrida del 25/10/2026, esfuerzo normal; de los 1341 casos que llegaron se
 pudieron comparar 1081):
 
-- **79,5 % da las mismas hojas que Corte Certo**, 15,5 % da menos y 5,0 % da más, con la plancha con
-  la que cierra el % de cada caso.
-- **¿Qué plancha usaba Corte Certo?** Con el % redondeado (lo normal, pregunta 24), hasta septiembre
-  de 2026 cortaba sobre la **hoja entera** (3600 × 2500, sin banda): 9 de cada 10 casos dan el %
-  justo con 3600, y la diferencia media es 0; con 3580 la diferencia media es −0,45 (para que cierre,
-  el comercial tendría que haber truncado siempre). Hay casos que solo pueden ser con la hoja entera
-  (7781: 7800 piezas de 900 × 478 en 412 hojas; en 3580 entran 17 por hoja y harían falta 459). En
-  octubre de 2026 cambia: 3600, 3580 y 3570 cierran parejo (pocos casos). Ver la tabla "¿Corte Certo
-  cortaba sobre 3600 o sobre 3580?" y la pregunta 28.
-- Por eso importa con qué se cotiza: si en todos los casos se usa la banda de 20 (como cotiza hoy el
-  programa), 78,9 % iguales y **7,4 % con más hojas**; con la hoja entera, 80,5 % iguales y 1,9 % con
-  más.
-- Cuanto más chico el presupuesto, más se parece: hasta 20 piezas, 98,2 % iguales. Con más de 100
-  piezas, 57,9 % iguales, 34,9 % con menos hojas y 7,2 % con más.
-- Lo que sigue dando más hojas (54 casos) es sobre todo de presupuestos grandes (28 de más de 100
-  piezas y 22 de 21 a 100) y con la plancha de `hojas.csv` (39). Ahí el motor encuentra a veces
-  combinaciones peores que Corte Certo. Con **esfuerzo máximo** en esos casos (y sus variantes de
-  plancha) mejoran 11: quedan 80,4 % iguales y 4,0 % con más. El más lento tardó 5 minutos (1364
-  piezas de 258 medidas). Para repetirlo: `--repaso-maximo`.
-- Los 39 casos iguales a otro (el mismo pedido cotizado en dos vidrios con la misma plancha) se
-  cuentan una vez. Los 3 casos con varias medidas de hoja anotadas no se comparan: el programa no
-  puede limitar cuántas hojas usa de cada medida.
+- **80,3 % da las mismas hojas que Corte Certo**, 16,7 % da menos y 3,1 % da más, con la plancha con
+  la que mejor cierra el % de cada caso.
+- **¿Qué plancha usaba Corte Certo?** Parece que cambió en **agosto de 2026**:
+  - hasta julio, casi todo apunta a la **hoja entera** (3600 × 2500, sin banda): 51 casos solo
+    pueden ser con la hoja entera y 13 solo con 3580; y hay casos que con 3580 son imposibles (7781:
+    7800 piezas de 900 × 478 en 412 hojas; en 3580 entran 17 por hoja y harían falta 459);
+  - de agosto a octubre, al revés: 43 casos solo pueden ser con 3580 y 10 solo con la hoja entera, y
+    en agosto aparecen 38 leyendas con la medida útil anotada (3190 × 2540, 3280 × 2440);
+  - ojo: con el % solo no alcanza para separar "3600 y la oficina redondeaba" de "3580 y la oficina
+    truncaba" (dan casi la misma diferencia media). Hasta julio, 15 casos contradicen la primera y 30
+    la segunda; desde agosto, empate. Ver la tabla "¿Corte Certo cortaba sobre 3600 o sobre 3580?" y
+    la pregunta 28.
+- Por eso importa con qué se cotiza. El programa cotiza hoy con 3580 (como Corte Certo desde agosto,
+  según Juan). Si se calculan **todos** los casos viejos así, 75,9 % iguales y **11,0 % con más
+  hojas**: en 21 las piezas ni entran, porque miden lo mismo que la hoja entera o casi (3600 en
+  hojas de 3600; 3194 a 3210 en hojas de 3210, como Cool Lite; hasta 3300 en hojas de 3300). Con la
+  hoja entera, 80,2 % iguales y 1,7 % con más.
+- Cuanto más chico el presupuesto, más se parece: hasta 20 piezas, 98,5 % iguales. Con más de 100
+  piezas, 57,9 % iguales, 37,7 % con menos hojas y 4,4 % con más.
+- Lo que sigue dando más hojas (33 casos) es sobre todo de presupuestos grandes (17 de más de 100
+  piezas y 13 de 21 a 100), casi todos con la plancha de `hojas.csv` (24). Ahí el motor encuentra a
+  veces combinaciones peores que Corte Certo. Con **esfuerzo máximo** en esos cálculos (y en las
+  variantes de plancha que dan más) mejoran 11 casos: quedan 81,2 % iguales y 2,0 % con más. El más
+  lento tardó 5 minutos (1364 piezas de 258 medidas). Para repetirlo: `--repaso-maximo`.
+- Los 39 casos iguales a otro (mismas piezas, plancha y resultado) se cuentan una vez. Los 3 casos
+  con varias medidas de hoja anotadas no se comparan: el programa no puede limitar cuántas hojas usa
+  de cada medida.
 - Todos los resultados pasaron el validador.
 
 <!-- HISTORICO: lo escribe `python -m optimizador historico --docs` -->
@@ -46,35 +51,36 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | Varias medidas de hoja anotadas (el programa no limita cuántas usa de cada una) | 3 |
 | Sin piezas | 0 |
 | No cierran: los m² no dan el % de la leyenda (el presupuesto cambió o era otra plancha) | 43 |
-| Iguales a otro caso (mismas piezas, plancha y resultado de Corte Certo): se cuentan una vez | 39 |
+| Iguales a otro caso (mismas piezas, plancha y resultado de Corte Certo; a veces el mismo pedido en otro vidrio, a veces otro presupuesto): se cuentan una vez | 39 |
 | **Pasaron el control y se compararon** | **1081** |
-| … calculados con la hoja entera / con banda 20 / con la medida útil anotada | 470 / 581 / 30 |
-| … donde también cierra la otra (banda 20 ↔ hoja entera): se calcularon las dos | 922 |
+| … calculados con la hoja entera / con banda 20 / con la medida útil anotada | 740 / 311 / 30 |
+| … donde también cierra la otra (banda 20 ↔ hoja entera): se calcularon las dos | 921 |
+| … donde la otra no cierra: se calculó igual, solo para "cotizando siempre con…" | 130 |
 | … donde el % cierra solo truncando, no redondeando | 27 |
 | … que cierran solo SIN el +3 mm del pulido (se calcularon sin el +3) | 3 |
 | … con las medidas de hoja anotadas en la leyenda | 46 |
 | … con plancha supuesta (el material no está en hojas.csv) | 39 |
 | … con una medida de hoja que hojas.csv no tiene para ese material (ver abajo) | 232 |
-| … con más de una medida de plancha que cierra (se usó la más cercana) | 39 |
+| … con más de una medida de plancha que cierra (se usó la más cercana) | 43 |
 
 **Medidas de hoja que Corte Certo usó y no están en `hojas.csv`** (habría que sumarlas a `Medidas_hojas.xlsx`; pregunta 29)
 
 | Material | Medida (casos) |
 |---|---|
-| LX3+3LOWE | 3300x2440 (85), 3600x2140 (2), 3600x2200 (1), 3660x2440 (1) |
+| LX3+3LOWE | 3300x2440 (85), 3210x2400 (2), 3600x2200 (1), 3660x2440 (1) |
 | LX4+4GC | 3600x2500 (26), 3600x2540 (1) |
 | CK8K1 | 3210x2540 (25) |
-| LX4+4ST120 | 3210x2400 (14), 3600x2140 (7), 3300x2440 (1) |
+| LX4+4ST120 | 3210x2400 (17), 3600x2140 (4), 3300x2440 (1) |
 | CT6G1 | 3210x2540 (13) |
 | CK8K2 | 3210x2540 (12) |
-| CS6S2 | 3210x2550 (4) |
+| CS6S2 | 3210x2550 (2), 3210x2540 (2) |
 | LX4+4LOWE | 3600x2140 (1), 3600x2200 (1), 3210x2500 (1) |
 | GRAPH6 | 2500x1600 (3) |
-| CK6K2 | 3300x2440 (2), 3210x2500 (1) |
+| CK6K2 | 3210x2500 (2), 3300x2440 (1) |
 | CK6K1 | 3210x2500 (1), 3210x2400 (1), 3660x2440 (1) |
-| LX5+5IN | 3660x2440 (1), 3700x2500 (1) |
+| LX5+5IN | 3660x2440 (1), 3600x2540 (1) |
 | OL3+3IN | 3600x2500 (2) |
-| FL6GR | 3210x2200 (2) |
+| FL6GR | 3210x2200 (1), 3310x2130 (1) |
 | LX4+4IN | 3210x2400 (1), 3660x2440 (1) |
 | EC6CL | 3300x2440 (2) |
 | LX4+4NL | 3210x2550 (1), 3660x2440 (1) |
@@ -87,68 +93,69 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | LX4+4IN76 | 3210x2400 (1) |
 | LX4+4ST150 | 3210x2500 (1) |
 | LX6+6K114 | 3210x2550 (1) |
-| CK6K3 | 3300x2440 (1) |
+| CK6K3 | 3210x2500 (1) |
 | CS8S1 | 3210x2540 (1) |
 | SO6BL | 3300x2440 (1) |
 | OP4IN | 3210x2550 (1) |
 | SO6OG | 3600x2500 (1) |
 | LX5+5AV | 3660x2440 (1) |
 
-**¿Corte Certo cortaba sobre 3600 o sobre 3580?** (pregunta 28). Casos con % entero y hoja de 3600 × 2500 en hojas.csv que cierran con alguna de las dos: cuántos dan el % **redondeando** con cada ancho, y la diferencia media leyenda − calculado (con el ancho que usó Corte Certo, si la oficina redondeaba, tiene que dar cerca de 0).
+**¿Corte Certo cortaba sobre 3600 o sobre 3580?** (pregunta 28). Casos con % entero y hoja de 3600 × 2500 en hojas.csv que cierran con alguna de las dos. Para cada ancho: cuántos dan el % **redondeando** y, entre paréntesis, la diferencia media leyenda − calculado. Hay dos lecturas que dan casi lo mismo en promedio: "3600 y la oficina redondeaba" y "3580 y la oficina truncaba". Lo que las separa son las dos últimas columnas: cuántos casos contradicen cada una (con 3600, una diferencia de más de 0,5; con 3580, una leyenda más alta que lo calculado).
 
-| Período | Casos | 3600 (hoja entera) | 3580 (banda 20) | 3570 (banda 30) | 3550 (banda 50) | Solo 3600 | Solo 3580 |
+| Período | Casos | 3600 (hoja entera) | 3580 (banda 20) | 3570 (banda 30) | 3550 (banda 50) | Contradicen 3600 redondeando | Contradicen 3580 truncando |
 |---|---|---|---|---|---|---|---|
-| 2025 T3 | 36 | 94 % (-0.05) | 44 % (-0.48) | 36 % (-0.70) | 6 % (-1.15) | 18 | 0 |
-| 2025 T4 | 54 | 93 % (-0.00) | 57 % (-0.45) | 31 % (-0.68) | 4 % (-1.14) | 21 | 2 |
-| 2026 T1 | 75 | 99 % (-0.03) | 56 % (-0.48) | 24 % (-0.71) | 0 % (-1.17) | 32 | 0 |
-| 2026 T2 | 119 | 93 % (-0.04) | 54 % (-0.46) | 33 % (-0.67) | 7 % (-1.10) | 49 | 2 |
-| 2026-07 | 35 | 100 % (-0.01) | 66 % (-0.45) | 34 % (-0.67) | 0 % (-1.11) | 12 | 0 |
-| 2026-08 | 16 | 75 % (+0.17) | 75 % (-0.28) | 50 % (-0.51) | 12 % (-0.97) | 2 | 2 |
-| 2026-09 | 20 | 85 % (+0.01) | 50 % (-0.43) | 30 % (-0.65) | 10 % (-1.10) | 8 | 1 |
-| 2026-10 | 19 | 53 % (+0.28) | 58 % (-0.14) | 63 % (-0.35) | 32 % (-0.77) | 4 | 5 |
+| 2025 T3 | 36 | 94 % (-0.05) | 44 % (-0.48) | 36 % (-0.70) | 6 % (-1.15) | 2 | 5 |
+| 2025 T4 | 54 | 93 % (-0.00) | 57 % (-0.45) | 31 % (-0.68) | 4 % (-1.14) | 4 | 7 |
+| 2026 T1 | 75 | 99 % (-0.03) | 56 % (-0.48) | 24 % (-0.71) | 0 % (-1.17) | 1 | 1 |
+| 2026 T2 | 119 | 93 % (-0.04) | 54 % (-0.46) | 33 % (-0.67) | 7 % (-1.10) | 8 | 15 |
+| 2026-07 | 35 | 100 % (-0.01) | 66 % (-0.45) | 34 % (-0.67) | 0 % (-1.11) | 0 | 2 |
+| 2026-08 | 16 | 75 % (+0.17) | 75 % (-0.28) | 50 % (-0.51) | 12 % (-0.97) | 4 | 4 |
+| 2026-09 | 20 | 85 % (+0.01) | 50 % (-0.43) | 30 % (-0.65) | 10 % (-1.10) | 3 | 3 |
+| 2026-10 | 19 | 53 % (+0.28) | 58 % (-0.14) | 63 % (-0.35) | 32 % (-0.77) | 9 | 9 |
+| **Total** | 374 |  |  |  |  | 31 | 46 |
 
-**Según qué plancha tenía Corte Certo**: si el % cierra con la banda de 20 y con la hoja entera, se calcularon las dos. La cuenta principal usa la que mejor cierra (redondeando primero); las otras filas muestran los dos extremos.
-
-| Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |
-|---|---|---|---|---|---|---|
-| La plancha con la que mejor cierra el % (redondeando primero): **la cuenta principal** | 1081 | 79.5 % | 15.5 % | 5.0 % | -0.21 | +15 |
-| Banda 20 (3580) siempre que cierre | 1081 | 78.9 % | 13.7 % | 7.4 % | -0.12 | +15 |
-| Hoja entera (3600) siempre que cierre | 1081 | 80.5 % | 17.7 % | 1.9 % | -0.31 | +11 |
-| Solo los casos donde la otra no cierra con ninguna medida de hoja | 147 | 78.9 % | 19.7 % | 1.4 % | -0.37 | +1 |
-
-**Con esfuerzo máximo** en los 54 casos donde el normal da más hojas que Corte Certo (más 44 variantes de plancha): mejoran 11 casos (y 14 variantes); el más lento tardó 324.31 s. Así quedan:
+**Según qué plancha**: la cuenta principal usa, en cada caso, la plancha con la que mejor cierra el % de Corte Certo (redondeando primero, y la más cercana). Las filas "cotizando siempre con…" calculan todos los casos con esa plancha, cierre o no con el %: dicen cuánto se parecería el programa a Corte Certo si cotizara siempre así. Si las piezas no entran, cuenta como más hojas (no se puede cotizar). La diferencia media y la peor son de los que sí se calcularon.
 
 | Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |
 |---|---|---|---|---|---|---|
-| La plancha con la que mejor cierra el % (redondeando primero): **la cuenta principal** | 1081 | 80.4 % | 15.6 % | 4.0 % | -0.22 | +15 |
-| Banda 20 (3580) siempre que cierre | 1081 | 80.2 % | 13.8 % | 6.0 % | -0.14 | +15 |
-| Hoja entera (3600) siempre que cierre | 1081 | 81.2 % | 17.8 % | 1.0 % | -0.32 | +11 |
-| Solo los casos donde la otra no cierra con ninguna medida de hoja | 147 | 78.9 % | 19.7 % | 1.4 % | -0.37 | +1 |
+| La plancha con la que mejor cierra el % de cada caso: **la cuenta principal** | 1081 | 80.3 % | 16.7 % | 3.1 % | -0.28 | +5 |
+| Cotizando siempre con banda 20 (3580) | 1081 | 75.9 % | 13.0 % | 11.0 % (con 21 donde las piezas no entran) | +0.12 | +47 |
+| Cotizando siempre con la hoja entera (3600) | 1081 | 80.2 % | 18.1 % | 1.7 % | -0.33 | +5 |
+| Solo los casos donde la otra no cierra con ninguna medida igual de confiable | 117 | 79.5 % | 19.7 % | 0.9 % | -0.42 | +1 |
+
+**Con esfuerzo máximo** en los 33 casos donde el normal da más hojas que Corte Certo (más 82 variantes de plancha): mejoran 11 casos (y 14 variantes); el más lento tardó 324.31 s. Así quedan:
+
+| Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |
+|---|---|---|---|---|---|---|
+| La plancha con la que mejor cierra el % de cada caso: **la cuenta principal** | 1081 | 81.2 % | 16.7 % | 2.0 % | -0.3 | +5 |
+| Cotizando siempre con banda 20 (3580) | 1081 | 77.2 % | 13.1 % | 9.6 % (con 21 donde las piezas no entran) | +0.1 | +47 |
+| Cotizando siempre con la hoja entera (3600) | 1081 | 80.9 % | 18.2 % | 0.8 % | -0.35 | +5 |
+| Solo los casos donde la otra no cierra con ninguna medida igual de confiable | 117 | 79.5 % | 19.7 % | 0.9 % | -0.42 | +1 |
 
 **Según de dónde salió la medida de hoja** (cuenta principal)
 
 | Medida de hoja | Casos | Iguales | Menos planchas | Más planchas | Dif. media |
 |---|---|---|---|---|---|
-| la medida de hoja del material en hojas.csv | 803 | 81.6 % | 13.6 % | 4.9 % | -0.18 |
-| las medidas de hoja anotadas en la leyenda | 46 | 73.9 % | 21.7 % | 4.3 % | -0.24 |
-| una medida deducida (hojas.csv no la tiene para ese material) | 232 | 73.3 % | 21.1 % | 5.6 % | -0.29 |
+| la medida de hoja del material en hojas.csv | 803 | 82.1 % | 14.9 % | 3.0 % | -0.26 |
+| las medidas de hoja anotadas en la leyenda | 46 | 76.1 % | 21.7 % | 2.2 % | -0.26 |
+| una medida deducida (hojas.csv no la tiene para ese material) | 232 | 75.0 % | 21.6 % | 3.4 % | -0.36 |
 
 **Resultado de la cuenta principal (todos los casos comparados)**
 
 - Casos: 1081
-- Iguales a Corte Certo: 79.5 %; con menos planchas: 15.5 %; con más planchas: 5.0 %
-- Diferencia media: -0.21 planchas por caso (negativo = a favor); la peor: +15
+- Iguales a Corte Certo: 80.3 %; con menos planchas: 16.7 %; con más planchas: 3.1 %
+- Diferencia media: -0.28 planchas por caso (negativo = a favor); la peor: +5
 - Casos donde Corte Certo ya estaba en el mínimo teórico: 272
 - Casos donde la leyenda dice menos hojas que el mínimo teórico (imposible; hay que mirarlos): 0
-- Casos comparados con avisos: 315
+- Casos comparados con avisos: 854
 - Resultados que no pasaron el validador (fuera de las cuentas): 0
 - Resultados con piezas sin calcular (fuera de las cuentas): 0
 
 | Material | Casos | Iguales | Mejores | Peores | Dif. media |
 |---|---|---|---|---|---|
-| CK6K1 | 167 | 77.2 % | 19.8 % | 3.0 % | -0.37 |
-| CK6K2 | 46 | 84.8 % | 13.0 % | 2.2 % | -0.5 |
-| CK6K3 | 21 | 81.0 % | 14.3 % | 4.8 % | -0.33 |
+| CK6K1 | 167 | 76.0 % | 21.6 % | 2.4 % | -0.44 |
+| CK6K2 | 46 | 82.6 % | 15.2 % | 2.2 % | -0.52 |
+| CK6K3 | 21 | 76.2 % | 23.8 % | 0.0 % | -1.24 |
 | CK6KB | 2 | 50.0 % | 50.0 % | 0.0 % | -0.5 |
 | CK6KG | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | CK8K1 | 30 | 93.3 % | 6.7 % | 0.0 % | -0.07 |
@@ -165,21 +172,21 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | EC6BL | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | EC6CL | 2 | 50.0 % | 50.0 % | 0.0 % | -1.0 |
 | EC6EV | 14 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| EC6GY | 68 | 75.0 % | 23.5 % | 1.5 % | -0.25 |
+| EC6GY | 68 | 76.5 % | 22.1 % | 1.5 % | -0.24 |
 | FL4GR | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | FL4IN | 5 | 80.0 % | 20.0 % | 0.0 % | -0.2 |
 | FL5BR | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | FL5IN | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | FL6BR | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| FL6GR | 7 | 42.9 % | 28.6 % | 28.6 % | -0.43 |
-| FL6IN | 2 | 50.0 % | 0.0 % | 50.0 % | +0.5 |
-| FL6NL | 10 | 50.0 % | 50.0 % | 0.0 % | -0.8 |
+| FL6GR | 7 | 71.4 % | 28.6 % | 0.0 % | -0.71 |
+| FL6IN | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
+| FL6NL | 10 | 40.0 % | 60.0 % | 0.0 % | -0.9 |
 | FL8GR | 2 | 50.0 % | 50.0 % | 0.0 % | -0.5 |
 | FL8IN | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | FL8NL | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | GRAPH6 | 3 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LA5+5VC | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| LO6IN | 16 | 50.0 % | 25.0 % | 25.0 % | -0.31 |
+| LO6IN | 16 | 68.8 % | 25.0 % | 6.2 % | -0.56 |
 | LX3+3BC | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX3+3BO | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX3+3ES | 19 | 89.5 % | 10.5 % | 0.0 % | -0.11 |
@@ -187,21 +194,21 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | LX3+3GC | 7 | 71.4 % | 14.3 % | 14.3 % | +0.0 |
 | LX3+3GCESM | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX3+3GO | 4 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| LX3+3IN | 40 | 72.5 % | 15.0 % | 12.5 % | -0.05 |
+| LX3+3IN | 40 | 75.0 % | 20.0 % | 5.0 % | -0.35 |
 | LX3+3IN76 | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| LX3+3LOWE | 93 | 67.7 % | 24.7 % | 7.5 % | -0.26 |
+| LX3+3LOWE | 93 | 68.8 % | 24.7 % | 6.5 % | -0.26 |
 | LX3+3OPBR | 2 | 0.0 % | 100.0 % | 0.0 % | -1.0 |
-| LX4+4ES | 10 | 90.0 % | 0.0 % | 10.0 % | +0.1 |
+| LX4+4ES | 10 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX4+4ESL | 3 | 66.7 % | 33.3 % | 0.0 % | -0.33 |
-| LX4+4GC | 27 | 81.5 % | 14.8 % | 3.7 % | -0.11 |
-| LX4+4GO | 7 | 85.7 % | 0.0 % | 14.3 % | +0.29 |
-| LX4+4IN | 74 | 81.1 % | 13.5 % | 5.4 % | -0.3 |
+| LX4+4GC | 27 | 85.2 % | 14.8 % | 0.0 % | -0.15 |
+| LX4+4GO | 7 | 71.4 % | 0.0 % | 28.6 % | +0.43 |
+| LX4+4IN | 74 | 82.4 % | 14.9 % | 2.7 % | -0.34 |
 | LX4+4IN76 | 3 | 66.7 % | 33.3 % | 0.0 % | -2.0 |
-| LX4+4LOWE | 57 | 87.7 % | 8.8 % | 3.5 % | -0.05 |
-| LX4+4NL | 25 | 80.0 % | 12.0 % | 8.0 % | +0.48 |
+| LX4+4LOWE | 57 | 89.5 % | 8.8 % | 1.8 % | -0.07 |
+| LX4+4NL | 25 | 84.0 % | 12.0 % | 4.0 % | -0.12 |
 | LX4+4NL114 | 1 | 0.0 % | 100.0 % | 0.0 % | -1.0 |
-| LX4+4ST120 | 24 | 70.8 % | 25.0 % | 4.2 % | -0.62 |
-| LX4+4ST150 | 23 | 87.0 % | 4.3 % | 8.7 % | +0.09 |
+| LX4+4ST120 | 24 | 75.0 % | 25.0 % | 0.0 % | -0.67 |
+| LX4+4ST150 | 23 | 87.0 % | 8.7 % | 4.3 % | -0.04 |
 | LX4+4STB12 | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX4+4VC | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX4+4VO | 2 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
@@ -217,7 +224,7 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | LX5+5NL | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX6+6GC | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX6+6GO | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| LX6+6IN | 23 | 73.9 % | 8.7 % | 17.4 % | +0.26 |
+| LX6+6IN | 23 | 73.9 % | 17.4 % | 8.7 % | -0.04 |
 | LX6+6IN76 | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | LX6+6K114 | 1 | 0.0 % | 100.0 % | 0.0 % | -1.0 |
 | LX6+6NL114 | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
@@ -227,33 +234,33 @@ Datos: `datos/casos/corte_certo` (exportados de Metrix el 25/10/2026). Esfuerzo:
 | OP4IN | 11 | 90.9 % | 0.0 % | 9.1 % | +0.09 |
 | OP5IN | 6 | 66.7 % | 16.7 % | 16.7 % | +0.0 |
 | OP6GR | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| OP6IN | 3 | 33.3 % | 66.7 % | 0.0 % | -0.67 |
+| OP6IN | 3 | 33.3 % | 66.7 % | 0.0 % | -1.0 |
 | SO6BL | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
-| SO6OC | 14 | 71.4 % | 14.3 % | 14.3 % | +0.07 |
-| SO6OG | 7 | 71.4 % | 28.6 % | 0.0 % | -0.71 |
+| SO6OC | 14 | 71.4 % | 14.3 % | 14.3 % | +0.0 |
+| SO6OG | 7 | 71.4 % | 28.6 % | 0.0 % | -0.57 |
 | SU6AR | 1 | 100.0 % | 0.0 % | 0.0 % | +0.0 |
 | SU6SU | 25 | 88.0 % | 4.0 % | 8.0 % | +0.04 |
 
 | Tamaño | Casos | Iguales | Mejores | Peores | Dif. media |
 |---|---|---|---|---|---|
-| hasta 20 piezas | 275 | 98.2 % | 0.4 % | 1.5 % | +0.01 |
-| 21 a 100 piezas | 419 | 87.1 % | 7.6 % | 5.3 % | -0.01 |
-| más de 100 piezas | 387 | 57.9 % | 34.9 % | 7.2 % | -0.57 |
+| hasta 20 piezas | 275 | 98.5 % | 0.4 % | 1.1 % | +0.01 |
+| 21 a 100 piezas | 419 | 89.0 % | 7.9 % | 3.1 % | -0.05 |
+| más de 100 piezas | 387 | 57.9 % | 37.7 % | 4.4 % | -0.74 |
 
 **Los peores (más planchas que Corte Certo)**
 
 | Presupuesto | Material | Piezas | Corte Certo | Nuestro | Mínimo teórico | Plancha |
 |---|---|---|---|---|---|---|
-| 6348 | LX4+4NL | 551 | 204 (81 %) | 219 (75.72 %) | 166 | 3600x2500 |
-| 10510 | CK6K3 | 194 | 51 (89 %) | 62 (73.42 %) | 46 | 3300x2440 |
-| 7152 | LX3+3IN | 436 | 115 (98 %) | 121 (93.6 %) | 114 | 3600x2500 |
+| 11404 | LX3+3LOWE | 124 | 36 (83 %) | 41 (72.85 %) | 30 | 3210x2400 |
 | 5701 | LX3+3LOWE | 166 | 60 (87 %) | 65 (80.61 %) | 53 | 3300x2440 |
-| 9878 | CK6K1 | 192 | 70 (86 %) | 75 (80.6 %) | 61 | 3210x2540 |
-| 11404 | LX3+3LOWE | 124 | 36 (83 %) | 40 (75.09 %) | 31 | 3600x2140 |
 | 9126 | LX6+6IN | 386 | 78 (85 %) | 82 (81.04 %) | 67 | 3600x2500 |
 | 6673 | CK6K1 | 249 | 55 (84 %) | 58 (79.8 %) | 47 | 3210x2540 |
 | 7369 | CK6K1 | 1242 | 418 (78 %) | 421 (77.92 %) | 329 | 3210x2540 |
 | 10120 | LX3+3LOWE | 40 | 11 (84 %) | 13 (71.14 %) | 10 | 3600x2200 |
+| 7319 | LX4+4GO | 52 | 8 (96 %) | 10 (77.11 %) | 8 | 3600x2500 |
+| 7786 | LX3+3IN | 391 | 70 (91 %) | 72 (88.68 %) | 64 | 3600x2500 |
+| 8155 | LX6+6IN | 112 | 21 (81 %) | 23 (74.14 %) | 18 | 3600x2500 |
+| 9371 | CK6K1 | 315 | 46 (92 %) | 48 (88.35 %) | 43 | 3210x2540 |
 <!-- /HISTORICO -->
 
 **Cómo se hizo** (detalle en `optimizador/historico/exportados.py`). Para repetirlo:
@@ -276,11 +283,12 @@ python -m optimizador historico --todo --procesos 3 --repaso-maximo --docs
    Corte Certo: por área, por piezas que no entran dos juntas, y por cuántas piezas de una misma
    medida entran como mucho en una plancha (ej. 900 × 478: 17 en la de 3580 y 20 en la de 3600).
 4. **Cuál plancha gana**, si cierran varias: la que tiene el +3; la de `hojas.csv` (o la anotada)
-   antes que una deducida; la que da el % **redondeando** antes que la que solo da truncando; banda
-   20 antes que hoja entera; la más cercana. Esa es la cuenta principal.
-5. Si con la misma medida cierran las dos (banda 20 y hoja entera), se calculan las dos: con eso se
-   arman las filas "Banda 20 siempre" y "Hoja entera siempre". "Solo los casos donde la otra no
-   cierra" son los que no cierran con la otra variante con ninguna medida igual de confiable.
+   antes que una deducida; la que da el % **redondeando** antes que la que solo da truncando; la más
+   cercana (si quedan iguales, banda 20). Esa es la cuenta principal.
+5. Con la misma medida se calcula también la otra variante (banda 20 ↔ hoja entera), cierre o no:
+   con eso se arman las filas "cotizando siempre con…". Si las piezas no entran, ese caso cuenta
+   como "más hojas". "Solo los casos donde la otra no cierra" son los que no cierran con la otra
+   variante con ninguna medida igual de confiable.
 6. Se calcula como estaba Corte Certo: sin separación ni destaque (H0). No hay calibración ni
    muestra de prueba (hay una sola configuración), así que los números son sobre **todos** los casos
    comparados. Los casos iguales a otro se cuentan una vez.
@@ -290,7 +298,7 @@ python -m optimizador historico --todo --procesos 3 --repaso-maximo --docs
    repiten con el máximo, y se muestra cómo quedan las cuentas.
 
 Lo calculado se guarda a medida que sale (`salida/historico/`, no va a git): si se corta, se vuelve
-a correr el mismo comando y sigue donde quedó. Con `--procesos 3` los 2003 cálculos tardan unos
+a correr el mismo comando y sigue donde quedó. Con `--procesos 3` los 2132 cálculos tardan unos
 15 minutos en la nube, y el repaso con máximo, otros 10.
 
 El método viejo (el zip del contrato v2, con las leyendas por leer y las piezas por reconstruir
@@ -310,7 +318,8 @@ las mismas medidas de hoja que usó Optima:
   3700 × 2500 donde Optima usó 8 y dos de 3050 × 2050: puede que fuera lo que había en stock, y el
   programa no lo sabe). En total, 0,5 % menos;
 - "Como cotización" muestra lo que daría el presupuesto con la plancha por defecto (respuesta 3): en
-  el FL5IN, 9 hojas de 3600 × 2500 (81 m²) donde Optima usó 7 de 3600 × 2200 (73,4 m²).
+  el FL5IN, 9 hojas de 3600 × 2500 (81 m²) donde Optima usó 2 de 3600 × 2500 y 7 de 3600 × 2200
+  (73,4 m²).
 
 Son solo 5 lotes: sirve para ver que la configuración de Optima está bien entendida, no como
 estadística. Para repetirlo: `python -m optimizador optima --docs`.
@@ -468,11 +477,11 @@ interfaz.
 
 | Meta | Estado |
 |---|---|
-| 100 % de los resultados pasa el validador | ✔ (85 de 85 del banco, 500 de 500 de la prueba de estrés y los 2003 cálculos contra Corte Certo; 2 se rechazaban por un error de redondeo del validador, ya corregido) |
+| 100 % de los resultados pasa el validador | ✔ (85 de 85 del banco, 500 de 500 de la prueba de estrés y los 2132 cálculos contra Corte Certo; 2 se rechazaban por un error de redondeo del validador, ya corregido) |
 | Óptimo en ≥ 95 % del "corte perfecto" hasta 100 piezas | ✘ 50 % (56 % en 3 etapas, 42 % en guillotina libre) |
 | Tiempos de §6.5 | ✔ en la nube para el típico y el grande; ✘ el peor caso (2000 piezas todas distintas) tarda 68 s. En la PC de la oficina va a tardar más: medirlo con §4 |
-| Reproducir a Corte Certo en ≥ 90 % de los casos históricos | ✘ 79,5 % iguales (80,4 % con esfuerzo máximo en los peores); en los casos de hasta 20 piezas, 98,2 % |
-| Igual o menos planchas que Corte Certo en ≥ 95 % | ✔ justo: 95,0 % con la plancha con la que cierra cada caso (96,0 % con máximo en los peores); ✘ 92,6 % si se cotiza siempre con banda 20 |
+| Reproducir a Corte Certo en ≥ 90 % de los casos históricos | ✘ 80,3 % iguales (81,2 % con esfuerzo máximo en los peores); en los casos de hasta 20 piezas, 98,5 % |
+| Igual o menos planchas que Corte Certo en ≥ 95 % | ✔ 96,9 % con la plancha con la que cierra cada caso (98,0 % con máximo en los peores); ✘ 89,0 % si se cotizan todos los casos viejos con 3580 |
 | Números con la fórmula de Corte Certo al 0,01 % | ✔ el validador los recalcula en cada resultado; además, un test con las cuentas del 413 (733,9 m² y 76,93 %), que prueba la fórmula (no pasa por el motor) |
 
 ## 4. Para medir en la PC de la oficina

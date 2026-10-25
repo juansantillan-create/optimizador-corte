@@ -6,25 +6,30 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 
 ## Abiertas
 
-**28. ¿Con qué plancha cotizamos: la hoja entera (3600 × 2500) o la de 3580 × 2500?**
-- Me dijiste que en Corte Certo "se carga la plancha ya achicada (3580 × 2500)". Pero los casos
-  viejos dicen que, **hasta septiembre de 2026, Corte Certo cortaba sobre la hoja entera** (3600,
-  sin banda):
-  - con el % redondeado (como dijiste en la 24), 9 de cada 10 casos dan justo con 3600 y la
-    diferencia media entre la leyenda y la cuenta es 0. Con 3580 da −0,45: para que cierre, el
-    comercial tendría que haber truncado siempre;
-  - hay casos que con 3580 son imposibles. El 7781: 7800 piezas de 900 × 478 en 412 hojas; en la de
-    3580 entran como mucho 17 por hoja (harían falta 459) y en la de 3600 entran 20
-    (4 × 900 = 3600 justo). El 10921: piezas de 2170 y 1430 de ancho, que suman 3600 justo, al 100 %;
-  - con la banda de Lucas da peor: con 30 mm, un tercio de los casos; con 50, casi ninguno;
-  - en **octubre de 2026** cambia: 3600, 3580 y 3570 cierran parejo (son 19 casos). ¿Se cambió algo
-    en Corte Certo hace poco? ¿Puede ser que cada PC lo tenga cargado distinto?
-- **Por qué importa**: en la mayoría de los casos da lo mismo, pero cuando las piezas suman justo
-  3600 (o casi) cambia la cantidad de hojas. Si el programa cotiza siempre con 3580, da **más hojas
-  que Corte Certo en el 7,4 %** de los casos viejos; con la hoja entera, en el 1,9 % (`docs/VALIDACION.md` §1).
-- **Por defecto**: "Como Corte Certo hoy" sigue con 3580 (banda 20), que es lo que dijiste y lo
-  prudente (nunca cotiza menos vidrio del que se puede cortar). Si me decís que va la hoja entera,
-  se cambia en una línea (`BANDA_CORTE_CERTO_MM = 0` en `optimizador/configuracion.py`).
+**28. ¿En agosto de 2026 cambiaron cómo están cargadas las planchas en Corte Certo?**
+- Me dijiste que en Corte Certo "se carga la plancha ya achicada (3580 × 2500)", y así cotiza hoy el
+  programa ("Como Corte Certo hoy", banda 20). Los casos viejos dicen que **eso empezó en agosto de
+  2026**; antes, Corte Certo cortaba sobre la hoja entera (3600 × 2500, sin banda):
+  - hasta julio: 51 casos solo pueden ser con la hoja entera y 13 solo con 3580. Hay casos que con
+    3580 son imposibles: el 7781 (7800 piezas de 900 × 478 en 412 hojas; en 3580 entran como mucho
+    17 por hoja y harían falta 459; en 3600 entran 20) o el 10921 (piezas de 2170 y 1430 que suman
+    3600 justo, al 100 %);
+  - de agosto a octubre: al revés, 43 solo con 3580 y 10 solo con la hoja entera, y en agosto
+    aparecen 38 leyendas con la medida útil anotada (3190 × 2540, 3280 × 2440);
+  - con la banda de Lucas (30 o 50) da peor en todas las épocas.
+- **Por qué importa**:
+  - si el cambio fue en agosto, cotizar con 3580 está bien ("como Corte Certo hoy"), pero los
+    presupuestos viejos no se van a poder repetir igual: calculados con 3580, el 11 % da más hojas
+    que lo que cotizó Corte Certo;
+  - con la plancha achicada, una pieza que mide lo mismo que la hoja (o casi) **no se puede
+    cotizar**: el programa dice "no entra en ninguna plancha". Hay 21 presupuestos viejos así que
+    Corte Certo cotizó: 6 con piezas de 3600 en hojas de 3600 (uno de octubre de 2026), 13 con piezas
+    de 3194 a 3210 en hojas de 3210 (10 de Cool Lite y parecidos) y 2 de hasta 3300 en hojas de
+    3300. ¿Cómo se cotiza hoy en Corte Certo una pieza así?
+- **Por defecto**: se sigue cotizando con banda 20 (lo que dijiste; lo prudente). Si me decís que va
+  la hoja entera, se cambia la banda de "Como Corte Certo hoy" (`BANDA_CORTE_CERTO_MM` en
+  `optimizador/configuracion.py`) y hay que revisar las variantes que usa la validación
+  (`VARIANTES` en `optimizador/historico/exportados.py`), que salen de ese mismo número.
 - Respuesta:
 
 **29. Medidas de hoja que Corte Certo usó y no están en `Medidas_hojas.xlsx`**

@@ -6,8 +6,8 @@ leer toda la conversación. Lo más nuevo, arriba.
 ## 25/10/2026 (tarde): respuestas de Juan y validación con los casos reales
 
 **Dónde quedó todo, en una línea**: se aplicaron las respuestas de Juan (preguntas 1 a 27) y se
-corrió por primera vez la validación con datos reales: **79,5 % de los casos da las mismas hojas
-que Corte Certo** y 5,0 % da más; contra Optima, con esfuerzo normal, el programa usa 0,9 % más
+corrió por primera vez la validación con datos reales: **80,3 % de los casos da las mismas hojas
+que Corte Certo** y 3,1 % da más; contra Optima, con esfuerzo normal, el programa usa 0,9 % más
 vidrio en total (5 lotes; con el máximo, 0,5 % menos).
 
 **Hecho en esta etapa**
@@ -30,27 +30,33 @@ vidrio en total (5 lotes; con el máximo, 0,5 % menos).
 - `README.md`: el texto que pegó Juan quedó como sección "Qué trae y cómo anda", con los números
   nuevos.
 
-**Revisión del subagente revisor**: encontró que la primera versión leía mal los casos (con el %
-redondeado, Corte Certo cortaba sobre la hoja entera de 3600 hasta septiembre de 2026, no sobre la
-de 3580) y que el resumen de Optima mostraba solo el esfuerzo máximo. También: medidas anotadas que
-ya eran útiles con la banda restada dos veces, variantes con otra medida de hoja, casos repetidos,
-casos con varias medidas de hoja contados por cantidad de hojas, los números con máximo sin un
-comando para repetirlos, y tests que no probaban lo que decían. Todo corregido.
+**Revisión del subagente revisor** (dos pasadas): encontró que la primera versión leía mal los
+casos (con el % redondeado, Corte Certo cortaba sobre la hoja entera de 3600 hasta julio de 2026, no
+sobre la de 3580) y que el resumen de Optima mostraba solo el esfuerzo máximo. También: medidas
+anotadas que ya eran útiles con la banda restada dos veces, variantes con otra medida de hoja, casos
+repetidos, casos con varias medidas de hoja contados por cantidad de hojas, números con máximo sin
+comando para repetirlos, avisos viejos en los resultados reaprovechados, y tests que no probaban lo
+que decían. En la segunda pasada: "cotizando siempre con 3580" estaba subestimado (usaba la hoja
+entera donde 3580 no cerraba; ahora se calcula de verdad con 3580 y, si las piezas no entran, cuenta
+como más hojas) y el desempate entre las dos planchas no era el más cercano. Todo corregido.
 
 **Resultados** (`VALIDACION.md` §1 y §1.b)
-- Corte Certo, 1081 casos comparables: 79,5 % iguales, 15,5 % con menos hojas, 5,0 % con más. Si se
-  cotiza siempre con banda 20: 78,9 / 13,7 / 7,4. Hasta 20 piezas: 98,2 % iguales. Con esfuerzo
-  máximo en los casos peores: 80,4 % iguales y 4,0 % con más.
-- Lo que sigue dando más hojas es sobre todo de presupuestos grandes con la plancha de `hojas.csv`.
+- Corte Certo, 1081 casos comparables: 80,3 % iguales, 16,7 % con menos hojas, 3,1 % con más. Hasta
+  20 piezas: 98,5 % iguales. Con esfuerzo máximo en los casos peores: 81,2 % iguales y 2,0 % con más.
+- Corte Certo parece haber pasado de la hoja entera a la plancha achicada en agosto de 2026. Si se
+  calculan todos los casos viejos con 3580 (como cotiza hoy el programa), 11,0 % da más hojas; en 21
+  las piezas no entran (miden lo mismo que la hoja o casi: 3600 en 3600, 3200–3210 en Cool Lite).
+- Lo que sigue dando más hojas (33 casos) es sobre todo de presupuestos grandes con la plancha de
+  `hojas.csv`.
 - Optima: con esfuerzo normal, 3 lotes iguales, FL5IN +1,5 %, FL6IN +1,8 % (Optima usó retazos);
   total +0,9 %. Con máximo, total −0,5 %.
 
 **Qué falta**
-1. Que Juan conteste la **28** (¿cotizamos con la hoja entera de 3600, como Corte Certo hasta
-   septiembre, o con 3580?), la 29 (medidas de hoja que faltan en `Medidas_hojas.xlsx`; la más
+1. Que Juan conteste la **28** (¿Corte Certo pasó a la plancha achicada en agosto de 2026? ¿cómo se
+   cotiza hoy una pieza que mide lo mismo que la hoja?), la 29 (medidas de hoja que faltan en `Medidas_hojas.xlsx`; la más
    importante: LX3+3LOWE no está y Corte Certo usaba 3300 × 2440), la 30 y la 31.
-2. **Motor**: en presupuestos grandes a veces da más hojas que Corte Certo (54 casos; con máximo,
-   43). "Máximo" con muchas medidas distintas puede tardar minutos (6984: 1364 piezas de 258
+2. **Motor**: en presupuestos grandes a veces da más hojas que Corte Certo (33 casos; con máximo,
+   22). "Máximo" con muchas medidas distintas puede tardar minutos (6984: 1364 piezas de 258
    medidas, 5 minutos). La meta del brief de 90 % iguales todavía no se cumple.
 3. El motor no sabe limitar cuántas hojas hay de cada medida (stock): por eso los casos con varias
    medidas anotadas no se comparan, y contra Optima se comparan m².
@@ -61,10 +67,10 @@ comando para repetirlos, y tests que no probaban lo que decían. Todo corregido.
    9 MB (el límite para publicarla es 5 MB). Se arma en la PC con el mismo comando.
 
 **Cómo seguir**: leer `VALIDACION.md` §1 (la tabla por período y los peores casos) y las respuestas
-a 28–31. Si Juan confirma la hoja entera, poner `BANDA_CORTE_CERTO_MM = 0` y volver a correr
-`python -m optimizador historico --todo --procesos 3 --repaso-maximo --docs` (lo ya calculado no se
-repite; ojo: con 0 las dos variantes del control quedan iguales, hay que revisar `VARIANTES` en
-`exportados.py`).
+a 28–31. Si Juan dice que va la hoja entera, cambiar `BANDA_CORTE_CERTO_MM` (y revisar `VARIANTES`
+en `exportados.py`, que sale de ese número) y volver a correr
+`python -m optimizador historico --todo --procesos 3 --repaso-maximo --docs` (lo ya calculado, en
+`salida/historico/`, no se repite).
 
 ## 25/10/2026: fase F5 (entrega) y correcciones de las revisiones de F1, F3 y F4
 
