@@ -3,17 +3,22 @@
 Por cada presupuesto con leyenda:
 1. Se leen las líneas de la leyenda (`leyendas.py`) y se reconstruyen las piezas (`reconstruir.py`).
 2. Cada material abreviado de la leyenda ("4+4 NLIGHT") se relaciona con un código de Metrix de las
-   piezas del mismo presupuesto (`relacionar`). Si hay dudas, el caso va aparte con el motivo.
-3. **Control de la entrada**: m² de piezas ÷ (hojas de la leyenda × plancha útil) tiene que dar el
-   % de la leyenda (±0,6, porque la leyenda lo redondea). Se prueba cada medida de plancha del
-   material, con y sin el +3 mm del pulido recto. Si no cierra, el caso se informa aparte.
+   piezas del mismo presupuesto (`relacionar`). Si hay dudas, o si dos líneas van al mismo código,
+   el caso va aparte con el motivo.
+3. **Control de la entrada**: m² de piezas (con el +3 mm del pulido recto, como Corte Certo hoy) ÷
+   (hojas de la leyenda × plancha útil) tiene que dar el % de la leyenda, redondeado como lo
+   escribió la oficina (±0,5 si es entero, más 0,01 por el redondeo de Corte Certo). Se prueba
+   cada medida de plancha del material en la que entren las piezas. Si no cierra, el caso se
+   informa aparte (y se dice si cerraría sin el +3).
 4. Se calcula con las hipótesis H0, H1 y H2, **con la misma medida de plancha** que dio el control.
 5. **Calibración**: con el 70 % de los casos (elegidos por número de presupuesto, siempre los
    mismos) se elige por grupo de material la hipótesis que más veces da las mismas planchas que
-   Corte Certo; los números finales se informan sobre el 30 % restante.
+   Corte Certo; los números finales se informan sobre el 30 % restante. Los resultados que no
+   pasaron el validador o que dejaron piezas sin calcular no entran en las cuentas: se cuentan
+   aparte.
 
 Los resultados se guardan renglón por renglón en un JSONL a medida que salen: si la corrida se corta,
-se retoma desde donde quedó.
+se retoma desde donde quedó (si cambiaron las piezas o la leyenda de un caso, se recalcula).
 """
 
 from __future__ import annotations
@@ -26,13 +31,20 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..api import optimizar, tiene_pulido_recto
-from ..configuracion import Catalogo, composicion_de_codigo
+from ..configuracion import PULIDO_RECTO_MM, Catalogo, composicion_de_codigo
 from . import leyendas as ley
 from .datos import Casos
 from .reconstruir import reconstruir
 
 HIPOTESIS = ("H0", "H1", "H2")
-TOLERANCIA_APROV = 0.6
+# Corte Certo da el % con 2 decimales y la oficina lo escribe redondeado (pregunta 24: ¿o lo trunca?).
+MARGEN_CORTE_CERTO = 0.01
+
+
+def tolerancia(decimales: int) -> float:
+    """Cuánto puede diferir nuestro % del de la leyenda por el redondeo: ±0,5 si es entero."""
+    return 0.5 * 10 ** -decimales + MARGEN_CORTE_CERTO
+
 
 # Palabras de las leyendas -> cómo aparecen en los códigos y descripciones de Metrix.
 ALIAS = {
@@ -46,6 +58,9 @@ ALIAS = {
     "VERDE": ["V", "VC", "VERDE"], "OPACID": ["OA", "OPACID"], "ESPEJO": ["OP", "OPTIMIRROR"],
     "ACUSTICO": ["AC", "ACUSTICO"], "EXTRA": ["EB", "EXTRA BLANCO"],
 }
+# Palabras que no dicen nada del color o el tipo.
+NEUTRAS = {"MM", "FL", "FLOAT", "LX", "LAM", "LAMINADO", "LAMILUX", "X", "TEMP", "TEMPLADO", "DVH", "PR",
+           "PULIDO", "VIDRIO", "CRISTAL", "Y"}
 
 
 def _composicion_texto(texto: str) -> str | None:
@@ -55,6 +70,14 @@ def _composicion_texto(texto: str) -> str | None:
         return f"{int(m.group(1))}+{int(m.group(2))}"
     m = re.search(r"(\d+)", t)
     return str(int(m.group(1))) if m else None
+
+
+def _coincide(palabra: str, codigo: str, catalogo: Catalogo) -> bool:
+    desc = catalogo.materiales[codigo].descripcion.upper() if codigo in catalogo.materiales else ""
+    sufijo = re.sub(r"^[A-Z]*\d+(\+\d+)?", "", codigo)
+    formas = ALIAS.get(palabra, [palabra])
+    return any(f == sufijo or sufijo.startswith(f) for f in formas if len(f) <= 3) or \
+        any(f in desc for f in formas if len(f) > 2)
 
 
 def relacionar(abreviado: str, candidatos: list[str], catalogo: Catalogo) -> tuple[str | None, str]:
@@ -69,51 +92,72 @@ def relacionar(abreviado: str, candidatos: list[str], catalogo: Catalogo) -> tup
     comp = _composicion_texto(abreviado)
     def comp_de(codigo):
         return catalogo.composicion.get(codigo) or composicion_de_codigo(codigo)[0]
+    palabras = [p for p in re.findall(r"[A-Z]+", abreviado.upper()) if p not in NEUTRAS]
+    colores = [p for p in palabras if p in ALIAS]
     mismos = [c for c in candidatos if comp is None or comp_de(c) == comp]
     if not mismos:
-        if len(candidatos) == 1:
-            return candidatos[0], f"composición distinta ({comp} contra {comp_de(candidatos[0])}), pero hay un solo material"
+        if len(candidatos) == 1 and not colores:
+            return None, f"composición distinta ({comp} contra {comp_de(candidatos[0])})"
         return None, f"ningún material del presupuesto es {comp}"
     if len(mismos) == 1:
-        return mismos[0], "único con esa composición"
-    palabras = [p for p in re.findall(r"[A-Z]+", abreviado.upper()) if p not in ("MM", "FL", "LX", "LAM", "X")]
-    puntajes = []
-    for c in mismos:
-        desc = catalogo.materiales[c].descripcion.upper() if c in catalogo.materiales else ""
-        sufijo = re.sub(r"^[A-Z]*\d+(\+\d+)?", "", c)
-        puntos = 0
-        for p in palabras:
-            formas = ALIAS.get(p, [p])
-            if any(f == sufijo or sufijo.startswith(f) for f in formas if len(f) <= 3) or \
-                    any(f in desc for f in formas if len(f) > 2):
-                puntos += 1
-        puntajes.append((puntos, c))
-    puntajes.sort(reverse=True)
-    if puntajes[0][0] > 0 and (len(puntajes) == 1 or puntajes[0][0] > puntajes[1][0]):
+        c = mismos[0]
+        if colores and not any(_coincide(p, c, catalogo) for p in colores):
+            return None, f"{c} tiene esa composición, pero no es {' '.join(colores)}"
+        return c, "único con esa composición" + (f" y {' '.join(colores)}" if colores else "")
+    puntajes = sorted(((sum(_coincide(p, c, catalogo) for p in palabras), c) for c in mismos), reverse=True)
+    if puntajes[0][0] > 0 and puntajes[0][0] > puntajes[1][0]:
         return puntajes[0][1], f"por las palabras ({', '.join(palabras)})"
     return None, f"ambiguo entre {', '.join(c for _, c in puntajes)}"
 
 
-def control_entrada(piezas: list[dict], material: str, hojas: int, aprov: float, catalogo: Catalogo):
-    """¿Cierran los m² de las piezas con las hojas y el % de la leyenda? Devuelve (plancha "AxB" o
-    None, con_pulido bool o None, detalle)."""
+def _mm2(piezas: list[dict], con_pulido: bool) -> float:
+    total = 0.0
+    for p in piezas:
+        extra = PULIDO_RECTO_MM if con_pulido and tiene_pulido_recto(p.get("clase", "")) else 0
+        total += (p["ancho"] + extra) * (p["largo"] + extra) * p["cantidad"]
+    return total
+
+
+def _entran(piezas: list[dict], w: int, h: int, girar: bool) -> bool:
+    for p in piezas:
+        extra = PULIDO_RECTO_MM if tiene_pulido_recto(p.get("clase", "")) else 0
+        a, l = p["ancho"] + extra, p["largo"] + extra
+        if not ((a <= w and l <= h) or (girar and l <= w and a <= h)):
+            return False
+    return True
+
+
+def control_entrada(piezas: list[dict], material: str, hojas: int, aprov: float, catalogo: Catalogo,
+                    decimales: int = 0) -> dict:
+    """¿Cierran los m² de las piezas (con el +3 del pulido recto) con las hojas y el % de la
+    leyenda? Devuelve {"plancha": "AxB" o None, "detalle", "ambigua": [otras que también cierran],
+    "cierra_sin_mas3": bool, "supuesta": bool, "no_entran": bool}."""
     mat = catalogo.material(material, "H0", usar_locales=False)
-    mm2_con = sum((p["ancho"] + (3 if tiene_pulido_recto(p.get("clase", "")) else 0)) *
-                  (p["largo"] + (3 if tiene_pulido_recto(p.get("clase", "")) else 0)) * p["cantidad"]
-                  for p in piezas)
-    mm2_sin = sum(p["ancho"] * p["largo"] * p["cantidad"] for p in piezas)
+    girar = mat.rotacion and mat.textura == "sin"
+    tol = tolerancia(decimales)
+    con, sin = _mm2(piezas, True), _mm2(piezas, False)
     pruebas = []
     for pl in mat.planchas:
         w, h = mat.util(pl)
-        for con, mm2 in ((True, mm2_con), (False, mm2_sin)):
-            calc = mm2 / (hojas * w * h) * 100 if hojas else 0
-            pruebas.append((abs(calc - aprov), pl.clave(), con, calc))
-    pruebas.sort(key=lambda x: (x[0], not x[2]))
-    mejor = pruebas[0] if pruebas else None
-    detalle = ", ".join(f"{c}{'+3' if con else ''}: {calc:.2f} %" for _, c, con, calc in pruebas[:4])
-    if mejor and mejor[0] <= TOLERANCIA_APROV:
-        return mejor[1], mejor[2], detalle
-    return None, None, detalle
+        if not _entran(piezas, w, h, girar):
+            continue
+        calc = con / (hojas * w * h) * 100
+        calc_sin = sin / (hojas * w * h) * 100
+        pruebas.append((abs(calc - aprov), pl.clave(), calc, calc_sin, pl.supuesta))
+    pruebas.sort()
+    salida = {"plancha": None, "ambigua": [], "cierra_sin_mas3": False, "no_entran": not pruebas,
+              "supuesta": any(pl.supuesta for pl in mat.planchas),
+              "detalle": ", ".join(f"{c}: {calc:.2f} %" + (f" (sin +3: {cs:.2f} %)" if abs(cs - calc) > 1e-9 else "")
+                                   for _, c, calc, cs, _ in pruebas[:4]) or
+                        ("las piezas no entran en ninguna plancha" if mat.planchas else "el material no tiene planchas")}
+    cierran = [x for x in pruebas if x[0] <= tol]
+    if cierran:
+        salida["plancha"] = cierran[0][1]
+        salida["supuesta"] = cierran[0][4]
+        salida["ambigua"] = [x[1] for x in cierran[1:]]
+    else:
+        salida["cierra_sin_mas3"] = any(abs(cs - aprov) <= tol for _, _, _, cs, _ in pruebas) and con != sin
+    return salida
 
 
 def es_calibracion(numero: str) -> bool:
@@ -128,13 +172,22 @@ class Opciones:
     hipotesis: tuple[str, ...] = HIPOTESIS
 
 
+def _firma(t: dict) -> str:
+    """Huella de lo que entra al cálculo: si cambia, el caso se recalcula al retomar."""
+    datos = json.dumps([t["piezas"], t["plancha"], t["cc_hojas"], t["cc_aprov"], PULIDO_RECTO_MM],
+                       sort_keys=True, ensure_ascii=False)
+    return hashlib.sha1(datos.encode()).hexdigest()[:16]
+
+
 def preparar(casos: Casos, catalogo: Catalogo) -> tuple[list[dict], dict]:
     """Lee leyendas y reconstruye: devuelve los "trabajos" (caso + material) y la cobertura."""
     codigos = set(catalogo.materiales)
     trabajos = []
     cobertura = {"presupuestos": len(casos.presupuestos), "con_texto": 0, "con_pinta": 0,
                  "leidos": 0, "lineas": 0, "relacionadas": 0, "control_ok": 0,
-                 "no_leidas": [], "sin_relacionar": [], "no_cierran": [], "sin_piezas": []}
+                 "no_leidas": [], "lineas_no_leidas": [], "ignoradas": 0, "sin_relacionar": [],
+                 "repetidas": [], "no_cierran": [], "sin_piezas": [], "con_avisos": 0,
+                 "plancha_supuesta": 0, "plancha_ambigua": 0}
     for numero in sorted(casos.presupuestos, key=lambda n: (len(n), n)):
         fila = casos.presupuestos[numero]
         if any((v or "").strip() for k, v in fila.items() if k not in ("numero", "fecha", "estado_pres", "tipopresup")):
@@ -143,15 +196,21 @@ def preparar(casos: Casos, catalogo: Catalogo) -> tuple[list[dict], dict]:
         if not leyenda.tiene_pinta:
             continue
         cobertura["con_pinta"] += 1
+        cobertura["ignoradas"] += len(leyenda.ignoradas)
         if not leyenda.lineas:
             cobertura["no_leidas"].append({"numero": numero, "lineas": leyenda.no_leidas[:3]})
             continue
         cobertura["leidos"] += 1
+        if leyenda.no_leidas:
+            # Se leyó algo, pero no todo: puede faltar un material.
+            cobertura["lineas_no_leidas"].append({"numero": numero, "lineas": leyenda.no_leidas[:3]})
         rec = reconstruir(casos, numero, codigos)
         if not rec.piezas:
-            cobertura["sin_piezas"].append({"numero": numero, "excluidos": rec.excluidos[:5]})
+            cobertura["sin_piezas"].append({"numero": numero, "excluidos": rec.excluidos[:5],
+                                            "avisos": rec.avisos[:5]})
             continue
         candidatos = rec.materiales()
+        relacion = []
         for linea in leyenda.lineas:
             cobertura["lineas"] += 1
             codigo, motivo = relacionar(linea.material, candidatos, catalogo)
@@ -159,28 +218,52 @@ def preparar(casos: Casos, catalogo: Catalogo) -> tuple[list[dict], dict]:
                 cobertura["sin_relacionar"].append({"numero": numero, "material": linea.material,
                                                     "motivo": motivo, "candidatos": candidatos})
                 continue
+            relacion.append((linea, codigo, motivo))
+        por_codigo: dict[str, int] = {}
+        for _, codigo, _ in relacion:
+            por_codigo[codigo] = por_codigo.get(codigo, 0) + 1
+        for linea, codigo, motivo in relacion:
+            if por_codigo[codigo] > 1:
+                # Dos líneas de la leyenda van al mismo código: no se sabe cuál es cuál.
+                cobertura["repetidas"].append({"numero": numero, "material": codigo,
+                                               "lineas": [l.material for l, c, _ in relacion if c == codigo]})
+                continue
             cobertura["relacionadas"] += 1
             piezas = [p for p in rec.piezas if p["material"] == codigo]
+            avisos = list(rec.avisos_material.get(codigo, []))
+            no_cierra = {"numero": numero, "material": codigo,
+                         "leyenda": f"{linea.hojas} hojas {linea.aprovechamiento:g}%", "avisos": avisos[:3]}
             if linea.aprovechamiento > 100 or linea.hojas <= 0:
-                cobertura["no_cierran"].append({"numero": numero, "material": codigo,
-                                                "leyenda": f"{linea.hojas} hojas {linea.aprovechamiento:g}%",
+                cobertura["no_cierran"].append({**no_cierra, "motivo": "imposible",
                                                 "probado": "imposible (más de 100 % o 0 hojas)"})
                 continue
-            plancha, con_pulido, detalle = control_entrada(piezas, codigo, linea.hojas,
-                                                           linea.aprovechamiento, catalogo)
-            if plancha is None:
-                cobertura["no_cierran"].append({"numero": numero, "material": codigo,
-                                                "leyenda": f"{linea.hojas} hojas {linea.aprovechamiento:g}%",
-                                                "probado": detalle})
+            control = control_entrada(piezas, codigo, linea.hojas, linea.aprovechamiento, catalogo,
+                                      linea.decimales)
+            if control["plancha"] is None:
+                motivo_nc = ("no_entran" if control["no_entran"] else
+                             "sin_mas3" if control["cierra_sin_mas3"] else
+                             "reconstruccion" if avisos else "no_cierra")
+                cobertura["no_cierran"].append({**no_cierra, "motivo": motivo_nc, "probado": control["detalle"]})
                 continue
             cobertura["control_ok"] += 1
-            trabajos.append({"numero": numero, "material": codigo, "abreviado": linea.material,
-                             "relacion": motivo, "cc_hojas": linea.hojas,
-                             "cc_aprov": linea.aprovechamiento, "plancha": plancha,
-                             "con_pulido": con_pulido, "piezas": piezas,
-                             "n_piezas": sum(p["cantidad"] for p in piezas),
-                             "grupo": _grupo(codigo, catalogo),
-                             "calibracion": es_calibracion(numero)})
+            if control["supuesta"]:
+                avisos.append(f"{codigo} no está en hojas.csv: se usó una plancha supuesta ({control['plancha']})")
+                cobertura["plancha_supuesta"] += 1
+            if control["ambigua"]:
+                avisos.append(f"también cierra con {', '.join(control['ambigua'])}; se usó {control['plancha']}, "
+                              f"la más cercana (pregunta 3)")
+                cobertura["plancha_ambigua"] += 1
+            if avisos:
+                cobertura["con_avisos"] += 1
+            t = {"numero": numero, "material": codigo, "abreviado": linea.material,
+                 "relacion": motivo, "cc_hojas": linea.hojas,
+                 "cc_aprov": linea.aprovechamiento, "plancha": control["plancha"],
+                 "plancha_supuesta": control["supuesta"], "avisos": avisos, "piezas": piezas,
+                 "n_piezas": sum(p["cantidad"] for p in piezas),
+                 "grupo": _grupo(codigo, catalogo),
+                 "calibracion": es_calibracion(numero)}
+            t["firma"] = _firma(t)
+            trabajos.append(t)
     return trabajos, cobertura
 
 
@@ -190,22 +273,37 @@ def _grupo(codigo: str, catalogo: Catalogo) -> str:
     return regla["grupo"] if regla else comp
 
 
+def _leer_hechos(salida: Path, mostrar) -> dict[tuple, dict]:
+    hechos: dict[tuple, dict] = {}
+    if not salida.exists():
+        return hechos
+    for n, linea in enumerate(salida.read_text(encoding="utf-8").splitlines(), start=1):
+        if not linea.strip():
+            continue
+        try:
+            r = json.loads(linea)
+        except json.JSONDecodeError:
+            # La corrida anterior se cortó a mitad de una línea: ese caso se vuelve a calcular.
+            mostrar(f"aviso: la línea {n} de {salida.name} está cortada; ese caso se recalcula")
+            continue
+        hechos[(r["numero"], r["material"], r["hipotesis"], r["esfuerzo"], r.get("firma"))] = r
+    return hechos
+
+
 def correr(trabajos: list[dict], salida: Path, opciones: Opciones, catalogo: Catalogo,
            mostrar=print) -> list[dict]:
     """Corre las hipótesis. Lo ya calculado (en `salida`, JSONL) no se repite."""
     salida.parent.mkdir(parents=True, exist_ok=True)
-    hechos: dict[tuple, dict] = {}
-    if salida.exists():
-        for linea in salida.read_text(encoding="utf-8").splitlines():
-            if linea.strip():
-                r = json.loads(linea)
-                hechos[(r["numero"], r["material"], r["hipotesis"], r["esfuerzo"])] = r
+    hechos = _leer_hechos(salida, mostrar)
     elegidos = trabajos if opciones.muestra is None else _muestra(trabajos, opciones.muestra)
     filas = []
+    texto_previo = salida.read_text(encoding="utf-8") if salida.exists() else ""
     with salida.open("a", encoding="utf-8") as archivo:
+        if texto_previo and not texto_previo.endswith("\n"):
+            archivo.write("\n")  # que lo nuevo no quede pegado a una línea cortada
         for n, t in enumerate(elegidos, start=1):
             for hip in opciones.hipotesis:
-                clave = (t["numero"], t["material"], hip, opciones.esfuerzo)
+                clave = (t["numero"], t["material"], hip, opciones.esfuerzo, t["firma"])
                 if clave in hechos:
                     filas.append(hechos[clave])
                     continue
@@ -213,19 +311,17 @@ def correr(trabajos: list[dict], salida: Path, opciones: Opciones, catalogo: Cat
                            "preset": hip, "piezas": t["piezas"], "fecha": "histórico",
                            "materiales": {t["material"]: {"planchas_habilitadas": _solo(t, catalogo)}},
                            "opciones": {"esfuerzo": opciones.esfuerzo}}
-                if t["con_pulido"] is False:
-                    # La leyenda cierra sin el +3: se respeta lo que se cargó en su momento.
-                    entrada["materiales"][t["material"]]["sobremedida_pulido_mm"] = 0
                 t0 = time.perf_counter()
                 res = optimizar(entrada, catalogo=catalogo)
                 m = res["materiales"][0]
                 fila = {k: t[k] for k in ("numero", "material", "abreviado", "relacion", "cc_hojas",
-                                          "cc_aprov", "plancha", "con_pulido", "n_piezas", "grupo",
-                                          "calibracion")}
+                                          "cc_aprov", "plancha", "plancha_supuesta", "avisos", "n_piezas",
+                                          "grupo", "calibracion", "firma")}
                 fila.update({"hipotesis": hip, "esfuerzo": opciones.esfuerzo,
                              "planchas": m["planchas"], "aprovechamiento": m["aprovechamiento"],
                              "montajes": m["layouts"], "minimo": m.get("minimo_teorico_planchas"),
-                             "verificado": res["verificado"], "errores": m["errores"][:3],
+                             "verificado": res["verificado"], "completo": not m["errores"],
+                             "errores": m["errores"][:3],
                              "segundos": round(time.perf_counter() - t0, 2)})
                 # Los montajes, aparte (para dibujarlos en la página de revisión).
                 carpeta = salida.parent / "montajes"
@@ -251,9 +347,23 @@ def _solo(t: dict, catalogo: Catalogo) -> dict:
 
 
 def _muestra(trabajos: list[dict], n: int) -> list[dict]:
-    """Una muestra fija (por número de presupuesto), mitad calibración y mitad prueba si se puede."""
+    """Una muestra fija (por número de presupuesto y material), con casos de calibración y de
+    prueba intercalados (7 de calibración por cada 3 de prueba, como el reparto)."""
     orden = sorted(trabajos, key=lambda t: hashlib.sha1(f"{t['numero']}|{t['material']}".encode()).hexdigest())
-    return orden[:n]
+    calib = [t for t in orden if t["calibracion"]]
+    prueba = [t for t in orden if not t["calibracion"]]
+    elegidos = []
+    while len(elegidos) < n and (calib or prueba):
+        for lista, cuantos in ((calib, 7), (prueba, 3)):
+            for _ in range(cuantos):
+                if lista and len(elegidos) < n:
+                    elegidos.append(lista.pop(0))
+    return elegidos
+
+
+def cuenta(f: dict) -> bool:
+    """¿Entra este resultado en las cuentas? Solo si pasó el validador y calculó todas las piezas."""
+    return bool(f["verificado"]) and f.get("completo", not f.get("errores"))
 
 
 # ----------------------------------------------------------------------- calibrar
@@ -261,7 +371,7 @@ def calibrar(filas: list[dict]) -> dict:
     """Elige por grupo de material la hipótesis que más reproduce a Corte Certo (con el 70 %)."""
     por_grupo: dict[str, dict[str, list[dict]]] = {}
     for f in filas:
-        if f["calibracion"] and f["verificado"]:
+        if f["calibracion"] and cuenta(f):
             por_grupo.setdefault(f["grupo"], {}).setdefault(f["hipotesis"], []).append(f)
     eleccion = {}
     for grupo, hips in por_grupo.items():
@@ -282,11 +392,14 @@ def calibrar(filas: list[dict]) -> dict:
 def informe_prueba(filas: list[dict], eleccion: dict) -> dict:
     """Números sobre el 30 % de prueba, con la hipótesis elegida para cada grupo (H0 si el grupo
     no tuvo casos de calibración)."""
-    prueba = [f for f in filas if not f["calibracion"]
-              and f["hipotesis"] == eleccion.get(f["grupo"], {}).get("hipotesis", "H0")]
-    def resumen(fs):
+    todas = [f for f in filas if not f["calibracion"]
+             and f["hipotesis"] == eleccion.get(f["grupo"], {}).get("hipotesis", "H0")]
+    prueba = [f for f in todas if cuenta(f)]
+    def resumen(fs, todas_fs):
+        base = {"no_validados": sum(1 for f in todas_fs if not f["verificado"]),
+                "incompletos": sum(1 for f in todas_fs if f["verificado"] and not cuenta(f))}
         if not fs:
-            return {"casos": 0}
+            return {"casos": 0, **base}
         difs = [f["planchas"] - f["cc_hojas"] for f in fs]
         return {"casos": len(fs),
                 "iguales_%": round(sum(d == 0 for d in difs) / len(fs) * 100, 1),
@@ -294,43 +407,73 @@ def informe_prueba(filas: list[dict], eleccion: dict) -> dict:
                 "peores_%": round(sum(d > 0 for d in difs) / len(fs) * 100, 1),
                 "diferencia_media": round(sum(difs) / len(fs), 2),
                 "peor_diferencia": max(difs),
-                "corte_certo_en_el_minimo": sum(1 for f in fs if f["minimo"] is not None and f["cc_hojas"] <= f["minimo"]),
-                "no_validados": sum(1 for f in fs if not f["verificado"])}
+                "corte_certo_en_el_minimo": sum(1 for f in fs if f["minimo"] is not None and f["cc_hojas"] == f["minimo"]),
+                # Menos hojas que el mínimo teórico es imposible: la leyenda o las piezas no son las de ese cálculo.
+                "corte_certo_debajo_del_minimo": sum(1 for f in fs if f["minimo"] is not None and f["cc_hojas"] < f["minimo"]),
+                "con_avisos": sum(1 for f in fs if f.get("avisos")),
+                **base}
     por_material: dict[str, list] = {}
     por_tamano: dict[str, list] = {}
+    def tamano(f):
+        return "hasta 20 piezas" if f["n_piezas"] <= 20 else "21 a 100 piezas" if f["n_piezas"] <= 100 else "más de 100 piezas"
     for f in prueba:
         por_material.setdefault(f["material"], []).append(f)
-        tam = "hasta 20 piezas" if f["n_piezas"] <= 20 else "21 a 100 piezas" if f["n_piezas"] <= 100 else "más de 100 piezas"
-        por_tamano.setdefault(tam, []).append(f)
+        por_tamano.setdefault(tamano(f), []).append(f)
     peores = sorted(prueba, key=lambda f: (-(f["planchas"] - f["cc_hojas"]), f["numero"]))[:10]
-    return {"total": resumen(prueba),
-            "por_material": {k: resumen(v) for k, v in sorted(por_material.items())},
-            "por_tamano": {k: resumen(v) for k, v in por_tamano.items()},
+    return {"total": resumen(prueba, todas),
+            "por_material": {k: resumen(v, [f for f in todas if f["material"] == k]) for k, v in sorted(por_material.items())},
+            "por_tamano": {k: resumen(v, [f for f in todas if tamano(f) == k]) for k, v in por_tamano.items()},
             "peores": [{k: f[k] for k in ("numero", "material", "n_piezas", "cc_hojas", "cc_aprov",
                                           "planchas", "aprovechamiento", "minimo", "plancha", "hipotesis")}
                        for f in peores if f["planchas"] > f["cc_hojas"]]}
 
 
-def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, origen: str) -> str:
+MOTIVOS_NO_CIERRAN = {
+    "no_cierra": "los m² no dan el % de la leyenda (el presupuesto cambió o era otra plancha)",
+    "sin_mas3": "cierran solo SIN el +3 mm del pulido recto",
+    "reconstruccion": "no cierran y la reconstrucción de las piezas tiene avisos",
+    "no_entran": "las piezas no entran en ninguna plancha del material",
+    "imposible": "la leyenda dice más de 100 % o 0 hojas",
+}
+
+
+def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, origen: str,
+             inventado: bool = False) -> str:
     """El texto para `docs/VALIDACION.md` (sección 1), en palabras simples."""
     c = cobertura
     t = prueba["total"]
-    lineas = [f"Datos: `{origen}`. Esfuerzo: {opciones.esfuerzo}. "
-              + ("Todos los casos." if opciones.muestra is None else f"Muestra de {opciones.muestra} casos."), "",
-              "**Cobertura de la leyenda**", "",
-              "| | Cantidad |", "|---|---|",
-              f"| Presupuestos en el zip | {c['presupuestos']} |",
-              f"| Con algo escrito | {c['con_texto']} |",
-              f"| Con pinta de leyenda | {c['con_pinta']} |",
-              f"| Leyenda leída | {c['leidos']} |",
-              f"| Líneas de material leídas | {c['lineas']} |",
-              f"| Material relacionado con un código de Metrix | {c['relacionadas']} |",
-              f"| Pasaron el control de la entrada (m² ↔ % de la leyenda) | {c['control_ok']} |",
-              f"| No se pudo leer la leyenda | {len(c['no_leidas'])} |",
-              f"| No se pudo relacionar el material | {len(c['sin_relacionar'])} |",
-              f"| No cierran (el presupuesto cambió o era otra plancha) | {len(c['no_cierran'])} |", "",
-              "**Hipótesis elegida por grupo de material (con el 70 %)**", "",
-              "| Grupo | Hipótesis | Casos | Iguales a Corte Certo |", "|---|---|---|---|"]
+    no_cierran: dict[str, int] = {}
+    for x in c["no_cierran"]:
+        no_cierran[x.get("motivo", "no_cierra")] = no_cierran.get(x.get("motivo", "no_cierra"), 0) + 1
+    lineas = []
+    if inventado:
+        lineas += ["> **DATOS INVENTADOS** (caso de juguete): estos números solo prueban que el programa "
+                   "anda; no dicen nada de Corte Certo.", ""]
+    lineas += [f"Datos: `{origen}`. Esfuerzo: {opciones.esfuerzo}. "
+               + ("Todos los casos." if opciones.muestra is None else f"Muestra de {opciones.muestra} casos."), "",
+               "**Cobertura de la leyenda**", "",
+               "| | Cantidad |", "|---|---|",
+               f"| Presupuestos en el zip | {c['presupuestos']} |",
+               f"| Con algo escrito | {c['con_texto']} |",
+               f"| Con pinta de leyenda | {c['con_pinta']} |",
+               f"| Leyenda leída | {c['leidos']} |",
+               f"| … de esas, con alguna línea que no se entendió | {len(c.get('lineas_no_leidas', []))} |",
+               f"| No se pudo leer la leyenda | {len(c['no_leidas'])} |",
+               f"| Líneas que no son materiales (TOTAL, etc.) | {c.get('ignoradas', 0)} |",
+               f"| Leyenda leída pero sin piezas de vidrio reconstruidas | {len(c.get('sin_piezas', []))} |",
+               f"| Líneas de material leídas | {c['lineas']} |",
+               f"| Material relacionado con un código de Metrix | {c['relacionadas']} |",
+               f"| No se pudo relacionar el material | {len(c['sin_relacionar'])} |",
+               f"| Dos líneas de la leyenda van al mismo código (no se comparan) | {len(c.get('repetidas', []))} |",
+               f"| Pasaron el control de la entrada (m² ↔ % de la leyenda) | {c['control_ok']} |"]
+    for motivo, texto in MOTIVOS_NO_CIERRAN.items():
+        if no_cierran.get(motivo):
+            lineas.append(f"| No cierran: {texto} | {no_cierran[motivo]} |")
+    lineas += [f"| Comparados con avisos de la reconstrucción o de la plancha | {c.get('con_avisos', 0)} |",
+               f"| … con plancha supuesta (el material no está en hojas.csv) | {c.get('plancha_supuesta', 0)} |",
+               f"| … con más de una medida de plancha que cierra | {c.get('plancha_ambigua', 0)} |", "",
+               "**Hipótesis elegida por grupo de material (con el 70 %)**", "",
+               "| Grupo | Hipótesis | Casos | Iguales a Corte Certo |", "|---|---|---|---|"]
     for g, e in sorted(eleccion.items()):
         lineas.append(f"| {g} | {e['hipotesis']} | {e['casos']} | {e['iguales']} % |")
     lineas += ["", "**Resultado sobre el 30 % de prueba**", ""]
@@ -341,7 +484,11 @@ def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, 
                    f"- Diferencia media: {t['diferencia_media']:+} planchas por caso (negativo = a favor); "
                    f"la peor: {t['peor_diferencia']:+}",
                    f"- Casos donde Corte Certo ya estaba en el mínimo teórico: {t['corte_certo_en_el_minimo']}",
-                   f"- Resultados que no pasaron el validador: {t['no_validados']}", "",
+                   f"- Casos donde la leyenda dice menos hojas que el mínimo teórico (imposible; hay que "
+                   f"mirarlos): {t['corte_certo_debajo_del_minimo']}",
+                   f"- Casos comparados con avisos: {t['con_avisos']}",
+                   f"- Resultados que no pasaron el validador (fuera de las cuentas): {t['no_validados']}",
+                   f"- Resultados con piezas sin calcular (fuera de las cuentas): {t['incompletos']}", "",
                    "| Material | Casos | Iguales | Mejores | Peores | Dif. media |", "|---|---|---|---|---|---|"]
         for mat, r in prueba["por_material"].items():
             lineas.append(f"| {mat} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | {r['peores_%']} % | {r['diferencia_media']:+} |")

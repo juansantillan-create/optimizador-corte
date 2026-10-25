@@ -55,8 +55,7 @@ def _decodificar(datos: bytes) -> str:
 
 
 def _archivos(origen: Path) -> dict[str, bytes]:
-    """Nombre (en minúsculas, sin carpetas) -> contenido. Acepta zip o carpeta (y zips adentro de
-    la carpeta)."""
+    """Nombre (en minúsculas, sin carpetas) -> contenido, de un zip o de una carpeta con los CSV."""
     salida: dict[str, bytes] = {}
     if origen.is_file() and origen.suffix.lower() == ".zip":
         with zipfile.ZipFile(origen) as z:
@@ -65,17 +64,48 @@ def _archivos(origen: Path) -> dict[str, bytes]:
                     salida[Path(nombre).name.lower()] = z.read(nombre)
         return salida
     if origen.is_dir():
-        zips = sorted(origen.glob("casos_historicos_*.zip"))
-        if zips and not (origen / "presupuestos.csv").exists():
-            return _archivos(zips[-1])  # el más nuevo
         for ruta in origen.iterdir():
-            if ruta.is_file():
+            if ruta.is_file() and ruta.suffix.lower() != ".zip":
                 salida[ruta.name.lower()] = ruta.read_bytes()
     return salida
 
 
 def leer(origen: Path) -> Casos:
+    """Lee un zip, una carpeta con los CSV o una carpeta con varios zips `casos_historicos_*.zip`
+    (por ejemplo, uno por año): en ese caso los junta, y si un presupuesto está en dos zips se
+    queda con el del zip más nuevo (por nombre) y lo avisa."""
     origen = Path(origen)
+    zips = sorted(origen.glob("casos_historicos_*.zip")) if origen.is_dir() else []
+    if zips and not (origen / "presupuestos.csv").exists():
+        if len(zips) == 1:
+            casos = _leer_uno(zips[0])
+            casos.origen = str(origen)
+            return casos
+        return _juntar([_leer_uno(z) for z in zips], origen)
+    return _leer_uno(origen)
+
+
+def _juntar(partes: list["Casos"], origen: Path) -> "Casos":
+    casos = Casos(origen=str(origen))
+    casos.leeme = "\n\n".join(p.leeme for p in partes if p.leeme)
+    repetidos = 0
+    for parte in partes:  # de la más vieja a la más nueva: la nueva pisa
+        casos.diferencias += [f"{Path(parte.origen).name}: {d}" for d in parte.diferencias]
+        for numero, fila in parte.presupuestos.items():
+            if numero in casos.presupuestos:
+                repetidos += 1
+            casos.presupuestos[numero] = fila
+            casos.renglones[numero] = parte.renglones.get(numero, [])
+            casos.piezas[numero] = parte.piezas.get(numero, [])
+        casos.articulos.update(parte.articulos)
+        casos.familias.update(parte.familias)
+    casos.diferencias.append(f"se juntaron {len(partes)} zips: " + ", ".join(Path(p.origen).name for p in partes))
+    if repetidos:
+        casos.diferencias.append(f"{repetidos} presupuestos estaban en más de un zip: se usó el del zip más nuevo")
+    return casos
+
+
+def _leer_uno(origen: Path) -> Casos:
     archivos = _archivos(origen)
     casos = Casos(origen=str(origen))
     casos.leeme = _decodificar(archivos.get("leeme.txt", b""))

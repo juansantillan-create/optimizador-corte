@@ -32,14 +32,23 @@ LISTA 1
 - Por línea: `<material> [:_-]? <n> HOJA(S) [-–] <p> %`, sin importar mayúsculas, espacios de más
   ni el espacio que falta antes de los asteriscos. También "PLANCHA(S)" o "CHAPA(S)" en lugar de
   "HOJAS", y coma decimal en el %.
+- Si una línea trae dos materiales (separados por " / ", por asteriscos o pegados), se leen los
+  dos. Un "/" entre letras ("NL/LOWE") es parte del nombre.
+- "LISTA 1" al principio de una línea de material se guarda como lista.
+- "TOTAL", "SE USAN", "DÓLAR"… no son materiales: se cuentan como "ignoradas".
+- Si después del % dice "desperdicio" o "pérdida", ese % no es aprovechamiento: no se lee.
+- Si una leyenda tiene líneas leídas y otras no, las no leídas igual se cuentan (puede faltar un
+  material).
 - El material abreviado se relaciona con un código de Metrix usando **las piezas del mismo
   presupuesto**: misma composición (`4+4`, `3+3`, `10`) y palabras clave (`NLIGHT` ↔ `NL` /
   "NEUTRO LIGHT", `LOWE` ↔ `LOW` / "LOW-E", `INC` ↔ `IN`, `GRIS` ↔ `GR`…). Si quedan dos
   candidatos o ninguno, el caso va a "no se pudo relacionar" con el motivo.
 - Lo que no matchea ninguna regla se cuenta como "no leído" y se guardan ejemplos.
 
-**Control**: los m² de piezas reconstruidos ÷ (hojas × plancha útil) tienen que dar el % de la
-leyenda (±0,5 por el redondeo a entero). Si no, el caso se informa aparte.
+**Control**: los m² de piezas reconstruidos (con el +3 mm del pulido recto) ÷ (hojas × plancha
+útil) tienen que dar el % de la leyenda (±0,5 por el redondeo a entero, más 0,01 por el redondeo
+de Corte Certo). Si no, el caso se informa aparte. Si la oficina truncaba el % en vez de
+redondearlo, hay que cambiar esta regla (pregunta 24).
 
 ## Cobertura
 

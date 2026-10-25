@@ -17,6 +17,9 @@ datos viajan **en un zip, sin nombres de clientes**.
 
 - En el repo, en **`datos/casos/`**, con un commit, si pesa menos de 50 MB (GitHub avisa a los
   50 MB y rechaza archivos de más de 100 MB). Si pesa más, partirlo por año o usar Parquet.
+  Si se parte por año (`casos_historicos_2024.zip`, `casos_historicos_2025.zip`…), dejar todos
+  en la misma carpeta: el programa los junta (si un presupuesto está en dos, usa el del zip más
+  nuevo por nombre y lo avisa).
 - O adjunto en el mensaje a la sesión. En ese caso, la sesión lo guarda en `datos/casos/` y lo
   commitea, solo si pasó el control de privacidad.
 - **Nunca** a git: lo que tenga nombres. Eso va a `datos/privado/`.

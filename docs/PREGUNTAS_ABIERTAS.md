@@ -124,6 +124,22 @@ tabla que los relacione con los códigos de Metrix?**
 - **Por defecto**: por material, debajo de cada uno.
 - Respuesta:
 
+**24. El % de la leyenda, ¿se redondeaba o se truncaba?**
+- Corte Certo da el aprovechamiento con 2 decimales (ej. 90,57 %) y en la observación se escribe
+  entero (91 % o 90 %).
+- **Por qué importa**: el control de la entrada compara nuestro % con el de la leyenda. Si se
+  truncaba, hay casos buenos que hoy quedan como "no cierran".
+- **Por defecto**: redondeado (90,57 → 91), con ±0,5 de margen.
+- Respuesta:
+
+**25. Presupuestos que en la leyenda tienen el +3 mm del pulido "de menos"**
+- La validación avisa los casos que cierran solo **sin** el +3 mm del pulido recto (cuenta aparte,
+  no se comparan). Si son muchos, puede ser que antes no se cargaba el +3, o que la clase de
+  Metrix no dice bien qué piezas llevaban pulido recto.
+- **Por defecto**: el +3 se aplica siempre (lo confirmaste el 25/10) y esos casos quedan afuera
+  de los números.
+- Respuesta:
+
 **18. Con textura (veta), ¿qué lado de la pieza va con la veta?**
 - En Metrix, LARGO y ANCHO de una pieza no dicen la orientación. Con rotación permitida da igual;
   con veta, no.

@@ -19,15 +19,22 @@ Qué hace (detalle en `optimizador/historico/comparar.py`):
 2. Busca la leyenda en "Situación de Presupuesto → Observaciones" (y en las otras columnas de texto)
    y la lee (`docs/FORMATO_LEYENDAS.md`). Cuenta cuántas lee y cuántas no, con ejemplos.
 3. Reconstruye las piezas de cada presupuesto por material (DVH = 2 vidrios; herrajes, fletes,
-   perforaciones y cámaras afuera; cada pieza de `DETPRES2` se cuenta una sola vez).
+   perforaciones, cámaras y láminas afuera; cada pieza de `DETPRES2` se cuenta una sola vez). Lo
+   dudoso (DETPRES2 que no cierra con DETPRES, cantidad sacada de los m², DVH escalonado…) queda
+   como aviso al lado del caso.
 4. Relaciona el material abreviado de la leyenda ("4+4 NLIGHT") con el código de Metrix de las
-   piezas del presupuesto (por composición y palabras). Si hay dudas, el caso va aparte.
-5. **Control de la entrada**: los m² de las piezas tienen que cerrar con las hojas y el % de la
-   leyenda (±0,6). De paso dice con qué medida de plancha y si se cargó con el +3 mm del pulido.
-   Lo que no cierra (el presupuesto cambió después, otra plancha) se informa aparte.
+   piezas del presupuesto (por composición y palabras, también el color). Si hay dudas, o si dos
+   líneas van al mismo código, el caso va aparte.
+5. **Control de la entrada**: los m² de las piezas, **con el +3 mm del pulido recto**, tienen que
+   cerrar con las hojas y el % de la leyenda (±0,5 por el redondeo a entero, más 0,01 por el de
+   Corte Certo; pregunta 24). Se prueban las medidas de plancha del material en las que entran las
+   piezas; si cierra con más de una, se usa la más cercana y se avisa. Lo que no cierra se informa
+   aparte con el motivo (el presupuesto cambió, otra plancha, cerraría solo sin el +3, la
+   reconstrucción tiene avisos).
 6. Calcula cada caso con H0, H1 y H2 **con la misma medida de plancha**, elige por grupo de
    material la que más se parece a Corte Certo usando el **70 %** de los casos (siempre los
-   mismos, por número de presupuesto) e informa los números sobre el **30 %** restante.
+   mismos, por número de presupuesto) e informa los números sobre el **30 %** restante. Los
+   resultados que no pasan el validador o que dejan piezas sin calcular se cuentan aparte.
 7. Arma la página de revisión (`salida/historico/revision.html`): caso por caso, nuestros montajes
    al lado de los números de Corte Certo, filtros (peores, mejores…), marcas bien/mal/duda y un
    botón "Copiar mis respuestas" para pegar en la sesión.

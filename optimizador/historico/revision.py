@@ -5,8 +5,11 @@
 - Juan marca bien / mal / duda (queda guardado en su navegador);
 - un botón copia sus respuestas como texto para pegar en la sesión.
 
-Una sola página HTML, sin internet. La versión "para git" (`publicable=True`) no incluye los
-textos crudos de las observaciones (por si la limpieza de nombres falló en alguno).
+Una sola página HTML, sin internet. La versión "para git" (`publicable=True`) no incluye nada
+escrito a mano en las observaciones (ni el material abreviado, ni el motivo de la relación, ni las
+líneas que no se leyeron), por si la limpieza de nombres falló en alguno; además, antes de copiarla
+a `docs/validacion/` se busca que no tenga palabras de los textos libres del zip
+(`principal.palabras_sospechosas`).
 """
 
 from __future__ import annotations
@@ -18,9 +21,10 @@ from .. import dibujo
 
 
 def html(filas: list[dict], eleccion: dict, prueba: dict, cobertura: dict, montajes: dict,
-         publicable: bool = False) -> str:
+         publicable: bool = False, corrida: str = "") -> str:
     """`filas`: resultados (uno por caso, material e hipótesis). `montajes`: (numero, material) ->
-    lista de montajes del resultado elegido (para dibujar)."""
+    lista de montajes del resultado elegido (para dibujar). `corrida` separa las marcas guardadas
+    en el navegador de una corrida y otra (otro zip u otro esfuerzo)."""
     elegidas = [f for f in filas if f["hipotesis"] == eleccion.get(f["grupo"], {}).get("hipotesis", "H0")]
     elegidas.sort(key=lambda f: (-(f["planchas"] - f["cc_hojas"]), f["numero"], f["material"]))
     t = prueba.get("total", {})
@@ -37,17 +41,26 @@ def html(filas: list[dict], eleccion: dict, prueba: dict, cobertura: dict, monta
                   "<button data-f='peor'>Peores</button><button data-f='mejor'>Mejores</button>"
                   "<button data-f='igual'>Iguales</button><button data-f='prueba'>Solo el 30 % de prueba</button>"
                   "<button data-f='sinmarcar'>Sin marcar</button>"
+                  "<button data-f='nocierra'>No cierran</button><button data-f='noleida'>No se pudo leer</button>"
                   " &nbsp; <button id='copiar' class='principal'>Copiar mis respuestas</button>"
                   "<span id='copiado'></span></div>")
     for f in elegidas:
         dif = f["planchas"] - f["cc_hojas"]
         clase = "peor" if dif > 0 else "mejor" if dif < 0 else "igual"
         clave = f"{f['numero']}|{f['material']}"
+        resultado = f"{f['hipotesis']}: {f['planchas']} planchas contra {f['cc_hojas']} de Corte Certo"
         minis = "".join(dibujo.miniatura(m, ancho_px=96, max_pila=8) for m in montajes.get(clave, [])[:14])
-        partes.append(
-            f"<div class='caso {clase} {'prueba' if not f['calibracion'] else 'calibra'}' data-clave='{escape(clave)}'>"
-            f"<div class='cab'><b>Presupuesto {escape(f['numero'])}</b> · {escape(f['material'])} "
+        leyenda = "" if publicable else \
             f"<span class='gris'>(leyenda: «{escape(f['abreviado'])}», {escape(f['relacion'])})</span>"
+        avisos = f.get("avisos") or []
+        if avisos and publicable:
+            texto_avisos = f" · {len(avisos)} aviso(s) (en la versión local)"
+        else:
+            texto_avisos = "".join(f"<br>⚠ {escape(a)}" for a in avisos[:4])
+        partes.append(
+            f"<div class='caso {clase} {'prueba' if not f['calibracion'] else 'calibra'}' data-clave='{escape(clave)}' "
+            f"data-resultado='{escape(resultado)}'>"
+            f"<div class='cab'><b>Presupuesto {escape(f['numero'])}</b> · {escape(f['material'])} {leyenda}"
             f"<span class='dif {clase}'>{'igual' if dif == 0 else f'{dif:+d} plancha(s)'}</span></div>"
             f"<table class='num'><tr><th></th><th>Planchas</th><th>Aprov.</th><th>Montajes</th></tr>"
             f"<tr><td>Corte Certo</td><td>{f['cc_hojas']}</td><td>{f['cc_aprov']:g} %</td><td>—</td></tr>"
@@ -55,28 +68,43 @@ def html(filas: list[dict], eleccion: dict, prueba: dict, cobertura: dict, monta
             f"<td>{f['montajes']}</td></tr>"
             f"<tr><td>Mínimo teórico</td><td>{f['minimo']}</td><td></td><td></td></tr></table>"
             f"<div class='gris'>{f['n_piezas']} piezas · plancha {escape(f['plancha'])}"
-            f"{'' if f['con_pulido'] else ' · la leyenda cierra SIN el +3 mm de pulido'}"
+            f"{' (supuesta)' if f.get('plancha_supuesta') else ''}"
             f"{'' if f['verificado'] else ' · <b class=peor>NO pasó el validador</b>'}"
-            f"{' · calibración' if f['calibracion'] else ' · prueba'}</div>"
+            f"{'' if f.get('completo', True) else ' · <b class=peor>quedaron piezas sin calcular</b>'}"
+            f"{' · calibración' if f['calibracion'] else ' · prueba'}{texto_avisos}</div>"
             f"<div class='minis'>{minis}</div>"
             f"<div class='marca'>"
             + "".join(f"<label><input type='radio' name='{escape(clave)}' value='{v}'> {v}</label>" for v in ("bien", "mal", "duda"))
             + f" <input class='coment' placeholder='comentario'></div></div>")
     partes.append("<h2>Lo que no se pudo comparar</h2>")
-    partes.append(_lista("No cierran (m² de piezas contra hojas y % de la leyenda)", cobertura.get("no_cierran", []),
-                         lambda x: f"{x['numero']} {x['material']}: leyenda {x['leyenda']}; probado {x['probado']}"))
-    partes.append(_lista("No se pudo relacionar el material", cobertura.get("sin_relacionar", []),
-                         lambda x: f"{x['numero']} «{x['material']}»: {x['motivo']} (hay: {', '.join(x['candidatos'])})"))
+    from .comparar import MOTIVOS_NO_CIERRAN
+    partes.append("<div class='aparte nocierra'>" + _lista(
+        "No cierran (m² de piezas contra hojas y % de la leyenda)", cobertura.get("no_cierran", []),
+        lambda x: f"{x['numero']} {x['material']}: leyenda {x['leyenda']}; "
+                  f"{MOTIVOS_NO_CIERRAN.get(x.get('motivo', ''), '')}; probado {x['probado']}"
+                  + ("" if publicable or not x.get("avisos") else " · avisos: " + " / ".join(x["avisos"]))) + "</div>")
+    if publicable:
+        partes.append(_lista("No se pudo relacionar el material", cobertura.get("sin_relacionar", []),
+                             lambda x: f"{x['numero']} (hay: {', '.join(x['candidatos'])})"))
+    else:
+        partes.append(_lista("No se pudo relacionar el material", cobertura.get("sin_relacionar", []),
+                             lambda x: f"{x['numero']} «{x['material']}»: {x['motivo']} (hay: {', '.join(x['candidatos'])})"))
+    partes.append(_lista("Dos líneas de la leyenda van al mismo código", cobertura.get("repetidas", []),
+                         lambda x: f"{x['numero']} {x['material']}" + ("" if publicable else f": {' / '.join(x['lineas'])}")))
     partes.append(_lista("Leyenda sin piezas de vidrio reconstruidas", cobertura.get("sin_piezas", []),
                          lambda x: f"{x['numero']}"))
     if not publicable:
-        partes.append(_lista("No se pudo leer la leyenda (texto tal cual, para mirar el formato)",
-                             cobertura.get("no_leidas", []),
-                             lambda x: f"{x['numero']}: " + " / ".join(x["lineas"])))
+        partes.append("<div class='aparte noleida'>" + _lista(
+            "No se pudo leer la leyenda (texto tal cual, para mirar el formato)", cobertura.get("no_leidas", []),
+            lambda x: f"{x['numero']}: " + " / ".join(x["lineas"])))
+        partes.append(_lista("Leyendas leídas con alguna línea que no se entendió", cobertura.get("lineas_no_leidas", []),
+                             lambda x: f"{x['numero']}: " + " / ".join(x["lineas"])) + "</div>")
     else:
-        partes.append(f"<p class='gris'>No se pudo leer la leyenda en {len(cobertura.get('no_leidas', []))} "
-                      "presupuestos (los textos están en la versión local de esta página).</p>")
-    partes.append(_PIE)
+        partes.append(f"<div class='aparte noleida'><p class='gris'>No se pudo leer la leyenda en "
+                      f"{len(cobertura.get('no_leidas', []))} presupuestos, y en "
+                      f"{len(cobertura.get('lineas_no_leidas', []))} quedó alguna línea sin entender (los textos "
+                      "están en la versión local de esta página).</p></div>")
+    partes.append(_PIE.replace("__CLAVE__", json.dumps("optimizador.revision|" + corrida)))
     return "".join(partes)
 
 
@@ -109,7 +137,7 @@ table.num td:first-child{text-align:left}
 
 _PIE = """<script>
 (function(){
-  var clave='optimizador.revision';
+  var clave=__CLAVE__;
   var guardado={};
   try{guardado=JSON.parse(localStorage.getItem(clave)||'{}');}catch(e){}
   function guardar(){try{localStorage.setItem(clave,JSON.stringify(guardado));}catch(e){}}
@@ -131,13 +159,17 @@ _PIE = """<script>
         var ver=f==='todos'||c.classList.contains(f)||(f==='sinmarcar'&&!g.marca);
         c.style.display=ver?'':'none';
       });
+      document.querySelectorAll('.aparte').forEach(function(a){
+        a.style.display=(f==='todos'||a.classList.contains(f))?'':'none';
+      });
+      if(f==='nocierra'||f==='noleida'){var a=document.querySelector('.aparte.'+f); if(a) a.scrollIntoView();}
     });
   });
   document.getElementById('copiar').addEventListener('click',function(){
     var lineas=[];
-    Object.keys(guardado).sort().forEach(function(k){
-      var g=guardado[k]; if(!g.marca&&!g.comentario) return;
-      lineas.push(k.replace('|',' ')+': '+(g.marca||'sin marca')+(g.comentario?' — '+g.comentario:''));
+    document.querySelectorAll('.caso').forEach(function(c){
+      var k=c.dataset.clave, g=guardado[k]; if(!g||(!g.marca&&!g.comentario)) return;
+      lineas.push(k.replace('|',' ')+' ('+c.dataset.resultado+'): '+(g.marca||'sin marca')+(g.comentario?' — '+g.comentario:''));
     });
     var texto='Revisión contra Corte Certo ('+lineas.length+' casos)\\n'+lineas.join('\\n');
     var listo=function(){document.getElementById('copiado').textContent=' copiado ('+lineas.length+')';};
