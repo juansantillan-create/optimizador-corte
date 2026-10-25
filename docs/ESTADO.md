@@ -88,8 +88,8 @@ rompecabezas de piezas todas distintas; los casos realistas quedan en la cota de
 11 de 13).
 
 **Pendiente del motor**: mejorar el "corte perfecto" (generador más fuerte o más trabajo en el
-esfuerzo normal sin pasarse de 10 s); máximo tamaño cortado (`corte_max_mm`) todavía no se
-controla (se guarda la opción).
+esfuerzo normal sin pasarse de 10 s). El máximo tamaño cortado ("Limitado") se controla con
+aviso; el motor no lo evita al armar los montajes.
 
 ## 25/10/2026: fase F0 cerrada (inventario y entendimiento)
 

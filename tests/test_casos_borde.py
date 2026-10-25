@@ -205,3 +205,11 @@ def test_generador_respeta_cotas_con_cache():
             for nodo in g.generar(valores, cotas):
                 usadas = arbol.contar(nodo)
                 assert all(usadas.get(i, 0) <= c for i, c in enumerate(cotas)), (cotas, usadas)
+
+
+def test_maximo_tamano_cortado_avisa():
+    piezas = [{"item": "1", "material": "FL5IN", "cantidad": 2, "ancho": 1500, "largo": 2500}]
+    res = calcular(piezas, materiales={"FL5IN": {"corte_max_libre": False, "corte_max_mm": 2000}})
+    assert any("máximo tamaño cortado" in a for a in material(res, "FL5IN")["avisos"])
+    res = calcular(piezas)
+    assert not any("máximo tamaño cortado" in a for a in material(res, "FL5IN")["avisos"])

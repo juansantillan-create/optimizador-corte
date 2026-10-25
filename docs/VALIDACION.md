@@ -144,7 +144,17 @@ seguridad, y si eso pasa sale un aviso.
 
 ### 2.5 Esfuerzo máximo
 
-Se corre aparte (tarda mucho más). Resultados: ver la próxima actualización de este archivo.
+Más trabajo (hasta 13 veces el normal), sigue buscando mientras la relajación diga que se puede
+bajar una plancha, y bucea. Solo los casos de "corte perfecto" (corrida del 25/10, versión anterior
+a la corrección de la caché del 25/10 — ver la próxima corrida):
+
+| Familia (hasta 100 piezas) | Normal | Máximo | Tiempo medio con máximo | Máximo |
+|---|---|---|---|---|
+| 3 etapas | 20 de 36 | **23 de 36 (64 %)** | 6,6 s | 40 s |
+| Guillotina libre | 10 de 24 | **13 de 24 (54 %)** | 39 s | 153 s |
+
+Mejora, pero tampoco llega al 95 %. Para un presupuesto difícil se puede elegir "Máximo" en la
+interfaz.
 
 ## 3. Metas del brief (§14): dónde estamos
 

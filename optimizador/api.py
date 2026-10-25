@@ -293,6 +293,13 @@ def informe_material(mat: Material, piezas: list[Pieza], res: ResultadoMaterial 
             salida["errores"] = salida["errores"] + res.errores
         return salida
     montajes = _montajes(mat, res)
+    if not mat.corte_max_libre:
+        # "Máximo tamaño cortado (Limitado)": se controla con aviso (brief §6.1).
+        for m in montajes:
+            largos = [c["hasta"] - c["desde"] for c in m["cortes"]]
+            if largos and max(largos) > mat.corte_max_mm:
+                salida["avisos"].append(f"montaje {m['numero']}: tiene un corte de {max(largos)} mm, más "
+                                        f"largo que el máximo tamaño cortado ({mat.corte_max_mm} mm)")
     usadas: "OrderedDict[tuple, dict]" = OrderedDict()
     m2_planchas = 0.0
     m2_hoja = 0.0
