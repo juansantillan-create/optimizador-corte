@@ -1,0 +1,13 @@
+{
+  "proyecto": {"codigo": "EJEMPLO-1", "descripcion": "Caso inventado para probar"},
+  "preset": "corte_certo",
+  "piezas": [
+    {"item": "1", "material": "FL5IN", "cantidad": 12, "ancho": 1150, "largo": 2400},
+    {"item": "2", "material": "FL5IN", "cantidad": 8, "ancho": 1000, "largo": 2380, "clase": "FLOAT PR TEMP"},
+    {"item": "3", "material": "FL5IN", "cantidad": 10, "ancho": 790, "largo": 1590},
+    {"item": "4", "material": "FL5IN", "cantidad": 6, "ancho": 1400, "largo": 1000},
+    {"item": "5", "material": "LX4+4IN", "cantidad": 20, "ancho": 600, "largo": 1500},
+    {"item": "6", "material": "LX4+4IN", "cantidad": 15, "ancho": 450, "largo": 900}
+  ],
+  "opciones": {"esfuerzo": "normal"}
+}

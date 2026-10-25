@@ -1,0 +1,154 @@
+{
+ "proyecto": {
+  "codigo": "RE-2003",
+  "descripcion": "realista: 120 piezas, 20 medidas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 20,
+   "ancho": 415,
+   "largo": 1795
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 13,
+   "ancho": 475,
+   "largo": 720
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 14,
+   "ancho": 640,
+   "largo": 1610
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 11,
+   "ancho": 760,
+   "largo": 1205
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 930,
+   "largo": 795
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 11,
+   "ancho": 955,
+   "largo": 2375
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 980,
+   "largo": 1680
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 1365,
+   "largo": 2290
+  },
+  {
+   "item": "9",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 1435,
+   "largo": 2035
+  },
+  {
+   "item": "10",
+   "material": "FL5IN",
+   "cantidad": 4,
+   "ancho": 1460,
+   "largo": 1555
+  },
+  {
+   "item": "11",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 1495,
+   "largo": 585
+  },
+  {
+   "item": "12",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 1530,
+   "largo": 1300
+  },
+  {
+   "item": "13",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1655,
+   "largo": 1880
+  },
+  {
+   "item": "14",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 1730,
+   "largo": 570
+  },
+  {
+   "item": "15",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1930,
+   "largo": 705
+  },
+  {
+   "item": "16",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1945,
+   "largo": 2210
+  },
+  {
+   "item": "17",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 2055,
+   "largo": 315
+  },
+  {
+   "item": "18",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2185,
+   "largo": 1675
+  },
+  {
+   "item": "19",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 2365,
+   "largo": 1675
+  },
+  {
+   "item": "20",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 2405,
+   "largo": 585
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "realista",
+  "piezas": 120
+ }
+}

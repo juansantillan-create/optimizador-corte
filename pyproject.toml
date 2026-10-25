@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optimizador-corte"
+description = "Optimizador de corte de vidrio de Cristalux, para cotizar (reemplazo de Corte Certo)"
+requires-python = ">=3.10"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "optimizador.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["optimizador*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]

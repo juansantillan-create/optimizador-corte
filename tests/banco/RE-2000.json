@@ -1,0 +1,49 @@
+{
+ "proyecto": {
+  "codigo": "RE-2000",
+  "descripcion": "realista: 20 piezas, 5 medidas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 10,
+   "ancho": 580,
+   "largo": 1115
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 670,
+   "largo": 1475
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 680,
+   "largo": 595
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1215,
+   "largo": 400
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1270,
+   "largo": 820
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "realista",
+  "piezas": 20
+ }
+}

@@ -103,8 +103,13 @@ Para Juan (oficina comercial; técnico, no programador de tiempo completo) y sus
 | `contexto/` | Documentos de la fábrica (Metrix, glosario, orquestador). Mapa en `contexto/LEEME.md` |
 | `datos/` | Casos históricos para validar (`datos/casos/` va a git sin nombres; `datos/privado/` no) |
 | `herramientas/` | Scripts sueltos (ej. `importar_medidas_hojas.py`) |
+| `optimizador/` | El programa (paquete de Python): motor, validador, informe, interfaz |
+| `tests/` | Los tests (`pytest -q`) y el banco sintético (`tests/banco/`) |
+| `requirements.txt` · `requirements-dev.txt` · `pyproject.toml` | Dependencias con versiones fijas y datos del paquete |
 | `.claude/agents/revisor.md` | Subagente revisor independiente: usarlo al cerrar cada fase |
 
 ## Para probar en la PC de Juan
 
-Se completa cuando exista la interfaz. La idea: doble clic en `Abrir_Optimizador.bat`.
+Doble clic en `Abrir_Optimizador.bat` (la primera vez instala lo necesario; ver
+`docs/INSTALACION.md`). Se abre el navegador en `http://127.0.0.1:8520`. Cerrar la ventana negra
+apaga el programa.

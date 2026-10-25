@@ -83,7 +83,7 @@ este mensaje: en ese caso, verificá que no tengan nombres de clientes y guardal
 CLAUDE.md, docs/ESTADO.md y docs/CONTRATO_DATOS.md y hacé la fase F4 del brief:
 1. Encontrá y documentá los formatos de la leyenda (docs/FORMATO_LEYENDAS.md), con su cobertura.
 2. Reconstruí las piezas por material y controlalas contra los m² de la leyenda.
-3. Calibrá las hipótesis H0 a H3 sobre el 70 % de los casos e informá sobre el 30 % restante en
+3. Calibrá las hipótesis H0 a H2 sobre el 70 % de los casos e informá sobre el 30 % restante en
    docs/VALIDACION.md, con la página de revisión.
 Empezá con una muestra de 50 casos y dejá escrita la cobertura antes de correr todo. Al
 terminar: ESTADO.md, revisor, PR y un mensaje para mí con los números en palabras simples.

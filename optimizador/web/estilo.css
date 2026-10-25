@@ -1,0 +1,123 @@
+/* Optimizador de corte — Cristalux. Aspecto limpio pero reconocible para quien usa Corte Certo:
+   mismas etiquetas, recuadros negros con números en color, amarillo para el sobrante. */
+:root {
+  --fondo: #f0f0f0; --panel: #ffffff; --borde: #c0c0c0; --texto: #111; --azul: #00008b;
+  --principal: #0a5c2a; --gris: #808080; --rojo: #b00000; --verde: #0a7a2a;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px Arial, Helvetica, sans-serif; }
+.barra { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  background: #000; color: #fff; padding: 6px 14px; }
+.marca { font-size: 17px; font-weight: bold; }
+.marca .sub { color: #ffd800; } .version { color: #9a9a9a; font-size: 11px; font-weight: normal; }
+.opciones { display: flex; gap: 14px; flex-wrap: wrap; }
+.opciones label { font-size: 12px; color: #ddd; }
+.opciones select { margin-left: 4px; }
+.pestanas { display: flex; gap: 2px; padding: 6px 10px 0; background: #d8d8d8; border-bottom: 1px solid var(--borde); }
+.pestanas button { border: 1px solid var(--borde); border-bottom: none; background: #e8e8e8; padding: 6px 16px;
+  font-size: 14px; cursor: pointer; border-radius: 3px 3px 0 0; }
+.pestanas button.activa { background: var(--panel); font-weight: bold; position: relative; top: 1px; }
+main { padding: 10px 14px; }
+.pestana { display: none; } .pestana.activa { display: block; }
+.fila-datos { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.fila-datos .ancha { flex: 1; min-width: 240px; } .fila-datos .ancha input { width: 100%; }
+input, select, textarea { font: inherit; padding: 3px 5px; border: 1px solid #999; border-radius: 2px; }
+.botonera { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+.botonera.derecha { justify-content: flex-end; }
+.botonera .sep { width: 12px; }
+button { font: inherit; padding: 4px 12px; border: 1px solid #888; background: #f7f7f7; border-radius: 3px; cursor: pointer; }
+button:hover { background: #e6eefc; }
+button.principal { background: var(--principal); color: #fff; border-color: #064; font-weight: bold; }
+button.principal:hover { background: #0c7535; }
+button:disabled { opacity: .5; cursor: default; }
+.grilla { border-collapse: collapse; background: var(--panel); width: 100%; }
+.grilla th { background: #e4e4e4; border: 1px solid var(--borde); padding: 3px 4px; font-size: 12px; text-align: left; }
+.grilla td { border: 1px solid #d4d4d4; padding: 0; }
+.grilla td.n { color: var(--gris); font-size: 11px; text-align: right; padding: 0 4px; width: 32px; }
+.grilla input, .grilla select { border: none; width: 100%; padding: 3px 4px; background: transparent; }
+.grilla input:focus, .grilla select:focus { outline: 2px solid #4a8cff; background: #fffde5; }
+.grilla input.num { text-align: right; }
+.grilla tr.mal td { background: #ffe9e9; }
+.grilla td.quitar { width: 26px; text-align: center; }
+.grilla td.quitar button { border: none; background: none; color: var(--rojo); padding: 2px 6px; }
+.totales { margin: 6px 2px; color: #333; font-size: 13px; }
+.ayuda { color: #555; font-size: 12px; }
+.revision { border: 1px solid #e0b000; background: #fff8dd; padding: 6px 10px; margin: 6px 0; font-size: 13px; }
+.revision.bien { border-color: #6c6; background: #ecffec; }
+.revision.mal { border-color: #d66; background: #ffecec; }
+.revision ul { margin: 4px 0 0 18px; padding: 0; }
+.revision .error { color: var(--rojo); }
+.dos-columnas { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.lista-materiales { width: 420px; max-width: 100%; }
+.lista-materiales input { width: 100%; margin-bottom: 4px; }
+.lista-materiales .contenedor { max-height: 70vh; overflow: auto; }
+table.lista { border-collapse: collapse; background: var(--panel); width: 100%; font-size: 13px; }
+table.lista th { color: var(--azul); text-align: left; border-bottom: 1px solid #999; border-right: 1px solid #ccc;
+  padding: 2px 6px; background: #fafafa; position: sticky; top: 0; font-weight: normal; }
+table.lista td { padding: 2px 6px; border-right: 1px solid #e0e0e0; border-bottom: 1px solid #f0f0f0; }
+table.lista tbody tr { cursor: pointer; }
+table.lista tbody tr:hover { background: #eef4ff; }
+table.lista tbody tr.elegido { background: #cfe0ff; }
+#m-lista { display: block; max-height: 72vh; overflow: auto; }
+.ficha { flex: 1; min-width: 520px; background: var(--panel); border: 1px solid var(--borde); padding: 0 0 10px; }
+.subpestanas { display: flex; gap: 2px; background: #e8e8e8; padding: 4px 4px 0; }
+.subpestanas button { border-radius: 3px 3px 0 0; border-bottom: none; background: #eee; }
+.subpestanas button.activa { background: #fff; font-weight: bold; }
+.franja { background: #000; color: #fff; text-align: right; padding: 4px 10px; font-size: 13px; }
+.grupos { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; padding: 10px; }
+/* Propiedades físicas: la misma grilla que la captura 4 de Corte Certo. */
+.grupos.fisicas { grid-template-columns: 1fr 1fr 0.8fr 0.6fr;
+  grid-template-areas: "sierra destaque rotacion textura" "retazo retazo rotacion textura"
+                       "constante constante espesor peso" "margen margen maximo maximo" "pulido pulido maximo maximo"; }
+.g-sierra { grid-area: sierra; } .g-destaque { grid-area: destaque; } .g-rotacion { grid-area: rotacion; }
+.g-textura { grid-area: textura; } .g-retazo { grid-area: retazo; } .g-constante { grid-area: constante; }
+.g-espesor { grid-area: espesor; } .g-peso { grid-area: peso; } .g-margen { grid-area: margen; }
+.g-maximo { grid-area: maximo; } .g-pulido { grid-area: pulido; }
+.grupos.fisicas .icono { float: right; margin: 0 0 4px 8px; }
+.g-rotacion .icono { float: none; display: block; margin: 8px auto; }
+.retazo { display: flex; gap: 16px; align-items: flex-start; }
+.g-espesor input[type=number], .g-peso input[type=number] { width: 60px; }
+@media (max-width: 900px) {
+  .grupos.fisicas { grid-template-columns: 1fr; grid-template-areas: none; }
+  .grupos.fisicas > fieldset { grid-area: auto; }
+}
+fieldset { border: 1px solid #aaa; padding: 6px 10px 8px; margin: 0; }
+legend { font-size: 13px; padding: 0 4px; }
+fieldset label { display: block; margin: 3px 0; font-size: 13px; }
+fieldset input[type=number] { width: 90px; text-align: right; }
+.margenes input[type=number] { width: 58px; }
+.margenes label { margin: 0; }
+.defecto { color: #c00; font-size: 10px; margin-left: 4px; }
+.recomendado { color: #c00; font-weight: bold; }
+.margenes { display: grid; grid-template-columns: 80px 86px 80px; grid-template-rows: auto auto auto; gap: 4px; align-items: center; justify-items: center; }
+.margenes .plancha-mini { width: 80px; height: 44px; background: #2a9; border: 2px solid #164; }
+.ficha .pie-ficha { padding: 0 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ficha .pie-ficha .observacion { flex: 1 1 320px; }
+.ficha .estado-ajuste { font-size: 12px; color: #8a4b00; }
+.ficha .descripcion-campos { padding: 10px; display: grid; grid-template-columns: 160px 1fr; gap: 6px 10px; max-width: 640px; }
+.provisorio { color: #8a4b00; font-size: 12px; padding: 0 10px; }
+/* --- Cálculo en proceso (captura 3) --- */
+.proceso { background: #808080; color: #fff; border: 1px solid #555; max-width: 1100px; }
+.proceso-titulo { text-align: center; font-size: 19px; padding: 14px; border-bottom: 1px solid #aaa; }
+.proceso-cuerpo { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px; flex-wrap: wrap; }
+.tiempos { border-collapse: separate; border-spacing: 0 3px; }
+.tiempos td.etq { background: #f0f0f0; color: #000; text-align: right; padding: 6px 8px; min-width: 230px; font-size: 15px; }
+.tiempos td.val { background: #000; font-family: "Courier New", monospace; font-size: 21px; padding: 4px 12px; min-width: 120px; text-align: center; }
+.amarillo { color: #ffff00; } .verde { color: #00ff00; } .celeste { color: #00e5ff; }
+.fase { flex: 1; text-align: center; font-size: 14px; color: #f4f4f4; min-width: 200px; }
+.torta-caja { text-align: center; }
+.montaje-n { display: flex; justify-content: space-between; font-size: 12px; width: 220px; }
+.proceso-pie { padding: 0 16px 14px; }
+iframe#r-marco { width: 100%; height: 80vh; border: 1px solid var(--borde); background: #fff; }
+.comparar input { width: 80px; text-align: right; }
+.peor { color: var(--rojo); } .mejor { color: var(--verde); }
+/* --- Ventanas --- */
+.velo { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding-top: 5vh; z-index: 10; }
+.velo[hidden] { display: none; }
+.ventana { background: #fff; border: 1px solid #666; padding: 12px 16px; width: 900px; max-width: 96vw; max-height: 88vh; overflow: auto; box-shadow: 0 4px 24px rgba(0,0,0,.3); }
+.ventana h3 { margin: 0 0 8px; }
+.ventana textarea { width: 100%; font-family: Consolas, monospace; font-size: 12px; }
+.mensaje { position: fixed; bottom: 16px; right: 16px; background: #222; color: #fff; padding: 8px 14px; border-radius: 4px; z-index: 20; max-width: 480px; }
+.mensaje.error { background: #a00; }
+@media (max-width: 700px) { .ficha { min-width: 0; } .lista-materiales { width: 100%; } }

@@ -1,0 +1,98 @@
+{
+ "proyecto": {
+  "codigo": "RE-2008",
+  "descripcion": "realista: 60 piezas, 12 medidas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 12,
+   "ancho": 350,
+   "largo": 705
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 13,
+   "ancho": 445,
+   "largo": 855
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 7,
+   "ancho": 450,
+   "largo": 635
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 525,
+   "largo": 855
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 575,
+   "largo": 450
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 665,
+   "largo": 875
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 690,
+   "largo": 410
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 690,
+   "largo": 675
+  },
+  {
+   "item": "9",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 735,
+   "largo": 460
+  },
+  {
+   "item": "10",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 765,
+   "largo": 535
+  },
+  {
+   "item": "11",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 860,
+   "largo": 470
+  },
+  {
+   "item": "12",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 880,
+   "largo": 865
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "realista",
+  "piezas": 60
+ }
+}

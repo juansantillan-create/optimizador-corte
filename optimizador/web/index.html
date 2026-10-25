@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimizador de corte — Cristalux</title>
+<link rel="stylesheet" href="/web/estilo.css">
+</head>
+<body>
+<header class="barra">
+  <div class="marca">Optimizador de corte <span class="sub">Cristalux</span> <span id="version" class="version"></span></div>
+  <div class="opciones">
+    <label>Configuración
+      <select id="preset" title="Con qué reglas se calcula">
+        <option value="corte_certo">Como Corte Certo hoy</option>
+        <option value="lucas">Reglas de corte (Lucas)</option>
+      </select></label>
+    <label>Esfuerzo
+      <select id="esfuerzo" title="Rápido: solo la heurística (segundos). Normal: lo recomendado. Máximo: busca más (puede tardar minutos).">
+        <option value="rapido">Rápido</option>
+        <option value="normal" selected>Normal</option>
+        <option value="maximo">Máximo</option>
+      </select></label>
+    <label>Decimales
+      <select id="decimal"><option value="0">Punto (como Corte Certo)</option><option value="1">Coma</option></select></label>
+  </div>
+</header>
+<nav class="pestanas" id="pestanas">
+  <button data-pestana="materiales">Materiales</button>
+  <button data-pestana="proyecto" class="activa">Proyecto</button>
+  <button data-pestana="calcular">Calcular</button>
+  <button data-pestana="resultados">Resultados</button>
+  <button data-pestana="comparar">Comparar</button>
+</nav>
+
+<main>
+<!-- ================================================================ PROYECTO -->
+<section id="proyecto" class="pestana activa">
+  <div class="fila-datos">
+    <label>Código <input id="p-codigo" size="12" placeholder="ej. 11580"></label>
+    <label class="ancha">Descripción <input id="p-descripcion" placeholder="ej. Presupuesto 11580"></label>
+  </div>
+  <div class="botonera">
+    <button id="b-nuevo">Nuevo</button>
+    <button id="b-abrir">Abrir…</button>
+    <button id="b-guardar">Guardar</button>
+    <span class="sep"></span>
+    <button id="b-pegar" title="Copiá las celdas en Excel y pegalas acá">Pegar desde Excel…</button>
+    <button id="b-importar" title="CSV, XLSX o la planilla .xls de la Interfaz de Metrix">Importar archivo…</button>
+    <input type="file" id="archivo" accept=".csv,.txt,.xlsx,.xlsm,.xls" hidden>
+    <button id="b-renglon">+ Renglón</button>
+    <span class="sep"></span>
+    <button id="b-revisar">Revisar</button>
+    <button id="b-calcular" class="principal">Calcular ▶</button>
+  </div>
+  <div id="revision" class="revision" hidden></div>
+  <table class="grilla" id="grilla">
+    <thead><tr><th>#</th><th>Ítem</th><th>Material</th><th>Cantidad</th><th>Ancho (mm)</th><th>Largo (mm)</th>
+      <th title="Si la pieza se puede girar">Gira</th><th title="Clase de Metrix: si tiene PR, +3 mm de pulido recto">Clase</th><th>Descripción</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="totales" id="totales"></div>
+  <p class="ayuda">Consejo: en Excel seleccioná las columnas <b>material, cantidad, ancho, largo</b> (y si querés descripción),
+    copiá con Ctrl+C y acá apretá Ctrl+V. Se muestra una vista previa antes de agregar. Las medidas van en milímetros.</p>
+</section>
+
+<!-- ================================================================ MATERIALES -->
+<section id="materiales" class="pestana">
+  <div class="dos-columnas">
+    <div class="lista-materiales">
+      <input id="m-filtro" placeholder="Buscar material…">
+      <table class="lista" id="m-lista"><thead><tr><th>Código</th><th>Descripción</th><th>Color</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="ficha" id="m-ficha">
+      <p class="ayuda">Elegí un material de la lista.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ CALCULAR -->
+<section id="calcular" class="pestana">
+  <div class="proceso" id="proceso">
+    <div class="proceso-titulo">Cálculo en proceso. Por favor espere...</div>
+    <div class="proceso-cuerpo">
+      <table class="tiempos">
+        <tr><td class="etq">Material :</td><td class="val amarillo" id="c-material">—</td></tr>
+        <tr><td class="etq">Tiempo de cálculo :</td><td class="val verde" id="c-tiempo">00:00:00</td></tr>
+        <tr><td class="etq">Tiempo estimado :</td><td class="val verde" id="c-estimado">--:--:--</td></tr>
+        <tr><td class="etq">Tiempo restante estimado :</td><td class="val celeste" id="c-restante">--:--:--</td></tr>
+      </table>
+      <div class="fase" id="c-fase"></div>
+      <div class="torta-caja">
+        <svg id="torta" width="220" height="140" viewBox="0 0 220 140"></svg>
+        <div class="montaje-n"><span>Montaje</span><span id="c-montaje">000</span></div>
+      </div>
+    </div>
+    <div class="proceso-pie"><button id="b-cancelar">Cancelar (quedarse con lo mejor hasta ahora)</button>
+      <span class="ayuda">Si todavía no hay ningún montaje, el material queda sin calcular.</span></div>
+  </div>
+  <p class="ayuda" id="c-ayuda">Todavía no se calculó nada. Cargá las piezas en <b>Proyecto</b> y apretá <b>Calcular</b>.</p>
+</section>
+
+<!-- ================================================================ RESULTADOS -->
+<section id="resultados" class="pestana">
+  <div class="botonera" id="r-botones">
+    <button id="r-imp-informe">Imprimir informe</button>
+    <button id="r-imp-miniaturas">Imprimir montajes (varios por hoja)</button>
+    <button id="r-imp-detalle">Imprimir montajes (uno por hoja)</button>
+    <span class="sep"></span>
+    <button id="r-xlsx">Consumo a Excel</button>
+    <button id="r-csv">Consumo a CSV</button>
+    <button id="r-json">Resultado (JSON)</button>
+  </div>
+  <div id="r-aviso" class="revision" hidden></div>
+  <iframe id="r-marco" title="Informe de cálculo"></iframe>
+  <p class="ayuda" id="r-vacio">Todavía no hay resultados.</p>
+</section>
+
+<!-- ================================================================ COMPARAR -->
+<section id="comparar" class="pestana">
+  <p class="ayuda">Cargá lo que dio Corte Certo (o la leyenda del presupuesto) para ver las diferencias con este cálculo.
+    Las diferencias en <b class="peor">rojo</b> son en contra (más planchas que Corte Certo) y en <b class="mejor">verde</b> a favor.</p>
+  <table class="lista comparar" id="cmp-tabla"><thead>
+    <tr><th rowspan="2">Material</th><th colspan="3">Corte Certo (cargar a mano)</th><th colspan="4">Este cálculo</th><th rowspan="2">Diferencia de planchas</th></tr>
+    <tr><th>Planchas</th><th>Layouts</th><th>Aprov. %</th><th>Planchas</th><th>Layouts</th><th>Aprov. %</th><th>Mínimo teórico</th></tr>
+  </thead><tbody></tbody></table>
+  <p class="ayuda" id="cmp-vacio">Primero calculá un proyecto.</p>
+</section>
+</main>
+
+<!-- ================================================================ VENTANAS -->
+<div class="velo" id="velo" hidden>
+  <div class="ventana" id="v-importar" hidden>
+    <h3 id="vi-titulo">Pegar desde Excel</h3>
+    <textarea id="vi-texto" rows="8" placeholder="Pegá acá (Ctrl+V) las celdas copiadas de Excel"></textarea>
+    <div class="botonera"><button id="vi-previa">Vista previa</button></div>
+    <div id="vi-resultado"></div>
+    <div class="botonera derecha">
+      <button id="vi-agregar" class="principal" disabled>Agregar al proyecto</button>
+      <button id="vi-reemplazar" disabled>Reemplazar el proyecto</button>
+      <button class="cerrar">Cancelar</button>
+    </div>
+  </div>
+  <div class="ventana" id="v-abrir" hidden>
+    <h3>Abrir proyecto</h3>
+    <table class="lista" id="va-lista"><thead><tr><th>Código</th><th>Descripción</th><th>Renglones</th><th>Guardado</th></tr></thead><tbody></tbody></table>
+    <p class="ayuda" id="va-vacio" hidden>No hay proyectos guardados (se guardan en la carpeta <code>proyectos</code>).</p>
+    <div class="botonera derecha"><button class="cerrar">Cerrar</button></div>
+  </div>
+</div>
+<div id="mensaje" class="mensaje" hidden></div>
+<script src="/web/app.js"></script>
+</body>
+</html>
