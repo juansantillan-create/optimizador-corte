@@ -3,7 +3,12 @@
   "codigo": "CP3-1036",
   "descripcion": "corte perfecto (3 etapas): 5 planchas"
  },
- "preset": "lucas",
+ "preset": "corte_certo",
+ "materiales": {
+  "FL5IN": {
+   "separacion_piezas_mm": 20
+  }
+ },
  "piezas": [
   {
    "item": "1",

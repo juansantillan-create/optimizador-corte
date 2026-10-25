@@ -41,9 +41,13 @@ HIPOTESIS = ("H0", "H1", "H2")
 MARGEN_CORTE_CERTO = 0.01
 
 
-def tolerancia(decimales: int) -> float:
-    """Cuánto puede diferir nuestro % del de la leyenda por el redondeo: ±0,5 si es entero."""
-    return 0.5 * 10 ** -decimales + MARGEN_CORTE_CERTO
+def cierra(calculado: float, leyenda: float, decimales: int = 0) -> bool:
+    """¿Nuestro % puede ser el que escribió la oficina? Juan, 25/10 (pregunta 24): se redondeaba,
+    pero según el comercial 90,57 % pudo quedar como 91 o como 90. Así que vale lo que da al
+    redondear (±0,5) y lo que da al truncar (hasta 1 por encima), más 0,01 por el redondeo de
+    Corte Certo."""
+    paso = 10 ** -decimales
+    return leyenda - paso / 2 - MARGEN_CORTE_CERTO <= calculado < leyenda + paso + MARGEN_CORTE_CERTO
 
 
 # Palabras de las leyendas -> cómo aparecen en los códigos y descripciones de Metrix.
@@ -134,7 +138,6 @@ def control_entrada(piezas: list[dict], material: str, hojas: int, aprov: float,
     "cierra_sin_mas3": bool, "supuesta": bool, "no_entran": bool}."""
     mat = catalogo.material(material, "H0", usar_locales=False)
     girar = mat.rotacion and mat.textura == "sin"
-    tol = tolerancia(decimales)
     con, sin = _mm2(piezas, True), _mm2(piezas, False)
     pruebas = []
     for pl in mat.planchas:
@@ -150,13 +153,22 @@ def control_entrada(piezas: list[dict], material: str, hojas: int, aprov: float,
               "detalle": ", ".join(f"{c}: {calc:.2f} %" + (f" (sin +3: {cs:.2f} %)" if abs(cs - calc) > 1e-9 else "")
                                    for _, c, calc, cs, _ in pruebas[:4]) or
                         ("las piezas no entran en ninguna plancha" if mat.planchas else "el material no tiene planchas")}
-    cierran = [x for x in pruebas if x[0] <= tol]
+    cierran = [x for x in pruebas if cierra(x[2], aprov, decimales)]
     if cierran:
         salida["plancha"] = cierran[0][1]
         salida["supuesta"] = cierran[0][4]
         salida["ambigua"] = [x[1] for x in cierran[1:]]
-    else:
-        salida["cierra_sin_mas3"] = any(abs(cs - aprov) <= tol for _, _, _, cs, _ in pruebas) and con != sin
+        salida["con_pulido"] = True
+    elif con != sin:
+        # Pregunta 25: "está bueno que en la validación pruebes los dos": si cierra sin el +3, se
+        # compara igual, sin el +3 y marcado aparte.
+        sin_mas3 = sorted((abs(cs - aprov), c, sup) for _, c, _, cs, sup in pruebas if cierra(cs, aprov, decimales))
+        if sin_mas3:
+            salida["cierra_sin_mas3"] = True
+            salida["plancha"] = sin_mas3[0][1]
+            salida["supuesta"] = sin_mas3[0][2]
+            salida["ambigua"] = [x[1] for x in sin_mas3[1:]]
+            salida["con_pulido"] = False
     return salida
 
 
@@ -170,11 +182,13 @@ class Opciones:
     esfuerzo: str = "normal"
     muestra: int | None = 50  # None = todos
     hipotesis: tuple[str, ...] = HIPOTESIS
+    procesos: int = 1  # casos que se calculan a la vez (en la nube, varios; en la PC, 1)
 
 
 def _firma(t: dict) -> str:
     """Huella de lo que entra al cálculo: si cambia, el caso se recalcula al retomar."""
-    datos = json.dumps([t["piezas"], t["plancha"], t["cc_hojas"], t["cc_aprov"], PULIDO_RECTO_MM],
+    datos = json.dumps([t["piezas"], t["plancha"], t["cc_hojas"], t["cc_aprov"], PULIDO_RECTO_MM,
+                        t.get("con_pulido", True), t.get("planchas")],
                        sort_keys=True, ensure_ascii=False)
     return hashlib.sha1(datos.encode()).hexdigest()[:16]
 
@@ -241,11 +255,13 @@ def preparar(casos: Casos, catalogo: Catalogo) -> tuple[list[dict], dict]:
                                       linea.decimales)
             if control["plancha"] is None:
                 motivo_nc = ("no_entran" if control["no_entran"] else
-                             "sin_mas3" if control["cierra_sin_mas3"] else
                              "reconstruccion" if avisos else "no_cierra")
                 cobertura["no_cierran"].append({**no_cierra, "motivo": motivo_nc, "probado": control["detalle"]})
                 continue
             cobertura["control_ok"] += 1
+            if control["cierra_sin_mas3"]:
+                avisos.append("la leyenda cierra solo SIN el +3 mm del pulido recto: se calcula sin el +3")
+                cobertura["sin_mas3"] = cobertura.get("sin_mas3", 0) + 1
             if control["supuesta"]:
                 avisos.append(f"{codigo} no está en hojas.csv: se usó una plancha supuesta ({control['plancha']})")
                 cobertura["plancha_supuesta"] += 1
@@ -258,6 +274,7 @@ def preparar(casos: Casos, catalogo: Catalogo) -> tuple[list[dict], dict]:
             t = {"numero": numero, "material": codigo, "abreviado": linea.material,
                  "relacion": motivo, "cc_hojas": linea.hojas,
                  "cc_aprov": linea.aprovechamiento, "plancha": control["plancha"],
+                 "con_pulido": control.get("con_pulido", True),
                  "plancha_supuesta": control["supuesta"], "avisos": avisos, "piezas": piezas,
                  "n_piezas": sum(p["cantidad"] for p in piezas),
                  "grupo": _grupo(codigo, catalogo),
@@ -290,51 +307,106 @@ def _leer_hechos(salida: Path, mostrar) -> dict[tuple, dict]:
     return hechos
 
 
+def entrada_de(t: dict, hip: str, esfuerzo: str, catalogo: Catalogo) -> dict:
+    """La entrada de `optimizar()` para un caso: sus piezas y solo la plancha que dio el control
+    (o las medidas de hoja que anotó la oficina, en `planchas`)."""
+    ajustes = {"planchas": t["planchas"]} if t.get("planchas") else {"planchas_habilitadas": _solo(t, catalogo)}
+    if t.get("con_pulido") is False:
+        ajustes["sobremedida_pulido_mm"] = 0
+    return {"proyecto": {"codigo": t["numero"], "descripcion": f"histórico {t['numero']}"},
+            "preset": hip, "piezas": t["piezas"], "fecha": "histórico",
+            "materiales": {t["material"]: ajustes}, "opciones": {"esfuerzo": esfuerzo}}
+
+
+CAMPOS_FILA = ("numero", "material", "abreviado", "relacion", "cc_hojas", "cc_aprov", "plancha",
+               "plancha_supuesta", "avisos", "n_piezas", "grupo", "calibracion", "firma")
+
+
+def calcular_caso(t: dict, hip: str, esfuerzo: str, catalogo: Catalogo) -> tuple[dict, list]:
+    """Corre un caso con una hipótesis. Devuelve (fila de resultados, montajes para dibujar)."""
+    t0 = time.perf_counter()
+    res = optimizar(entrada_de(t, hip, esfuerzo, catalogo), catalogo=catalogo)
+    m = res["materiales"][0]
+    fila = {k: t.get(k) for k in CAMPOS_FILA}
+    fila.update({k: t[k] for k in ("con_pulido", "extra") if k in t})
+    fila.update({"hipotesis": hip, "esfuerzo": esfuerzo,
+                 "planchas": m["planchas"], "aprovechamiento": m["aprovechamiento"],
+                 "m2_planchas": m.get("m2_planchas"),
+                 "montajes": m["layouts"], "minimo": m.get("minimo_teorico_planchas"),
+                 "verificado": res["verificado"], "completo": not m["errores"],
+                 "errores": m["errores"][:3],
+                 "segundos": round(time.perf_counter() - t0, 2)})
+    montajes = [{k: mo[k] for k in ("numero", "repeticiones", "plancha", "piezas")} for mo in m["montajes"]]
+    return fila, montajes
+
+
+_CATALOGO_PROCESO: Catalogo | None = None
+
+
+def _trabajar(tarea):
+    """Para los procesos de `multiprocessing` (cada uno arma su catálogo una vez)."""
+    global _CATALOGO_PROCESO
+    if _CATALOGO_PROCESO is None:
+        _CATALOGO_PROCESO = Catalogo(usar_locales=False)
+    t, hip, esfuerzo = tarea
+    return calcular_caso(t, hip, esfuerzo, _CATALOGO_PROCESO)
+
+
 def correr(trabajos: list[dict], salida: Path, opciones: Opciones, catalogo: Catalogo,
            mostrar=print) -> list[dict]:
-    """Corre las hipótesis. Lo ya calculado (en `salida`, JSONL) no se repite."""
+    """Corre las hipótesis. Lo ya calculado (en `salida`, JSONL) no se repite. Con
+    `opciones.procesos` > 1 calcula varios casos a la vez (el resultado es el mismo: cada caso no
+    depende de los otros, y se guardan en el mismo orden)."""
     salida.parent.mkdir(parents=True, exist_ok=True)
     hechos = _leer_hechos(salida, mostrar)
     elegidos = trabajos if opciones.muestra is None else _muestra(trabajos, opciones.muestra)
-    filas = []
+    pendientes = []
+    por_clave: dict[tuple, dict] = {}
+    for t in elegidos:
+        for hip in opciones.hipotesis:
+            clave = (t["numero"], t["material"], hip, opciones.esfuerzo, t["firma"])
+            if clave in hechos and hechos[clave].get("verificado"):
+                # La cuenta es la misma (misma firma); los datos de contexto, los de ahora. (Lo que
+                # no pasó el validador se vuelve a calcular: puede haber sido un error ya arreglado.)
+                por_clave[clave] = {**hechos[clave], "extra": t.get("extra") or {}}
+            else:
+                pendientes.append((t, hip, opciones.esfuerzo))
+    if hechos and pendientes:
+        mostrar(f"Ya calculados: {len(por_clave)}; faltan {len(pendientes)}")
     texto_previo = salida.read_text(encoding="utf-8") if salida.exists() else ""
+    carpeta = salida.parent / "montajes"
+    carpeta.mkdir(exist_ok=True)
     with salida.open("a", encoding="utf-8") as archivo:
         if texto_previo and not texto_previo.endswith("\n"):
             archivo.write("\n")  # que lo nuevo no quede pegado a una línea cortada
-        for n, t in enumerate(elegidos, start=1):
-            for hip in opciones.hipotesis:
-                clave = (t["numero"], t["material"], hip, opciones.esfuerzo, t["firma"])
-                if clave in hechos:
-                    filas.append(hechos[clave])
-                    continue
-                entrada = {"proyecto": {"codigo": t["numero"], "descripcion": f"histórico {t['numero']}"},
-                           "preset": hip, "piezas": t["piezas"], "fecha": "histórico",
-                           "materiales": {t["material"]: {"planchas_habilitadas": _solo(t, catalogo)}},
-                           "opciones": {"esfuerzo": opciones.esfuerzo}}
-                t0 = time.perf_counter()
-                res = optimizar(entrada, catalogo=catalogo)
-                m = res["materiales"][0]
-                fila = {k: t[k] for k in ("numero", "material", "abreviado", "relacion", "cc_hojas",
-                                          "cc_aprov", "plancha", "plancha_supuesta", "avisos", "n_piezas",
-                                          "grupo", "calibracion", "firma")}
-                fila.update({"hipotesis": hip, "esfuerzo": opciones.esfuerzo,
-                             "planchas": m["planchas"], "aprovechamiento": m["aprovechamiento"],
-                             "montajes": m["layouts"], "minimo": m.get("minimo_teorico_planchas"),
-                             "verificado": res["verificado"], "completo": not m["errores"],
-                             "errores": m["errores"][:3],
-                             "segundos": round(time.perf_counter() - t0, 2)})
-                # Los montajes, aparte (para dibujarlos en la página de revisión).
-                carpeta = salida.parent / "montajes"
-                carpeta.mkdir(exist_ok=True)
-                (carpeta / nombre_montajes(t["numero"], t["material"], hip, opciones.esfuerzo)).write_text(
-                    json.dumps([{k: mo[k] for k in ("numero", "repeticiones", "plancha", "piezas")}
-                                for mo in m["montajes"]], ensure_ascii=False), encoding="utf-8")
-                archivo.write(json.dumps(fila, ensure_ascii=False) + "\n")
-                archivo.flush()
+        if opciones.procesos > 1 and len(pendientes) > 1:
+            import multiprocessing
+            contexto = multiprocessing.get_context("spawn")  # igual en Windows y en Linux
+            with contexto.Pool(opciones.procesos) as pool:
+                resultados = pool.imap(_trabajar, pendientes, chunksize=1)
+                _guardar_resultados(resultados, pendientes, archivo, carpeta, por_clave, mostrar)
+        else:
+            resultados = (calcular_caso(t, hip, esf, catalogo) for t, hip, esf in pendientes)
+            _guardar_resultados(resultados, pendientes, archivo, carpeta, por_clave, mostrar)
+    filas = []
+    for t in elegidos:
+        for hip in opciones.hipotesis:
+            fila = por_clave.get((t["numero"], t["material"], hip, opciones.esfuerzo, t["firma"]))
+            if fila is not None:
                 filas.append(fila)
-            mostrar(f"[{n}/{len(elegidos)}] {t['numero']} {t['material']}: Corte Certo {t['cc_hojas']} hojas; "
-                    + ", ".join(f"{f['hipotesis']}={f['planchas']}" for f in filas[-len(opciones.hipotesis):]))
     return filas
+
+
+def _guardar_resultados(resultados, pendientes, archivo, carpeta, por_clave, mostrar) -> None:
+    for n, ((t, hip, esfuerzo), (fila, montajes)) in enumerate(zip(pendientes, resultados), start=1):
+        sufijo = "_alternativa" if (t.get("extra") or {}).get("alternativa") else ""
+        (carpeta / nombre_montajes(t["numero"], t["material"] + sufijo, hip, esfuerzo)).write_text(
+            json.dumps(montajes, ensure_ascii=False), encoding="utf-8")
+        archivo.write(json.dumps(fila, ensure_ascii=False) + "\n")
+        archivo.flush()
+        por_clave[(t["numero"], t["material"], hip, esfuerzo, t["firma"])] = fila
+        mostrar(f"[{n}/{len(pendientes)}] {t['numero']} {t['material']} {hip}: Corte Certo {t['cc_hojas']} "
+                f"hojas; nuestro {fila['planchas']} ({fila['segundos']:g} s)")
 
 
 def nombre_montajes(numero: str, material: str, hip: str, esfuerzo: str) -> str:
@@ -389,10 +461,11 @@ def calibrar(filas: list[dict]) -> dict:
     return eleccion
 
 
-def informe_prueba(filas: list[dict], eleccion: dict) -> dict:
-    """Números sobre el 30 % de prueba, con la hipótesis elegida para cada grupo (H0 si el grupo
-    no tuvo casos de calibración)."""
-    todas = [f for f in filas if not f["calibracion"]
+def informe_prueba(filas: list[dict], eleccion: dict, solo_prueba: bool = True) -> dict:
+    """Números sobre el 30 % de prueba (o sobre todos, con `solo_prueba=False`, cuando la hipótesis
+    no se calibró), con la hipótesis elegida para cada grupo (H0 si el grupo no tuvo casos de
+    calibración)."""
+    todas = [f for f in filas if (not solo_prueba or not f["calibracion"])
              and f["hipotesis"] == eleccion.get(f["grupo"], {}).get("hipotesis", "H0")]
     prueba = [f for f in todas if cuenta(f)]
     def resumen(fs, todas_fs):
@@ -441,7 +514,6 @@ def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, 
              inventado: bool = False) -> str:
     """El texto para `docs/VALIDACION.md` (sección 1), en palabras simples."""
     c = cobertura
-    t = prueba["total"]
     no_cierran: dict[str, int] = {}
     for x in c["no_cierran"]:
         no_cierran[x.get("motivo", "no_cierra")] = no_cierran.get(x.get("motivo", "no_cierra"), 0) + 1
@@ -472,11 +544,23 @@ def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, 
     lineas += [f"| Comparados con avisos de la reconstrucción o de la plancha | {c.get('con_avisos', 0)} |",
                f"| … con plancha supuesta (el material no está en hojas.csv) | {c.get('plancha_supuesta', 0)} |",
                f"| … con más de una medida de plancha que cierra | {c.get('plancha_ambigua', 0)} |", "",
-               "**Hipótesis elegida por grupo de material (con el 70 %)**", "",
-               "| Grupo | Hipótesis | Casos | Iguales a Corte Certo |", "|---|---|---|---|"]
-    for g, e in sorted(eleccion.items()):
-        lineas.append(f"| {g} | {e['hipotesis']} | {e['casos']} | {e['iguales']} % |")
-    lineas += ["", "**Resultado sobre el 30 % de prueba**", ""]
+               ]
+    lineas += resultados_md(eleccion, prueba)
+    return "\n".join(lineas)
+
+
+def resultados_md(eleccion: dict, prueba: dict, titulo: str = "Resultado sobre el 30 % de prueba",
+                  con_eleccion: bool = True) -> list[str]:
+    """Las tablas de resultados (iguales, mejores, peores; por material y tamaño; los peores)."""
+    t = prueba["total"]
+    lineas = []
+    if con_eleccion:
+        lineas += ["**Hipótesis elegida por grupo de material (con el 70 %)**", "",
+                   "| Grupo | Hipótesis | Casos | Iguales a Corte Certo |", "|---|---|---|---|"]
+        for g, e in sorted(eleccion.items()):
+            lineas.append(f"| {g} | {e['hipotesis']} | {e['casos']} | {e['iguales']} % |")
+        lineas.append("")
+    lineas += [f"**{titulo}**", ""]
     if t["casos"]:
         lineas += [f"- Casos: {t['casos']}",
                    f"- Iguales a Corte Certo: {t['iguales_%']} %; con menos planchas: {t['mejores_%']} %; "
@@ -504,4 +588,4 @@ def markdown(cobertura: dict, eleccion: dict, prueba: dict, opciones: Opciones, 
                               f"{p['planchas']} ({p['aprovechamiento']:g} %) | {p['minimo']} | {p['plancha']} |")
     else:
         lineas.append("No hay casos de prueba todavía.")
-    return "\n".join(lineas)
+    return lineas

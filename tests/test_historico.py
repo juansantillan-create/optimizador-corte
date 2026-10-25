@@ -154,23 +154,24 @@ def test_relacionar_mira_el_color_aunque_la_composicion_sea_unica():
     assert comparar.relacionar("10", ["FL10IN"], cat)[0] == "FL10IN"
 
 
-def test_control_siempre_con_mas3_y_tolerancia_del_redondeo():
+def test_control_con_mas3_y_tolerancia_redondeo_o_truncado():
     cat = Catalogo(usar_locales=False)
-    # FL10IN, 1 hoja de 3650 × 2500 útil: 48,57 % redondea a 49, no a 48.
-    lado = int((0.4857 * 3650 * 2500) ** 0.5)
+    # FL10IN, 1 hoja de 3680 × 2500 útil (banda 20, como Corte Certo): 48,57 % se pudo escribir 49
+    # (redondeado) o 48 (truncado),
+    # según el comercial (Juan, pregunta 24); 47 o 50, no.
+    lado = int((0.4857 * 3680 * 2500) ** 0.5)
     piezas = [{"material": "FL10IN", "cantidad": 1, "ancho": lado, "largo": lado, "clase": ""}]
-    calc = lado * lado / (3650 * 2500) * 100
-    assert round(calc) == 49
-    assert comparar.control_entrada(piezas, "FL10IN", 1, 48, cat)["plancha"] is None
-    assert comparar.control_entrada(piezas, "FL10IN", 1, 49, cat)["plancha"] == "3700x2500"  # útil 3650
-    # Con pulido recto: si la leyenda solo cierra sin el +3, no se compara y se dice por qué.
-    pr = [{"material": "FL5IN", "cantidad": 40, "ancho": 397, "largo": 497, "clase": "FLOAT PR TEMP"}]
-    sin = 40 * 397 * 497 / (3580 * 2500) * 100
-    con = 40 * 400 * 500 / (3580 * 2500) * 100
-    assert round(sin) != round(con)
+    for leyenda, cierra in ((47, False), (48, True), (49, True), (50, False)):
+        assert (comparar.control_entrada(piezas, "FL10IN", 1, leyenda, cat)["plancha"] == "3700x2500") is cierra
+    # Con pulido recto: si la leyenda solo cierra sin el +3, se compara igual, sin el +3 (pregunta 25).
+    pr = [{"material": "FL5IN", "cantidad": 100, "ancho": 197, "largo": 297, "clase": "FLOAT PR TEMP"}]
+    sin = 100 * 197 * 297 / (3580 * 2500) * 100
+    con = 100 * 200 * 300 / (3580 * 2500) * 100
+    assert round(con) - round(sin) >= 2
     r = comparar.control_entrada(pr, "FL5IN", 1, round(sin), cat)
-    assert r["plancha"] is None and r["cierra_sin_mas3"]
-    assert comparar.control_entrada(pr, "FL5IN", 1, round(con), cat)["plancha"] == "3600x2500"
+    assert r["plancha"] == "3600x2500" and r["cierra_sin_mas3"] and r["con_pulido"] is False
+    r = comparar.control_entrada(pr, "FL5IN", 1, round(con), cat)
+    assert r["plancha"] == "3600x2500" and r["con_pulido"] is True
 
 
 def test_control_plancha_ambigua_supuesta_y_piezas_que_no_entran():

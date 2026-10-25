@@ -86,15 +86,18 @@ def test_ajustes_de_material_en_la_pc(servidor):
     base, config, _ = servidor
     m = pedir(base, "/api/materiales/FL4IN")
     assert m["separacion_piezas_mm"] == 0 and len(m["planchas"]) == 3
+    # Por defecto solo la de 3600 × 2500 (Juan, 25/10/2026); se habilita a mano la de 3600 × 2200.
+    assert [p["habilitada"] for p in m["planchas"]] == [True, False, False]
     pedir(base, "/api/materiales/FL4IN", {"separacion_piezas_mm": 7,
-                                          "planchas_habilitadas": {"3300x2440": False}}, "PUT")
+                                          "planchas_habilitadas": {"3600x2200": True}}, "PUT")
     m = pedir(base, "/api/materiales/FL4IN")
     assert m["separacion_piezas_mm"] == 7 and m["base"]["separacion_piezas_mm"] == 0
     assert [p["habilitada"] for p in m["planchas"]] == [True, True, False]
     guardado = json.loads((config / "local" / "materiales.json").read_text())["FL4IN"]
     # La sierra depende del preset: se guarda solo para "Como Corte Certo hoy".
     assert guardado["por_preset"]["corte_certo"]["separacion_piezas_mm"] == 7
-    assert pedir(base, "/api/materiales/FL4IN?preset=lucas")["separacion_piezas_mm"] == 20
+    lucas = pedir(base, "/api/materiales/FL4IN?preset=lucas")
+    assert lucas["separacion_piezas_mm"] == 0 and lucas["destaque_min_mm"] == 20  # la regla es destaque
     assert [p["habilitada"] for p in pedir(base, "/api/materiales/FL4IN?preset=lucas")["planchas"]] == [True, True, False]
     # Un valor imposible no se guarda.
     with pytest.raises(urllib.error.HTTPError) as error:

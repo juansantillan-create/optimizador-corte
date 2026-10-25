@@ -108,7 +108,9 @@ def caso_corte_perfecto(semilla: int, planchas: int, piezas_por_plancha: int, se
         "proyecto": {"codigo": f"CP{etapas[0].upper()}-{semilla}",
                      "descripcion": f"corte perfecto ({'3 etapas' if etapas == '3' else 'guillotina libre'}): "
                                     f"{planchas} planchas"},
-        "preset": "lucas" if s else "corte_certo",
+        # Con separación: la del ancho de sierra, explícita (el preset de Lucas ahora es destaque).
+        "preset": "corte_certo",
+        **({"materiales": {"FL5IN": {"separacion_piezas_mm": s}}} if s else {}),
         "piezas": piezas,
         "fecha": FECHA_FIJA,
         "banco": {"familia": "corte_perfecto", "etapas": etapas, "optimo": planchas,

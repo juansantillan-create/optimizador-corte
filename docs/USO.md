@@ -80,7 +80,7 @@ aprovechamiento) al lado de cada material; la diferencia sale en verde (a favor)
 
 | Opción | Qué hace |
 |---|---|
-| Configuración | **Como Corte Certo hoy** (por defecto) o **Reglas de corte (Lucas)**: además separa las piezas 20/30/50 mm según el espesor. El informe dice siempre cuál se usó |
+| Configuración | **Como Corte Certo hoy** (por defecto: así se cotiza) o **Reglas de corte (Lucas, como Optima)**: además, si entre dos piezas queda una tira de sobrante, tiene que medir al menos 20/30/50 mm según el espesor (el destaque mínimo de la mesa). El informe dice siempre cuál se usó |
 | Esfuerzo | **Normal** (lo recomendado: segundos). **Rápido**: solo la primera solución (para ver rápido). **Máximo**: busca más (puede tardar minutos) |
 | Decimales | Punto (como Corte Certo) o coma |
 

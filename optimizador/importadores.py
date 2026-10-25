@@ -255,16 +255,19 @@ def desde_xlsx(datos: bytes) -> Importacion:
 
 
 # ----------------------------------------------------------- Interfaz de Metrix
-# Columnas de la planilla de la Interfaz (A..P). Las del brief §9 son seguras (TIPO, VIDRIO1,
-# CAMARA, VIDRIO2, ANCHO, LARGO, …, CLASE, CLASE CARA1, CLASE CARA2, OC); la de CANTIDAD (G) es
-# SUPUESTA hasta ver una planilla real (pregunta 13). Si la planilla trae encabezados, mandan ellos.
+# Columnas de la planilla de la Interfaz (Juan, 25/10/2026, pregunta 13): A TIPO, B VIDRIO1,
+# C CAMARA, D VIDRIO2, E ANCHO, F LARGO, G ANCHO2, H LARGO2, I CANTIDAD, J TIPOLOGIA, K OBS,
+# L NTAS, M CLASE, N CLASE CARA1, O CLASE CARA2. ANCHO2/LARGO2: la medida del vidrio 2 de un DVH
+# escalonado. Si la planilla trae encabezados, mandan ellos.
 INTERFAZ_POSICIONES = {"tipo": 0, "vidrio1": 1, "camara": 2, "vidrio2": 3, "ancho": 4, "largo": 5,
-                       "cantidad": 6, "clase": 12, "clase_cara1": 13, "clase_cara2": 14, "oc": 15}
+                       "ancho2": 6, "largo2": 7, "cantidad": 8, "tipologia": 9, "obs": 10, "notas": 11,
+                       "clase": 12, "clase_cara1": 13, "clase_cara2": 14, "oc": 15}
 INTERFAZ_SINONIMOS = {"tipo": ["tipo"], "vidrio1": ["vidrio1", "vidrio"], "camara": ["camara"],
                       "vidrio2": ["vidrio2"], "ancho": ["ancho"], "largo": ["largo", "alto"],
-                      "cantidad": ["cantidad", "cant"], "clase": ["clase"],
+                      "ancho2": ["ancho2"], "largo2": ["largo2", "alto2"],
+                      "cantidad": ["cantidad", "cant"], "tipologia": ["tipologia"], "clase": ["clase"],
                       "clase_cara1": ["clasecara1"], "clase_cara2": ["clasecara2"], "oc": ["oc"],
-                      "obs": ["obs", "observaciones"], "item": ["item", "nro"]}
+                      "obs": ["obs", "observaciones"], "notas": ["ntas", "notas"], "item": ["item", "nro"]}
 
 
 def desde_interfaz(datos: bytes, nombre: str = "") -> Importacion:
@@ -308,10 +311,9 @@ def _interfaz_desde_filas(filas: list[list], origen: str = "Interfaz",
     else:
         mapa = dict(INTERFAZ_POSICIONES)
         datos_filas = numeradas
-        imp.columnas = {c: f"columna {chr(65 + i)}" + (" (SUPUESTA)" if c == "cantidad" else "")
-                        for c, i in sorted(mapa.items(), key=lambda x: x[1])}
-        imp.avisos.append("planilla sin encabezados: se usan las posiciones de la Interfaz; la de la "
-                          "CANTIDAD (columna G) es supuesta hasta confirmarla (pregunta 13)")
+        imp.columnas = {c: f"columna {chr(65 + i)}" for c, i in sorted(mapa.items(), key=lambda x: x[1])}
+        imp.avisos.append("planilla sin encabezados: se usan las posiciones de la Interfaz (la cantidad "
+                          "en la columna I)")
     herrajes = 0
     for n, fila in datos_filas:
         def celda(campo):
@@ -338,15 +340,22 @@ def _interfaz_desde_filas(filas: list[list], origen: str = "Interfaz",
         clase = str(celda("clase") or "").strip()
         item = str(celda("item") or n)
         es_dvh = "DVH" in tipo or bool(str(celda("camara") or "").strip()) or bool(v2)
-        vidrios = [(v1, str(celda("clase_cara1") or "").strip() or clase)]
+        vidrios = [(v1, str(celda("clase_cara1") or "").strip() or clase, ancho, largo)]
         if es_dvh:
             if v2:
-                vidrios.append((v2, str(celda("clase_cara2") or "").strip() or clase))
+                # DVH escalonado: el vidrio 2 lleva ANCHO2 × LARGO2 (si están).
+                a2, l2 = numero_mm(celda("ancho2")), numero_mm(celda("largo2"))
+                escalonado = bool(a2 and l2 and a2 > 0 and l2 > 0)
+                if escalonado and (a2, l2) != (ancho, largo):
+                    imp.avisos.append(f"{origen} fila {n}: DVH escalonado: el vidrio 2 ({v2}) va con "
+                                      f"{a2:g} × {l2:g}")
+                vidrios.append((v2, str(celda("clase_cara2") or "").strip() or clase,
+                                a2 if escalonado else ancho, l2 if escalonado else largo))
             else:
                 imp.avisos.append(f"{origen} fila {n}: es DVH pero no tiene VIDRIO2; se importa solo VIDRIO1")
-        for k, (vidrio, cl) in enumerate(vidrios, start=1):
+        for k, (vidrio, cl, a_v, l_v) in enumerate(vidrios, start=1):
             pieza = {"item": f"{item}" + (f"-{k}" if len(vidrios) > 1 else ""), "material": vidrio,
-                     "cantidad": int(round(cantidad)), "ancho": int(round(ancho)), "largo": int(round(largo)),
+                     "cantidad": int(round(cantidad)), "ancho": int(round(a_v)), "largo": int(round(l_v)),
                      "clase": cl, "origen": {"interfaz_fila": n}}
             desc = []
             if es_dvh:

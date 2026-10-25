@@ -3,7 +3,12 @@
   "codigo": "CPL-1060",
   "descripcion": "corte perfecto (guillotina libre): 6 planchas"
  },
- "preset": "lucas",
+ "preset": "corte_certo",
+ "materiales": {
+  "FL5IN": {
+   "separacion_piezas_mm": 20
+  }
+ },
  "piezas": [
   {
    "item": "1",

@@ -16,8 +16,8 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 DESTINO = RAIZ / "tests" / "historico_juguete"
-UTIL = {"FL4IN": 3580 * 2500, "FL5IN": 3580 * 2500, "LX4+4NL": 3570 * 2500, "LX3+3LOW": 3280 * 2440,
-        "LX3+3IN": 3580 * 2500, "LX3+3BC": 3580 * 2500, "FL10IN": 3650 * 2500}
+UTIL = {"FL4IN": 3580 * 2500, "FL5IN": 3580 * 2500, "LX4+4NL": 3580 * 2500, "LX3+3LOW": 3280 * 2440,
+        "LX3+3IN": 3580 * 2500, "LX3+3BC": 3580 * 2500, "FL10IN": 3680 * 2500}  # banda 20, como Corte Certo
 ABREV = {"FL4IN": "4 INC", "FL5IN": "5 INC", "LX4+4NL": "4+4 NLIGHT", "LX3+3LOW": "3+3 LOWE",
          "LX3+3IN": "3+3", "FL10IN": "10 INC"}
 
