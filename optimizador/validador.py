@@ -23,6 +23,7 @@ import re
 from collections import defaultdict
 
 TOLERANCIA_M2 = 5e-7  # el informe redondea los m² a 6 decimales
+TOLERANCIA_2_DECIMALES = 0.005 + 1e-7  # media centésima (redondeo a 2 decimales) + error de la cuenta
 LIMITE_PASOS_GUILLOTINA = 200_000
 
 
@@ -266,17 +267,22 @@ def _validar_material(mat: dict, esperados: list[dict]) -> list[str]:
     _comparar(errores, codigo, "planchas", mat.get("planchas"), planchas, 0)
     _comparar(errores, codigo, "layouts", mat.get("layouts"), len(montajes), 0)
     _comparar(errores, codigo, "m² de planchas", mat.get("m2_planchas"), m2_planchas, TOLERANCIA_M2)
-    _comparar(errores, codigo, "perímetro", mat.get("perimetro_m"), round(perimetro, 2), 0.0051)
+    # Los números con 2 decimales se comparan contra el valor exacto: vale cualquier redondeo bien
+    # hecho (en un empate como 89,755 el informe pone 89,76 y el round de Python daría 89,75).
+    _comparar(errores, codigo, "perímetro", mat.get("perimetro_m"), perimetro, TOLERANCIA_2_DECIMALES)
     if m2_planchas > 0:
-        aprov = round(m2_piezas / m2_planchas * 100, 2)
-        _comparar(errores, codigo, "aprovechamiento", mat.get("aprovechamiento"), aprov, 0.0051)
-        _comparar(errores, codigo, "pérdida", mat.get("perdida"), round(100 - aprov, 2), 0.0051)
+        aprov = m2_piezas / m2_planchas * 100
+        _comparar(errores, codigo, "aprovechamiento", mat.get("aprovechamiento"), aprov, TOLERANCIA_2_DECIMALES)
+        _comparar(errores, codigo, "pérdida", mat.get("perdida"), 100 - aprov, TOLERANCIA_2_DECIMALES)
+        if mat.get("aprovechamiento") is not None and mat.get("perdida") is not None:
+            _comparar(errores, codigo, "aprovechamiento + pérdida", float(mat["aprovechamiento"]) +
+                      float(mat["perdida"]), 100.0, 1e-6)
     return errores
 
 
 def _comparar(errores: list[str], codigo: str, que: str, informado, calculado, tol: float) -> None:
     if informado is None or abs(float(informado) - float(calculado)) > tol:
-        errores.append(f"{codigo}: {que} informado {informado}, recalculado {calculado}")
+        errores.append(f"{codigo}: {que} informado {informado}, recalculado {round(float(calculado), 6):g}")
 
 
 def _cantidades(codigo: str, colocadas: dict[tuple[int, int], int], esperados: list[dict]) -> list[str]:

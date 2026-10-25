@@ -79,6 +79,17 @@ def test_numeros_del_informe(bueno):
         assert validar(ent, r), campo
 
 
+def test_empate_de_redondeo_no_es_error():
+    # 1003 × 1350 en una hoja de 3600 × 2500 sin banda: 15,045 % justo. El informe pone 15,05
+    # (redondeo de toda la vida); el round de Python da 15,04. Las dos cosas están bien.
+    ent = {**_entrada(), "piezas": [{"item": "1", "material": "FL5IN", "cantidad": 1, "ancho": 1003, "largo": 1350}],
+           "materiales": {"FL5IN": {"planchas": [{"ancho": 3600, "largo": 2500, "corte_banda": 0}]}}}
+    res = optimizar(ent)
+    m = res["materiales"][0]
+    assert (m["aprovechamiento"], m["perdida"]) == (15.05, 84.95)
+    assert res["verificado"] and validar(ent, res) == []
+
+
 def test_girada_sin_rotacion(bueno):
     ent, res = bueno
     ent2 = copy.deepcopy(ent)
