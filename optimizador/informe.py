@@ -84,6 +84,11 @@ table.lista th { background: #eee; }
   .no-imprimir { display: none !important; }
   .salto { break-before: page; }
   .detalle-montaje { break-inside: avoid; }
+  .detalle-montaje h3 { font-size: 11pt; margin-bottom: 2mm; }
+  .detalle-montaje svg.detalle { width: auto; height: 118mm; max-width: 100%; display: block; }
+  .detalle-montaje table.lista { font-size: 7.5pt; }
+  .detalle-montaje .listas { gap: 0 4mm; }
+  .grilla svg.miniatura { break-inside: avoid; }
   .barra-negra, .dg-tabla td.val { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

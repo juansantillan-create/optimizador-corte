@@ -3,6 +3,23 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F2 cerrada (informe, montajes SVG, impresión, JSON)
+
+**Hecho**
+- `optimizador/informe.py`: "Informe de cálculo" con el formato de la captura 1 (proyectos
+  calculados, lista de materiales, planchas usadas, perímetro, punto decimal o coma) y un recuadro
+  aparte con lo agregado (validador, preset, mínimo teórico, m² de hoja entera, peso, avisos).
+- "Visualizar e imprimir montajes" como la captura 2: Datos generales en recuadros negros con
+  números en color, miniaturas apiladas con ×N, 6 por fila; detalle de cada montaje con medidas,
+  ítems, sobrantes y cortes numerados (rojo = de lado a lado, azul = adentro de una tira).
+- Impresión A4 apaisada por CSS: informe solo, montajes varios por hoja, o uno por hoja (se
+  verificó a PDF: cada detalle entra en una hoja).
+- `docs/API.md`: entrada, salida y ejemplo completo; CLI `--html`.
+- `optimizador/exportar.py`: consumo por material a CSV (`;`, UTF-8 con BOM) y XLSX.
+
+**No se hizo**: exportar el proyecto en el formato que importa Corte Certo (era opcional y no
+conocemos ese formato).
+
 ## 25/10/2026: fase F1 cerrada (motor + validador + banco sintético + CLI)
 
 **Hecho**
