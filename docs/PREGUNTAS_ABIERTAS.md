@@ -12,14 +12,14 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
   Propiedades físicas tiene todo en 0.
 - **Por defecto**: preset "Como Corte Certo hoy", sin separación. La validación con los casos
   viejos lo va a confirmar.
-- Respuesta:
+- Respuesta: no se usaba con separacion
 
 **2. En la mesa, "20 mm de distancia mínima entre piezas", ¿quiere decir…**
 - (a) que todas las piezas quedan separadas 20 mm, o
 - (b) que pueden compartir el corte, pero si entre dos piezas queda una tira de sobrante, esa
   tira tiene que medir al menos 20 mm?
 - **Por defecto**: (a), en el preset "Reglas de corte (Lucas)".
-- Respuesta:
+- Respuesta: es la b
 
 **3. Cuando un material tiene varias medidas de plancha, ¿con cuál se cotiza?**
 - Ejemplos: FL4IN 3600 × 2500 / 3600 × 2200 / 3300 × 2440; FL10IN 3700 × 2500 / 3700 × 2200 /
@@ -27,7 +27,7 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 - ¿Se elige una? ¿Se pueden mezclar? ¿Depende del stock?
 - **Por defecto**: todas habilitadas y el programa elige la combinación de menos m². Se puede
   deshabilitar una medida por material.
-- Respuesta:
+- Respuesta: si esta la opcion de 3600x2500, usar siempre esa por defecto, sino, en el caso de 6mm la de 3700x2500
 
 **4. (Sigue de la 4 respondida) Pulido: ¿el pulido de aristas (MF) suma algo? ¿Y el +3 mm del
 pulido recto se cargaba en las medidas de las piezas en Corte Certo?**
@@ -36,7 +36,7 @@ pulido recto se cargaba en las medidas de las piezas en Corte Certo?**
 - **Por defecto**: el MF no suma; el +3 del pulido recto **sí** cuenta en los m² de piezas del
   informe (como si se hubiera cargado así en Corte Certo). El informe muestra además los m² con
   las medidas del presupuesto (sin el +3).
-- Respuesta:
+- Respuesta: el pulido de aristas no suma mm! en cambio el pr si, y en corte certo se lo sumabamos manualmente de antemano antes de importar un pedido
 
 **5. En los montajes de Corte Certo, ¿qué quieren decir los colores bordó, verde y oliva?**
 - El amarillo es sobrante.
@@ -51,16 +51,16 @@ pulido recto se cargaba en las medidas de las piezas en Corte Certo?**
 - **Por defecto** (cambió el 25/10): como se ve en la captura, solo esos 3 colores: cada tipo de
   pieza toma uno, rotando (tipo 1 bordó, 2 verde, 3 oliva, 4 bordó…); todo el sobrante en amarillo.
   Para saber qué pieza es cada una, el detalle del montaje muestra la medida y el ítem.
-- Respuesta:
+- Respuesta: es solo para saber que pieza es cada una, pero lo amarillo siempre es sobrante
 
 **6. "Cálculo especial de perímetro": ¿se usa? ¿para qué?**
 - **Por defecto**: se muestra en 0,00, como en la captura.
-- Respuesta:
+- Respuesta: no se usa 
 
 **7. ¿Podés mandar capturas de las pestañas "Descripción" y "Propiedades comerciales" de un
 material en Corte Certo?**
 - **Por defecto**: campos provisorios (código, descripción, color, espesor; precio por m²).
-- Respuesta:
+- Respuesta: con lo que ya tenemos basta
 
 **8. (Sigue de la 8 respondida) La leyenda en "Situación de Presupuesto → Observaciones":
 ¿en qué columna de `PRESUP` queda guardada?**
@@ -70,59 +70,59 @@ material en Corte Certo?**
 - **Por defecto**: el zip trae todas las columnas de texto de `PRESUP` (`NOTAS_CAUSA`,
   `TV_DESCRIP` y cualquier otra de observaciones) y el lector busca la leyenda en todas
   (`docs/CONTRATO_DATOS.md`, versión 2).
-- Respuesta:
+- Respuesta: esto ya esta tipificado en casos historicos!
 
 **9. Para cotizar, ¿el aprovechamiento va sobre la plancha útil o sobre la hoja entera?**
 - Plancha útil: 3580, como Corte Certo. Hoja entera: 3600.
 - **Por defecto**: como Corte Certo. La hoja entera se informa aparte.
-- Respuesta:
+- Respuesta: el aprovechamiento va sobre la hoja usada! si se usa la medida de 3580, va esa.
 
 **10. ¿Hay vidrios que no se pueden girar?**
 - Por el dibujo o la veta: catedral, martelé, stipolite, esmerilado…
 - **Por defecto**: todos se pueden girar, como en la captura.
-- Respuesta:
+- Respuesta: todos se pueden girar
 
 **11. ¿Se cotiza alguna vez con retazos de stock?**
 - En Corte Certo existe "Planchas / offcuts usados".
 - **Por defecto**: no, solo planchas enteras.
-- Respuesta:
+- Respuesta: no
 
 **12. ¿Corte Certo guarda los proyectos? ¿Dónde?**
 - El de la captura es el 413.
 - Si se pueden copiar, son casos perfectos para validar (ver `CONTRATO_DATOS.md`, fuente B).
-- Respuesta:
+- Respuesta: no se guardan
 
 **13. ¿Podés pasar una planilla de la Interfaz de ejemplo, sin nombres de clientes?**
 - Sirve para confirmar qué hay en cada columna, de la A a la P (CANTIDAD, CLASE, etc.).
-- Respuesta:
+- Respuesta: te lo paso aca! : TIPO/VIDRIO1/CAMARA/VIDRIO2/ANCHO/LARGO/ANCHO2/LARGO2/CANTIDAD/TIPOLOGIA/OBS/NTAS/CLASE/CLASE CARA1/ CLASE CARA 1 . 
 
 **14. Materiales que no están en `Medidas_hojas.xlsx` (por ejemplo FL8BR u otros colores): ¿qué
 plancha llevan?**
 - **Por defecto**: 3600 × 2500, con la banda de su espesor, marcada como "supuesta" en el
   informe.
-- Respuesta:
+- Respuesta: esta bien esa asumicion
 
 **15. La separación de los materiales que no menciona la regla de Lucas, ¿es igual a la del
 float o del laminado del mismo espesor?**
 - Son 45 materiales: float 3 mm, 5+3, 6+6, catedral, Cool Lite, Eclipse, espejos, etc.
 - **Por defecto**: sí (columna `separacion_fuente` de `config/hojas.csv`).
-- Respuesta:
+- Respuesta: por defecto
 
 **16. ¿Las mesas u Optima limitan las etapas de corte (X, Y, Z)?**
 - Para cotizar no cambia tanto, pero sirve para que el montaje sea cortable de verdad.
 - **Por defecto**: no se configura un límite. El generador arma montajes de 3 o 4 etapas (como
   los de la captura de Corte Certo) y el validador acepta cualquier guillotina.
-- Respuesta:
+- Respuesta: no lo se :P
 
 **17. Corte Certo usa códigos de material propios (5 = "5 mm Incoloro", 2004 = ?). ¿Hay una
 tabla que los relacione con los códigos de Metrix?**
 - Sirve si las leyendas viejas nombran el material con el código de Corte Certo.
-- Respuesta:
+- Respuesta: nono, codigos nuestros nomas, los que ya pusimos
 
 **23. Con varios materiales, ¿el "Perímetro - Piezas" de Corte Certo es por material o el total?**
 - En la captura hay un solo material y no se puede saber.
 - **Por defecto**: por material, debajo de cada uno.
-- Respuesta:
+- Respuesta: por material
 
 **24. El % de la leyenda, ¿se redondeaba o se truncaba?**
 - Corte Certo da el aprovechamiento con 2 decimales (ej. 90,57 %) y en la observación se escribe
@@ -130,7 +130,7 @@ tabla que los relacione con los códigos de Metrix?**
 - **Por qué importa**: el control de la entrada compara nuestro % con el de la leyenda. Si se
   truncaba, hay casos buenos que hoy quedan como "no cierran".
 - **Por defecto**: redondeado (90,57 → 91), con ±0,5 de margen.
-- Respuesta:
+- Respuesta: se redondeaba! ese 90.57 podria haber sido 91 o 90, depende el comercial que lo haya escrito
 
 **25. Presupuestos que en la leyenda tienen el +3 mm del pulido "de menos"**
 - La validación avisa los casos que cierran solo **sin** el +3 mm del pulido recto (cuenta aparte,
@@ -138,7 +138,7 @@ tabla que los relacione con los códigos de Metrix?**
   Metrix no dice bien qué piezas llevaban pulido recto.
 - **Por defecto**: el +3 se aplica siempre (lo confirmaste el 25/10) y esos casos quedan afuera
   de los números.
-- Respuesta:
+- Respuesta: esta buen oque en la validacion pruebes los dos!
 
 **26. Si se usan a la vez "ancho de la sierra" y "destaque mínimo", ¿el destaque se mide con la sierra
 incluida o sin?**
@@ -147,12 +147,12 @@ incluida o sin?**
 - **Por qué importa**: solo cambia algo si se cargan las dos cosas en un material (ningún preset lo
   hace hoy).
 - **Por defecto**: se mide con la sierra incluida (vale en el ejemplo).
-- Respuesta:
+- Respuesta:la sierra es solo para cuadno usan el corte certo para cortar laminas de otros materiales, aca no se usa una sierra :B, el destaque minimo si pero en optima, no en cotizacion
 
 **27. Corte Certo deja poner márgenes negativos (de −500 a 500 mm). ¿Para qué se usaban?**
 - Un margen negativo haría la plancha útil más grande que la hoja, y eso no se puede cortar.
 - **Por defecto**: el optimizador no acepta márgenes negativos (avisa y no calcula ese material).
-- Respuesta:
+- Respuesta: ni idea :B no le des bola
 
 **18. Con textura (veta), ¿qué lado de la pieza va con la veta?**
 - En Metrix, LARGO y ANCHO de una pieza no dicen la orientación. Con rotación permitida da igual;
@@ -161,34 +161,35 @@ incluida o sin?**
   lado de 3580); "Vertical" = el largo va a lo ancho (el lado de 2500). La pieza no se gira.
 - Ojo: sin veta y sin rotación, la pieza va como se cargó, con su **ancho** a lo largo de la
   plancha (la convención de `CLAUDE.md`). Con veta horizontal queda al revés (el largo en X).
-- Respuesta:
+- Respuesta: no te preocupes por la rotacion dem ateriales especiales, para cotizar no va al caso
+  
 
 **19. Cuando se mezclan planchas de distinta medida en un material, ¿alcanza con que el
 programa elija la combinación de menos m²?**
 - Ejemplo: 3 planchas de 3600 × 2500 o 2 de 3600 × 2500 + 1 de 3600 × 2200.
 - **Por defecto**: sí, gana la de menos m² de plancha útil; si empatan, la de menos montajes.
-- Respuesta:
+- Respuesta: si
 
 **20. ¿Qué Python tiene (o puede tener) la PC de la oficina?**
 - El programa anda con Python 3.10 o más nuevo, pero los resultados son idénticos a los de la
   nube solo con 3.12 o más nuevo (mismas versiones de las librerías de cálculo).
 - **Por defecto**: la instalación recomienda Python 3.12 o 3.13 de python.org, instalado "solo
   para mí" (no pide permisos de administrador).
-- Respuesta:
+- Respuesta: se puede isntalar cualqueira de los dos
 
 **21. Nombres de compañeros en los documentos de la fábrica: ¿los dejamos?**
 - No son clientes, pero el revisor encontró en `contexto/fabrica/` el usuario de Windows de un
   compañero (en rutas como `C:\Users\…`) y nombres de pila de empleados, y en las propiedades de
   `config/fuentes/Medidas_hojas.xlsx` figura quién lo creó.
 - **Por defecto**: se dejan como están (la regla de `CLAUDE.md` es sobre clientes).
-- Respuesta:
+- Respuesta: esta bien asi no te preocupes
 
 **22. ¿Faltó subir algún archivo?**
 - Llegaron `download`, `download (1)` y `download (3)` (falta un `(2)`), y `LEEME.md`, `LEEME (2)`
   y `LEEME (4)` (faltan `(1)` y `(3)`). Por el contenido no parece faltar nada, pero conviene
   confirmarlo.
 - **Por defecto**: se sigue con lo que hay.
-- Respuesta:
+- Respuesta: sigue ocn lo qe hay
 
 ## Respondidas
 
