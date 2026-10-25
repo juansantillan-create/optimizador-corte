@@ -1,0 +1,16 @@
+# Texto con fin de línea normalizado; los .bat necesitan CRLF para andar bien en Windows
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xlsx binary
+*.xlsm binary
+*.xls binary
+*.zip binary
+*.duckdb binary
+*.parquet binary

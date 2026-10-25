@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
+build/
+dist/
+
+# Datos con nombres de clientes: NUNCA a git
+datos/privado/
+
+# Salidas generadas (se regeneran) y logs
+salida/
+logs/
+*.log
+
+# Proyectos y configuración local de cada PC (pueden tener nombres de clientes)
+proyectos/
+config/local/
+
+# Windows, Office y editores
+Thumbs.db
+desktop.ini
+~$*
+.vscode/
+.idea/

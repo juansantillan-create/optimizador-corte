@@ -1,0 +1,414 @@
+<title>Mapa del orquestador Cristalux</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: una lámina de plano técnico — rótulo arriba, el recorrido como diagrama de flujo, y las capas/etapas como tablas de la lámina */
+:root {
+  --bg: #eef3f2;          /* papel con tinte de canto de vidrio */
+  --surface: #f8fbfa;
+  --fg: #142321;
+  --muted: #566a67;
+  --line: #c3d3d0;
+  --accent: #1d6c64;      /* verde azulado del canto del float */
+  --accent-soft: #d5e9e5;
+  --ok: #2f7a3e;   --ok-soft: #dcefdf;
+  --half: #9a6400; --half-soft: #f5e7c9;
+  --todo: #6b7775; --todo-soft: #e3e9e8;
+  --gate: #a2361f; --gate-soft: #f6ddd6;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1615; --surface: #152120; --fg: #e2ecea; --muted: #93a8a4; --line: #2b3d3a;
+    --accent: #5fc2b3; --accent-soft: #19332f;
+    --ok: #7fcf8c; --ok-soft: #1b3321; --half: #e5b04f; --half-soft: #3a2c10;
+    --todo: #a3b1ae; --todo-soft: #24302e; --gate: #f08b72; --gate-soft: #3d1d15;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1615; --surface: #152120; --fg: #e2ecea; --muted: #93a8a4; --line: #2b3d3a;
+  --accent: #5fc2b3; --accent-soft: #19332f;
+  --ok: #7fcf8c; --ok-soft: #1b3321; --half: #e5b04f; --half-soft: #3a2c10;
+  --todo: #a3b1ae; --todo-soft: #24302e; --gate: #f08b72; --gate-soft: #3d1d15;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.hoja { max-width: 1080px; margin: 0 auto; display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h2 { font-size: 1.45rem; font-weight: 750; font-stretch: 112%; letter-spacing: -0.01em; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.mono { font-family: var(--mono); font-size: 0.86em; }
+.etiqueta { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 16px; }
+.cabeza { display: grid; gap: 6px; }
+
+/* ── rótulo ── */
+.rotulo { display: grid; grid-template-columns: 1fr auto; border: 2px solid var(--fg); background: var(--surface); }
+.rotulo .titulo { padding: 20px 22px; display: grid; gap: 10px; border-right: 2px solid var(--fg); min-width: 0; }
+.rotulo h1 { font-size: clamp(1.7rem, 4.4vw, 2.7rem); font-weight: 800; font-stretch: 118%; line-height: 1.05; letter-spacing: -0.02em; }
+.rotulo .frase { color: var(--muted); }
+.rotulo dl { margin: 0; display: grid; grid-template-columns: auto auto; align-content: stretch; }
+.rotulo dl div { display: contents; }
+.rotulo dt, .rotulo dd { margin: 0; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.rotulo dt { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--line); }
+.rotulo dd { font-family: var(--mono); font-size: 0.85rem; font-weight: 600; }
+.rotulo dl div:last-child dt, .rotulo dl div:last-child dd { border-bottom: 0; }
+@media (max-width: 720px) {
+  .rotulo { grid-template-columns: 1fr; }
+  .rotulo .titulo { border-right: 0; border-bottom: 2px solid var(--fg); }
+  .rotulo dl { grid-template-columns: auto 1fr; }
+}
+
+/* ── chips de estado ── */
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em;
+  padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ok   { color: var(--ok);   background: var(--ok-soft); }
+.half { color: var(--half); background: var(--half-soft); }
+.todo { color: var(--todo); background: var(--todo-soft); }
+.gate { color: var(--gate); background: var(--gate-soft); }
+.quien { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.leyenda { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+
+/* ── capas ── */
+.capas { display: grid; border: 1px solid var(--line); background: var(--surface); }
+.capa { display: grid; grid-template-columns: 170px 1fr; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.capa:last-child { border-bottom: 0; }
+.capa .nombre { display: grid; gap: 2px; align-content: start; }
+.capa .nombre strong { font-family: var(--display); font-size: 1.15rem; font-stretch: 112%; }
+.capa .cosas { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.pieza { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--bg); padding: 5px 8px; border-radius: 3px; }
+@media (max-width: 640px) { .capa { grid-template-columns: 1fr; gap: 8px; } }
+
+/* ── recorrido ── */
+.selector { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.selector button { font: 600 0.85rem var(--body); color: var(--fg); background: transparent; border: 0; padding: 8px 14px; cursor: pointer; }
+.selector button + button { border-left: 1px solid var(--line); }
+.selector button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.selector button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.flujo { display: grid; gap: 0; justify-items: stretch; }
+.nodo { position: relative; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); padding: 12px 14px;
+  display: grid; gap: 4px; transition: opacity 0.2s; }
+.nodo .fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; justify-content: space-between; }
+.nodo h3 { font-size: 0.98rem; }
+.nodo p { color: var(--muted); font-size: 0.88rem; }
+.flecha { height: 26px; display: grid; place-items: center; color: var(--muted); }
+.flecha svg { width: 14px; height: 26px; }
+.flecha path { stroke: currentColor; fill: none; stroke-width: 1.5; }
+.flecha .punta { fill: currentColor; stroke: none; }
+.carriles { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.carril { display: grid; align-content: start; gap: 0; transition: opacity 0.2s; }
+.carril .rotulo-carril { font-family: var(--display); font-weight: 750; font-stretch: 112%; font-size: 0.95rem; padding: 6px 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.carril.dir .nodo { border-left-color: var(--ok); }
+.disparo { border-left-color: var(--half) !important; }
+.porton { border: 2px solid var(--gate); border-left-width: 6px; background: var(--gate-soft); }
+.porton h3 { color: var(--gate); }
+.porton ul { margin: 4px 0 0; padding-left: 18px; color: var(--fg); font-size: 0.88rem; display: grid; gap: 2px; }
+.bandeja { margin-top: 14px; border: 1px dashed var(--muted); padding: 10px 14px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; background: var(--bg); }
+.flujo[data-carril="cot"] .carril.dir, .flujo[data-carril="dir"] .carril.cot { opacity: 0.28; }
+@media (max-width: 680px) { .carriles { grid-template-columns: 1fr; gap: 22px; } }
+@media (prefers-reduced-motion: reduce) { .nodo, .carril { transition: none; } }
+
+/* ── traza AAX ── */
+.traza { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--surface); }
+.paso { padding: 14px 16px; border-right: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0; }
+.paso:last-child { border-right: 0; }
+.paso .cuando { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+.paso .numero { font-family: var(--mono); font-size: 1.35rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+.paso p { font-size: 0.86rem; color: var(--muted); }
+@media (max-width: 760px) { .traza { grid-template-columns: 1fr 1fr; } .paso:nth-child(2) { border-right: 0; } .paso:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+@media (max-width: 420px) { .traza { grid-template-columns: 1fr; } .paso { border-right: 0; border-bottom: 1px solid var(--line); } .paso:last-child { border-bottom: 0; } }
+
+/* ── etapas ── */
+.etapas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); background: var(--surface); }
+.etapa { padding: 14px; border-right: 1px solid var(--line); display: grid; gap: 6px; align-content: start; min-width: 0; }
+.etapa:last-child { border-right: 0; }
+.etapa .n { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
+.etapa h3 { font-size: 0.95rem; }
+.etapa p { font-size: 0.84rem; color: var(--muted); }
+.etapa.actual { background: var(--accent-soft); box-shadow: inset 0 3px 0 var(--accent); }
+.etapa.actual .n { color: var(--accent); font-weight: 600; }
+@media (max-width: 860px) { .etapas { grid-template-columns: 1fr; } .etapa { border-right: 0; border-bottom: 1px solid var(--line); } .etapa:last-child { border-bottom: 0; } }
+
+/* ── tabla de piezas ── */
+.tabla-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 0.88rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td .mono { color: var(--muted); }
+
+/* ── preguntas ── */
+.preguntas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pregunta { border-top: 2px solid var(--fg); padding-top: 10px; display: grid; gap: 4px; }
+.pregunta p { color: var(--muted); font-size: 0.88rem; }
+footer { color: var(--muted); font-size: 0.82rem; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+
+<div class="hoja">
+
+  <header class="rotulo">
+    <div class="titulo">
+      <span class="etiqueta">Cristalux · oficina comercial</span>
+      <h1>Mapa del orquestador</h1>
+      <p class="frase">Metrix y mainque siguen siendo el motor. Alrededor, un orquestador lleva cada pedido de punta a punta y deja a las personas revisando en lugar de cargando.</p>
+    </div>
+    <dl>
+      <div><dt>Lámina</dt><dd>01 / 01</dd></div>
+      <div><dt>Revisión</dt><dd>16/10/2026</dd></div>
+      <div><dt>Escala</dt><dd>sin escala</dd></div>
+      <div><dt>Dibujó</dt><dd>Claude</dd></div>
+      <div><dt>Revisó</dt><dd>Juan S.</dd></div>
+      <div><dt>Detalle</dt><dd>docs/VISION_ORQUESTADOR.md</dd></div>
+    </dl>
+  </header>
+
+  <section aria-labelledby="t-capas">
+    <div class="cabeza">
+      <span class="etiqueta">Vista general</span>
+      <h2 id="t-capas">Tres capas</h2>
+      <p>Las herramientas no se juntan en un solo programa. Cada una hace lo suyo, y el expediente de cada pedido es lo que las ata.</p>
+    </div>
+    <div class="leyenda">
+      <span class="chip ok">anda</span><span class="chip half">a medias</span><span class="chip todo">por hacer</span><span class="chip gate">persona</span>
+    </div>
+    <div class="capas">
+      <div class="capa">
+        <div class="nombre"><strong>Caras</strong><span class="quien">cómo lo usan las personas</span></div>
+        <div class="cosas">
+          <span class="pieza">Borradores en el Gmail del comercial <span class="chip todo">por hacer</span></span>
+          <span class="pieza">Página de la sombra (solo lectura) <span class="chip ok">anda</span></span>
+          <span class="pieza">Consola: revisar y aprobar <span class="chip todo">por hacer</span></span>
+          <span class="pieza">Tableros y Power BI <span class="chip ok">anda</span></span>
+          <span class="pieza">Portal de clientes <span class="chip todo">etapa 4</span></span>
+        </div>
+      </div>
+      <div class="capa">
+        <div class="nombre"><strong>Columna</strong><span class="quien">el orquestador</span></div>
+        <div class="cosas">
+          <span class="pieza">Expediente por pedido: estados e historial <span class="chip half">en la sombra</span></span>
+          <span class="pieza">Servicio que pregunta "¿qué le falta?" <span class="chip todo">por hacer</span></span>
+        </div>
+      </div>
+      <div class="capa">
+        <div class="nombre"><strong>Piezas</strong><span class="quien">cerebro (servidor) · manos (bots)</span></div>
+        <div class="cosas">
+          <span class="pieza">Lector de mail (Gmail) <span class="chip ok">anda</span></span>
+          <span class="pieza">Interpretador Haiku + código <span class="chip ok">19/20 pedidos</span></span>
+          <span class="pieza">Descuentos por cliente <span class="chip half">a medias</span></span>
+          <span class="pieza">Bot de presupuesto <span class="chip ok">v0.6.4</span></span>
+          <span class="pieza">Verificador por la base <span class="chip ok">anda</span></span>
+          <span class="pieza">Cruce y generador de NP <span class="chip ok">anda</span></span>
+          <span class="pieza">Bot de NP en mainque <span class="chip ok">v1.5</span></span>
+          <span class="pieza">Bot de pedido en Metrix <span class="chip ok">anda</span></span>
+          <span class="pieza">Planos para la water jet <span class="chip ok">en producción</span></span>
+          <span class="pieza">Optimizador de corte <span class="chip todo">por hacer</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-recorrido">
+    <div class="cabeza">
+      <span class="etiqueta">El recorrido</span>
+      <h2 id="t-recorrido">De un mail a producción</h2>
+      <p>Todo pedido pasa por presupuesto, mainque y producción. Hay dos formas de entrar; lo único que cambia es qué dispara el paso a mainque.</p>
+    </div>
+    <div class="selector" role="group" aria-label="Qué recorrido mostrar">
+      <button type="button" id="ver-ambos" data-carril="ambos" aria-pressed="true">Los dos</button>
+      <button type="button" id="ver-cot" data-carril="cot" aria-pressed="false">Cotización</button>
+      <button type="button" id="ver-dir" data-carril="dir" aria-pressed="false">Pedido directo</button>
+    </div>
+
+    <div class="flujo" id="flujo" data-carril="ambos">
+      <div class="nodo">
+        <div class="fila"><h3>Llega un mail nuevo</h3><span class="chip ok">anda (Gmail)</span></div>
+        <p>El bot es miembro de los grupos templados@ y comercial@. WhatsApp Web y fotos de papel se reenvían a su casilla. Un mensaje es un expediente.</p>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo">
+        <div class="fila"><h3>Clasificado e interpretado</h3><span class="chip ok">en sombra</span></div>
+        <p>¿Es un pedido? ¿Cotización o pedido directo? ¿Qué cliente? Haiku lee el texto y las imágenes; los planos CAD se miden por código.</p>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo">
+        <div class="fila"><h3>Presupuesto cargado y verificado</h3><span class="chip ok">anda</span></div>
+        <p>Interfaz + Metrix, con la matrícula en la obra. Después se compara por la base, renglón por renglón, contra lo interpretado.</p>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+
+      <div class="carriles">
+        <div class="carril cot">
+          <div class="rotulo-carril">Cotización <span class="quien">el cliente pide precio</span></div>
+          <div class="nodo">
+            <div class="fila"><h3>A INFORMAR + PDF + borrador</h3><span class="chip half">a medias</span></div>
+            <p>Situación y PDF ya los hace el bot. Falta el borrador de respuesta, con la firma del bot.</p>
+          </div>
+          <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+          <div class="nodo">
+            <div class="fila"><h3>El comercial lo envía</h3><span class="chip gate">persona</span></div>
+          </div>
+          <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+          <div class="nodo disparo">
+            <div class="fila"><h3>El cliente confirma: dispara</h3><span class="chip gate">persona</span></div>
+            <p>Lo marca el comercial. Más adelante, el bot lee el "dale, confirmamos" en el hilo.</p>
+          </div>
+        </div>
+        <div class="carril dir">
+          <div class="rotulo-carril">Pedido directo <span class="quien">cliente con cuenta, pedido chico</span></div>
+          <div class="nodo disparo">
+            <div class="fila"><h3>Disparo inmediato</h3><span class="chip todo">la "tecla"</span></div>
+            <p>El mail ya es el pedido ("es un pedido nuevo"). La tecla por cliente dice a quién se le acepta sin esperar confirmación.</p>
+          </div>
+          <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+          <div class="nodo">
+            <div class="fila"><h3>También fuera de hora</h3><span class="chip todo">por hacer</span></div>
+            <p>Un pedido del sábado queda cargado y pendiente; el lunes a primera hora solo falta aprobar.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo">
+        <div class="fila"><h3>NP en mainque → pedido en Metrix → planos</h3><span class="chip ok">probado el 13/10</span></div>
+        <p>El pedido se carga con el Nº de presupuesto (los renglones salen tal cual) y el Nº de NP en O.Compra. Queda PENDIENTE, sin imputar. Planos para la water jet si hay.</p>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo porton">
+        <div class="fila"><h3>Portón de producción</h3><span class="chip gate">siempre una persona</span></div>
+        <p style="color:var(--fg)">Una mala cotización se arregla; un mal envío a producción, no. El comercial controla en la consola, lado a lado:</p>
+        <ul>
+          <li>el pedido interpretado contra lo cargado, con las diferencias marcadas;</li>
+          <li>el plano del cliente contra el plano generado;</li>
+          <li>con precios: el desglose del descuento y el consumo de hojas.</li>
+        </ul>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo">
+        <div class="fila"><h3>Imputar + mail al cliente con copia a producción</h3><span class="chip gate">hoy, el comercial</span></div>
+        <p>Más adelante, el botón Aprobar de la consola hace que el bot impute y mande el mail.</p>
+      </div>
+      <div class="flecha" aria-hidden="true"><svg viewBox="0 0 14 26"><path d="M7 0 V18"/><path class="punta" d="M2 17 L7 25 L12 17 Z"/></svg></div>
+      <div class="nodo">
+        <div class="fila"><h3>Seguimiento → listo → despachado → aviso</h3><span class="chip half">los datos ya están</span></div>
+        <p>Las piezas por puesto ya se leen de la base cada 5 minutos (tableros, Power BI). El aviso al cliente viene después.</p>
+      </div>
+
+      <div class="bandeja">
+        <span class="chip half">bandeja de revisión</span>
+        <span>Desde cualquier paso: ante cualquier duda, el expediente va a una persona con el motivo escrito, y vuelve al recorrido cuando se resuelve.</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-traza">
+    <div class="cabeza">
+      <span class="etiqueta">Prueba real · cliente de prueba</span>
+      <h2 id="t-traza">El circuito ya anduvo una vez: matrícula AAX</h2>
+      <p>Presupuesto, NP y pedido hechos por los bots y verificados por la base, en el cliente y la empresa de prueba.</p>
+    </div>
+    <div class="traza">
+      <div class="paso"><span class="cuando">10/10 · bot Metrix</span><span class="numero">11775</span><p>Presupuesto gemelo del 11762: 24 de 24 líneas iguales, mismo neto al centavo.</p></div>
+      <div class="paso"><span class="cuando">13/10 15:11 · bot mainque</span><span class="numero">NP 2706</span><p>Nota de pedido en la empresa TEST, con el subtotal verificado en pantalla.</p></div>
+      <div class="paso"><span class="cuando">13/10 15:39 · bot Metrix v0.6.4</span><span class="numero">12137</span><p>Pedido PENDIENTE con O.Compra 2706 y los 24 renglones del presupuesto. 31 s.</p></div>
+      <div class="paso"><span class="cuando">13/10 15:40 · verificador</span><span class="numero">3 / 3</span><p>Situación ACEPTADO, pedido en la base y PDF del pedido: todo OK.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-sombra">
+    <div class="cabeza">
+      <span class="etiqueta">Modo sombra · mails reales del 01 al 16/10</span>
+      <h2 id="t-sombra">Lo que entendió la sombra contra lo que cargó la persona</h2>
+      <p>Gmail de templados@ (solo lectura) → Haiku 5.5 → comparación pieza por pieza con el presupuesto real. Sin tocar Metrix ni contestar nada.</p>
+    </div>
+    <div class="traza">
+      <div class="paso"><span class="cuando">pedidos</span><span class="numero">19 / 20</span><p>Iguales a lo cargado: 38 de 39 piezas bien. El que falló: una pieza con perforación de más.</p></div>
+      <div class="paso"><span class="cuando">cotizaciones</span><span class="numero">3 / 6</span><p>Las otras: un vidrio pintado que Haiku pasó a una persona y piezas que cambiaron en el ida y vuelta.</p></div>
+      <div class="paso"><span class="cuando">35 expedientes</span><span class="numero">5</span><p>Sin pareja todavía. La pareja sale de la respuesta con "NP / P(presupuesto)" o de las medidas en la base.</p></div>
+      <div class="paso"><span class="cuando">costo</span><span class="numero">0,11 USD</span><p>Unos 0,003 USD por pedido con Haiku 5.5. Tope automático de 0,80 USD.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-etapas">
+    <div class="cabeza">
+      <span class="etiqueta">Orden de construcción</span>
+      <h2 id="t-etapas">Etapas</h2>
+      <p>Sin fechas. Cada etapa se apoya en la anterior.</p>
+    </div>
+    <div class="etapas">
+      <div class="etapa actual"><span class="n">ETAPA 0 · EN MARCHA</span><h3>Modo sombra</h3><p>Lee e interpreta los pedidos reales sin tocar Metrix ni contestar. 16/10: pedidos 19 de 20 iguales a lo cargado. Falta cronometrar el "antes".</p></div>
+      <div class="etapa"><span class="n">ETAPA 1</span><h3>Pedidos directos de templados</h3><p>Clientes con cuenta, de punta a punta hasta el portón. Primeros usuarios: templados y laminados.</p></div>
+      <div class="etapa"><span class="n">ETAPA 2</span><h3>Cotizaciones y todos los vidrios</h3><p>DVH, laminados, distribución. Borradores en Gmail, optimizador de corte, leer la confirmación.</p></div>
+      <div class="etapa"><span class="n">ETAPA 3</span><h3>La central completa</h3><p>Estado de cada pedido, recordatorios a clientes, el bot imputando al aprobar.</p></div>
+      <div class="etapa"><span class="n">ETAPA 4</span><h3>Portal de clientes</h3><p>Sus presupuestos, pedidos y fechas de producción y despacho; después, cargar pedidos.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-piezas">
+    <div class="cabeza">
+      <span class="etiqueta">Inventario</span>
+      <h2 id="t-piezas">Las piezas, una por una</h2>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Pieza</th><th>Estado</th><th>Qué hace</th><th>Dónde</th></tr></thead>
+        <tbody>
+          <tr><td>Expediente + orquestador</td><td><span class="chip half">ficha en la sombra</span></td><td>Una ficha por pedido con sus estados; falta el orquestador que encarga cada paso a los bots</td><td><span class="mono">negocio/sombra.py</span></td></tr>
+          <tr><td>Lector de mail</td><td><span class="chip ok">anda</span></td><td>Gmail de Juan, solo lectura, etiqueta templados, cada 15 min</td><td><span class="mono">negocio/sombra.py</span></td></tr>
+          <tr><td>Interpretador</td><td><span class="chip ok">19/20 pedidos</span></td><td>Haiku 5.5 con el prompt del cotizador: tipo de entrada, piezas, clases, perforaciones, advertencias; ~0,003 USD por pedido</td><td><span class="mono">negocio/interpretador.py</span></td></tr>
+          <tr><td>Descuentos por cliente</td><td><span class="chip half">casi cerrado</span></td><td>De dónde sale cada %; "con forma" como recargo</td><td><span class="mono">docs/LISTAS_DISTRIBUCION.md</span></td></tr>
+          <tr><td>Bot de presupuesto</td><td><span class="chip ok">v0.6.4</span></td><td>Importa, clases, precios, descuentos, Situación, PDF</td><td><span class="mono">bots/bot_presupuesto_metrix.py</span></td></tr>
+          <tr><td>Verificador</td><td><span class="chip ok">anda</span></td><td>Compara por la base lo cargado contra lo pedido</td><td><span class="mono">negocio/presupuesto_gemelo.py</span></td></tr>
+          <tr><td>Cruce + generador de NP</td><td><span class="chip ok">anda</span></td><td>Arma la planilla de la NP desde el presupuesto</td><td><span class="mono">negocio/servir_np.py</span></td></tr>
+          <tr><td>Bot de NP</td><td><span class="chip ok">v1.5</span></td><td>Carga la NP en mainque; lo usan los compañeros. TEST es real (NP "T")</td><td><span class="mono">bots/bot_mainque.py</span></td></tr>
+          <tr><td>Bot de pedido</td><td><span class="chip ok">anda</span></td><td>Pedido en Metrix con Nº de presupuesto y O.Compra = NP, sin imputar</td><td><span class="mono">bots/bot_presupuesto_metrix.py</span></td></tr>
+          <tr><td>Planos water jet</td><td><span class="chip ok">en producción</span></td><td>Plano del cliente → Haiku → planilla + .wpd del SCAD; agujeros, grillas y entrantes</td><td><span class="mono">waterjet/</span></td></tr>
+          <tr><td>Optimizador de corte</td><td><span class="chip todo">por hacer</span></td><td>Rectángulos en hojas con 2 parámetros por tipo de hoja: hojas, aprovechamiento, esquema</td><td>—</td></tr>
+          <tr><td>Consola / bandeja</td><td><span class="chip half">solo lectura</span></td><td>Hoy: la página de la sombra, pieza por pieza. Falta revisar, corregir y aprobar</td><td><span class="mono">Abrir_Sombra.bat</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-preguntas">
+    <div class="cabeza">
+      <span class="etiqueta">Pendiente</span>
+      <h2 id="t-preguntas">Preguntas abiertas</h2>
+    </div>
+    <div class="preguntas">
+      <div class="pregunta"><h3>Nombre</h3><p>Para presentarlo y para la firma del bot.</p></div>
+      <div class="pregunta"><h3>¿Mail en copia o imputado?</h3><p>Con cuál de los dos arranca producción de verdad. Define qué tiene que pasar sí o sí al aprobar.</p></div>
+      <div class="pregunta"><h3>Regla de cuenta corriente</h3><p>Qué controla administración antes de aceptar un pedido directo.</p></div>
+      <div class="pregunta"><h3>Formato de la water jet</h3><p>Resuelto el 14/10: .wpd del SCAD (ver docs/WATERJET_PLANOS.md).</p></div>
+      <div class="pregunta"><h3>Medidas de hojas</h3><p>El archivo con las hojas y los 2 parámetros por tipo, para el optimizador.</p></div>
+      <div class="pregunta"><h3>El "antes"</h3><p>Planilla para cronometrar 10 a 15 pedidos actuales por paso.</p></div>
+    </div>
+  </section>
+
+  <footer>Metrix se lee por la base (solo lectura) y se escribe por pantalla, como un usuario. Nada pasa a producción sin una persona.</footer>
+</div>
+
+<script>
+(function () {
+  var flujo = document.getElementById("flujo");
+  var botones = document.querySelectorAll(".selector button");
+  function mostrar(carril) {
+    flujo.setAttribute("data-carril", carril);
+    botones.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-carril") === carril)); });
+    try { localStorage.setItem("mapa-carril", carril); } catch (e) {}
+  }
+  botones.forEach(function (b) { b.addEventListener("click", function () { mostrar(b.getAttribute("data-carril")); }); });
+  try { var guardado = localStorage.getItem("mapa-carril"); if (guardado) mostrar(guardado); } catch (e) {}
+})();
+</script>

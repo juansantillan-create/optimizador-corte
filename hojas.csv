@@ -1,0 +1,102 @@
+﻿codigo;descripcion;hoja_excel;fila_excel;composicion;espesor_mm;laminado;hoja_ancho_mm;hoja_largo_mm;corte_banda_mm;util_ancho_mm;util_largo_mm;separacion_piezas_mm;separacion_fuente;grupo_regla;peso_kg_m2;avisos
+CA4M1;CATEDRAL 4 MM MARTELE AMBAR;MONOLITICO;2;4;4;NO;2500;1600;20;2480;1600;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+CA4PA;CATEDRAL 4 MM PACIFICO;MONOLITICO;3;4;4;NO;2500;1600;20;2480;1600;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+CA4ST;CATEDRAL 4 MM STIPOLITE;MONOLITICO;4;4;4;NO;2500;1600;20;2480;1600;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+CA6AD;CATEDRAL 6 MM ARMADO;MONOLITICO;5;6;6;NO;3000;1600;20;2980;1600;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CA8PA;CATEDRAL 8 MM PACIFICO;MONOLITICO;6;8;8;NO;2500;1600;30;2470;1600;30;supuesto por espesor (la regla es de float/Lamilux);FL 8 mm;20;
+CK6KG;COOL LITE KNT 6 MM GREY KNT 355;MONOLITICO;7;6;6;NO;3210;2540;20;3190;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CK6K1;COOL LITE KNT 6 MM KNT 140;MONOLITICO;8;6;6;NO;3210;2540;20;3190;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CK6K1;COOL LITE KNT 6 MM KNT 140;MONOLITICO;9;6;6;NO;3600;2540;20;3580;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CK6K2;COOL LITE KNT 6 MM KNT 155;MONOLITICO;10;6;6;NO;3210;2540;20;3190;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CK6K3;COOL LITE KNT 6 MM KNT 164;MONOLITICO;11;6;6;NO;3210;2540;20;3190;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CK8K2;COOL LITE KNT 8 MM KNT 155;MONOLITICO;12;8;8;NO;3600;2540;30;3570;2540;30;supuesto por espesor (la regla es de float/Lamilux);FL 8 mm;20;
+CT4N2;COOL LITE ST 4 MM 150;MONOLITICO;13;4;4;NO;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+CT4G1;COOL LITE ST 4 MM GRIS - ST120;MONOLITICO;14;4;4;NO;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+CT6AZ;COOL LITE ST 6 MM AZUL - STB120;MONOLITICO;15;6;6;NO;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CT6G1;COOL LITE ST 6 MM GRIS - ST120;MONOLITICO;16;6;6;NO;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CT6G2;COOL LITE ST 6 MM NEUTRO ST 150;MONOLITICO;17;6;6;NO;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CT6G2;COOL LITE ST 6 MM NEUTRO ST 150;MONOLITICO;18;6;6;NO;3210;2540;20;3190;2540;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+CV3+3EB;COVERGLASS 3+3 MM EXTRA BLANCO;MONOLITICO;19;3+3;6;SI;3210;2400;20;3190;2400;20;supuesto por espesor (la regla es de float/Lamilux);3+3;15;
+CV5BL;COVERGLASS 5 MM BLANCO;MONOLITICO;20;5;5;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;12.5;
+EC6AR;ECLIPSE ADV 6 MM ARTIC BLUE;MONOLITICO;21;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+EC6BL;ECLIPSE ADV 6 MM BLUEGREEN;MONOLITICO;22;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+EC6EV;ECLIPSE ADV 6 MM EVERGREEN;MONOLITICO;23;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+EC6GY;ECLIPSE ADV 6 MM GREY;MONOLITICO;24;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+FL10GR;FL 10 MM GRIS;MONOLITICO;25;10;10;NO;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;FL 10 mm;25;
+FL10IN;FL 10 MM INC;MONOLITICO;26;10;10;NO;3050;2050;50;3000;2050;50;regla de Lucas 21/10/2026;FL 10 mm;25;
+FL10IN;FL 10 MM INC;MONOLITICO;27;10;10;NO;3700;2200;50;3650;2200;50;regla de Lucas 21/10/2026;FL 10 mm;25;
+FL10IN;FL 10 MM INC;MONOLITICO;28;10;10;NO;3700;2500;50;3650;2500;50;regla de Lucas 21/10/2026;FL 10 mm;25;
+FL3IN;FL 3 MM INC;MONOLITICO;29;3;3;NO;3600;2500;20;3580;2500;20;supuesto (la regla no menciona 3 mm: se usa la separación de 4/5/6 mm);FL 3 mm;7.5;
+FL3IN;FL 3 MM INC;MONOLITICO;30;3;3;NO;3600;2200;20;3580;2200;20;supuesto (la regla no menciona 3 mm: se usa la separación de 4/5/6 mm);FL 3 mm;7.5;
+FL4BROA;FL 4 MM BRONCE OPACID;MONOLITICO;31;4;4;NO;3660;2440;20;3640;2440;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;10;
+FL4GR;FL 4 MM GRIS;MONOLITICO;32;4;4;NO;3210;2400;20;3190;2400;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;10;
+FL4IN;FL 4 MM INC;MONOLITICO;33;4;4;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;10;
+FL4IN;FL 4 MM INC;MONOLITICO;34;4;4;NO;3600;2200;20;3580;2200;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;10;
+FL4IN;FL 4 MM INC;MONOLITICO;35;4;4;NO;3300;2440;20;3280;2440;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;10;
+FL5GR;FL 5 MM GRIS;MONOLITICO;36;5;5;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;12.5;
+FL5IN;FL 5 MM INC;MONOLITICO;37;5;5;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;12.5;
+FL5NL;FL 5MM SOL NEU LIGHT;MONOLITICO;38;5;5;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;12.5;
+FL6BR;FL 6 MM BRONCE;MONOLITICO;39;6;6;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;15;
+FL6GR;FL 6 MM GRIS;MONOLITICO;40;6;6;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;15;
+FL6IN;FL 6 MM INC;MONOLITICO;41;6;6;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;15;
+FL6NL;FL 6 MM SOL NEU LIGHT;MONOLITICO;42;6;6;NO;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;FL 4/5/6 mm;15;
+FL8GR;FL 8 MM GRIS;MONOLITICO;43;8;8;NO;3600;2200;30;3570;2200;30;regla de Lucas 21/10/2026;FL 8 mm;20;
+FL8IN;FL 8 MM INC;MONOLITICO;44;8;8;NO;3600;2500;30;3570;2500;30;regla de Lucas 21/10/2026;FL 8 mm;20;
+FL8NL;FL 8 MM SOL NEU LIGHT;MONOLITICO;45;8;8;NO;3600;2500;30;3570;2500;30;regla de Lucas 21/10/2026;FL 8 mm;20;
+GRAPH5;GRAPHITE 5 MM;MONOLITICO;46;5;5;NO;2500;1600;20;2480;1600;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;12.5;
+LO4IN;LOW-E 4 MM INC;MONOLITICO;47;4;4;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+LO6IN;LOW-E 6 MM INC;MONOLITICO;48;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+OA10IN;OPACID 10 MM INC;MONOLITICO;49;10;10;NO;3700;2500;50;3650;2500;50;supuesto por espesor (la regla es de float/Lamilux);FL 10 mm;25;
+OA4IN;OPACID 4 MM INC;MONOLITICO;50;4;4;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+OA8IN;OPACID 8 MM INC;MONOLITICO;51;8;8;NO;3210;2500;30;3180;2500;30;supuesto por espesor (la regla es de float/Lamilux);FL 8 mm;20;
+OA8IN;OPACID 8 MM INC;MONOLITICO;52;8;8;NO;3600;2500;30;3570;2500;30;supuesto por espesor (la regla es de float/Lamilux);FL 8 mm;20;
+OP6GR;OPTIMIRROR 6 MM GRIS;MONOLITICO;53;6;6;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+OP3BR;OPTIMIRROR 3 MM BRONCE;MONOLITICO;54;3;3;NO;3600;2500;20;3580;2500;20;supuesto (la regla no menciona 3 mm: se usa la separación de 4/5/6 mm);FL 3 mm;7.5;
+OP5IN;OPTIMIRROR 5 MM INC;MONOLITICO;55;5;5;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;12.5;
+OL3+3IN;OPTIMIRROR LAMI 3+3 MM INC;MONOLITICO;56;3+3;6;SI;3210;2250;20;3190;2250;20;supuesto por espesor (la regla es de float/Lamilux);3+3;15;
+OP3IN;OPTIMIRROR PLUS 3 MM INC;MONOLITICO;57;3;3;NO;3600;2500;20;3580;2500;20;supuesto (la regla no menciona 3 mm: se usa la separación de 4/5/6 mm);FL 3 mm;7.5;
+OP4IN;OPTIMIRROR PLUS 4 MM INC;MONOLITICO;58;4;4;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;10;
+OP5GR;OPTIMIRROR PLUS 5 MM GRIS;MONOLITICO;59;5;5;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;12.5;
+SO6BL;SOLAR-E 6 MM BLUEGREEN;MONOLITICO;60;6;6;NO;3310;2130;20;3290;2130;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SO6OC;SOLAR-E 6 MM ON CLEAR;MONOLITICO;61;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SO6OG;SOLAR-E 6 MM ON GREY;MONOLITICO;62;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+ST6BR;STOPSOL CLASSIC 6MM BRONCE;MONOLITICO;63;6;6;NO;3210;2250;20;3190;2250;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SU6AR;SU TINTS 6 MM ARTIC BLUE;MONOLITICO;64;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SU6EV;SU TINTS 6 MM EVERGREEN;MONOLITICO;65;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SU6SU;SU TINTS 6 MM SUPER GREY;MONOLITICO;66;6;6;NO;3300;2440;20;3280;2440;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+SU6MMOG;SU TINTS OPTIGREEN 6 MM;MONOLITICO;67;6;6;NO;3600;2500;20;3580;2500;20;supuesto por espesor (la regla es de float/Lamilux);FL 4/5/6 mm;15;
+LX3+3BC;LAMILUX 3+3 MM BRONCE CLARO;LAMINADO;2;3+3;6;SI;3600;2140;20;3580;2140;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3BC;LAMILUX 3+3 MM BRONCE CLARO;LAMINADO;3;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3ES;LAMILUX 3+3 MM ESMERILADO;LAMINADO;4;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3GC;LAMILUX 3+3 MM GRIS CLARO;LAMINADO;5;3+3;6;SI;3210;2200;20;3190;2200;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3GC;LAMILUX 3+3 MM GRIS CLARO;LAMINADO;6;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3GO;LAMILUX 3+3 MM GRIS OSCURO;LAMINADO;7;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3IN;LAMILUX 3+3 INC;LAMINADO;8;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3IN;LAMILUX 3+3 INC;LAMINADO;9;3+3;6;SI;3600;2200;20;3580;2200;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3IN;LAMILUX 3+3 INC;LAMINADO;10;3+3;6;SI;4000;2500;20;3980;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3LOW;LAMILUX 3+3 MM LOW-E;LAMINADO;11;3+3;6;SI;3300;2440;20;3280;2440;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3OP;LAMILUX 3+3 MM OPTIMIRROR;LAMINADO;12;3+3;6;SI;3210;2250;20;3190;2250;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3OPBR;LAMILUX 3+3 MM OPTIMIRROR BRONCE;LAMINADO;13;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX3+3VC;LAMILUX 3+3 MM VERDE CLARO;LAMINADO;14;3+3;6;SI;3600;2500;20;3580;2500;20;regla de Lucas 21/10/2026;3+3;15;Descripción/Código invertidas en el Excel
+LX4+4ES;LAMILUX 4+4 MM ESMERILADO;LAMINADO;15;4+4;8;SI;3600;2500;30;3570;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4GC;LAMILUX 4+4 MM GRIS CLARO;LAMINADO;16;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4GO;LAMILUX 4+4 MM GRIS OSCURO;LAMINADO;17;4+4;8;SI;3600;2500;30;3570;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4GOESM;LAMILUX 4+4 MM GRIS OSCURO ESM;LAMINADO;18;4+4;8;SI;3600;2500;30;3570;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4GR;LAMILUX COOL LITE 4+4 MM GRIS ST 120.;LAMINADO;19;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4IN;LAMILUX 4+4 INC;LAMINADO;20;4+4;8;SI;3600;2200;30;3570;2200;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4IN;LAMILUX 4+4 INC;LAMINADO;21;4+4;8;SI;3600;2500;30;3570;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4IN;LAMILUX 4+4 INC;LAMINADO;22;4+4;8;SI;4000;2500;30;3970;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4LOWE;LAMILUX 4+4 LOW-E;LAMINADO;23;4+4;8;SI;3300;2440;30;3270;2440;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4NEU;LAMILUX COOL LITE 4+4 MM NEUTRO ST 150.;LAMINADO;24;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4NL;LAMILUX 4+4 MM NEUTRO LIGHT;LAMINADO;25;4+4;8;SI;3600;2500;30;3570;2500;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4ST150;LAMILUX COOL LITE 4+4 MM NEUTRO ST 150;LAMINADO;26;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4ST467;LAMILUX COOL LITE 4+4 MM VERDE ST 467;LAMINADO;27;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX4+4STB12;LAMILUX COOL LITE 4+4 MM AZUL STB 120;LAMINADO;28;4+4;8;SI;3210;2400;30;3180;2400;20;regla de Lucas 21/10/2026;4+4;20;Descripción/Código invertidas en el Excel
+LX5+3AC;LAMILUX 5+3 MM INC ACUSTICO;LAMINADO;29;5+3;8;SI;3600;2500;50;3550;2500;50;supuesto (la regla no menciona 5+3: separación supuesta igual a 5+5);5+3;20;Descripción/Código invertidas en el Excel
+LX5+5ES;LAMILUX 5+5 MM ESMERILADO;LAMINADO;30;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX5+5GC;LAMILUX 5+5 MM GRIS CLARO;LAMINADO;31;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX5+5IN;LAMILUX 5+5 MM INC;LAMINADO;32;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX5+5NL;LAMILUX 5+5 MM NEUTRO LIGHT;LAMINADO;33;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX5+5VB;LAMILUX 5+5 MM VERDE BRONCE;LAMINADO;34;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX5+5VC;LAMILUX 5+5 MM VERDE CLARO;LAMINADO;35;5+5;10;SI;3600;2500;50;3550;2500;50;regla de Lucas 21/10/2026;5+5;25;Descripción/Código invertidas en el Excel
+LX6+6IN;LAMILUX 6+6 MM INC;LAMINADO;36;6+6;12;SI;3600;2500;50;3550;2500;50;supuesto (la regla no menciona 6+6: separación supuesta igual a 5+5);6+6;30;Descripción/Código invertidas en el Excel

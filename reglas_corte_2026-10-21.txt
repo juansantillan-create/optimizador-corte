@@ -1,0 +1,34 @@
+Reglas de corte por material — texto original que pasó Juan el 21/10/2026
+(copiado tal cual; la versión para el programa es config/reglas_corte.csv)
+
+"Les paso las medidas que tenemos en cuenta para los cortes de los diferentes
+materiales (chequeado hace un rato con Lucas):
+* fl 4/5/6 mm: sacamos 20 mm de borde de la hoja del lado más largo + 20 mm dist
+  mínima entre pieza (la hoja queda de 3580 x 2500/2200 en lugar de 3600)
+* fl 8 mm: sacamos 30 mm de borde de la hoja del lado más largo + 30 mm dist
+  mínima entre pieza (la hoja queda de 3570 x 25000 en lugar de 3600)
+* fl 10 mm: sacamos 50 mm de borde de la hoja del lado más largo + 50 mm dist
+  mínima entre pieza (la hoja queda de 3650 x 2500/2200 en lugar de 3700 o bien,
+  3000 x 2050 en lugar de 3050 x 2050)
+* 3+3 mm: sacamos 20 mm de borde de la hoja del lado más largo + 20 mm dist
+  mínima entre pieza (la hoja queda de 3580 x 2500/2200 en lugar de 3600)
+* 4+4 mm: sacamos 30 mm de borde de la hoja del lado más largo + 20 mm dist
+  mínima entre pieza (la hoja queda de 3570 x 2500/2200 en lugar de 3600)
+* 5+5 mm: sacamos 50 mm de borde de la hoja del lado más largo + 50 mm dist
+  mínima entre pieza (la hoja queda de 3550 x 2500 en lugar de 3600)"
+
+Comentario de Juan en el mismo mensaje:
+"la app tiene que poder hacerse con esa configuracion o cambiandola, ya que asi
+se usa el sistema oficial, creo que literalmente solo usan la distancia de la
+hoja al canto del vidrio, y que no queden separadas entre si por 20-30-50"
+
+Notas para leerlo bien:
+- "25000" en la línea de 8 mm es un error de tipeo: es 2500.
+- En 4+4 el borde es 30 pero la distancia entre piezas es 20 (no es un error:
+  así lo pasaron).
+- Lo que cree Juan: en Corte Certo (oficina) solo se carga la plancha ya
+  achicada (3580 x 2500), sin separación entre piezas. La captura de
+  "Propiedades físicas" lo confirma: ancho de la sierra 0, destaque 0,
+  constante 0, márgenes 0. La separación de 20/30/50 sería la regla de
+  producción. Por eso el programa tiene las dos configuraciones y la validación
+  contra los casos viejos dice cuál reproduce lo que dio Corte Certo.
