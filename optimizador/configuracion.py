@@ -84,8 +84,9 @@ def leer_reglas(carpeta: Path | None = None) -> dict[str, dict]:
 class Catalogo:
     """Los materiales de `hojas.csv` con sus planchas y la separación de la regla."""
 
-    def __init__(self, carpeta: Path | None = None):
+    def __init__(self, carpeta: Path | None = None, usar_locales: bool = True):
         self.carpeta = Path(carpeta or CARPETA_CONFIG)
+        self.usar_locales = usar_locales  # False: ignora config/local (tests, banco, validación)
         self.reglas = leer_reglas(self.carpeta)
         self.materiales: dict[str, Material] = {}
         self.separacion_regla: dict[str, int] = {}
@@ -114,6 +115,8 @@ class Catalogo:
             ))
 
     def ajustes_locales(self) -> dict:
+        if not self.usar_locales:
+            return {}
         ruta = self.carpeta / "local" / "materiales.json"
         if not ruta.exists():
             return {}
@@ -176,6 +179,8 @@ def _aplicar(mat: Material, valores: dict, origen: str) -> None:
     for campo, valor in valores.items():
         if campo == "planchas":
             mat.planchas = [Plancha(**p) if isinstance(p, dict) else p for p in valor]
+        elif campo == "comercial":
+            continue  # precios provisorios: se guardan, todavía no se usan en el cálculo
         elif campo == "planchas_habilitadas":
             # {"3600x2500": true, "3600x2200": false}
             for p in mat.planchas:

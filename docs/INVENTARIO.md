@@ -27,9 +27,20 @@ la historia de git; ver `DECISIONES.md`).
 
 | Archivo | Qué es | Para qué sirve |
 |---|---|---|
-| `optimizador/__init__.py`, `__main__.py` | El paquete y la línea de comandos (`python -m optimizador`) | Esqueleto de F0; se completa en F1 |
-| `optimizador/motor/` | El motor de cálculo | F1 |
-| `tests/test_esqueleto.py` | Controles mínimos (el paquete importa, `hojas.csv` tiene las 101 medidas) | `pytest -q` |
+| `optimizador/__init__.py`, `__main__.py` | El paquete y la línea de comandos (`python -m optimizador`) | `calcular`, `materiales`, `banco`, `servidor` |
+| `optimizador/modelo.py` | Pieza, Material, Plancha, Proyecto | Las convenciones de medidas |
+| `optimizador/configuracion.py` | Lee `hojas.csv` y las reglas; presets y ajustes locales | Con qué valores se calcula |
+| `optimizador/motor/mochila.py` | Mochila 1D acotada (numpy) | Pieza básica del generador |
+| `optimizador/motor/arbol.py` | Árbol de guillotina, cortes, medidas reales | Cómo se guarda un montaje |
+| `optimizador/motor/generador.py` | Generador de montajes de guillotina | El corazón del motor |
+| `optimizador/motor/calculo.py` | Heurística, generación de columnas, entera, cantidades exactas | Calcula un material |
+| `optimizador/api.py` | `optimizar()`: entrada → resultado (JSON) | Para la interfaz y el orquestador |
+| `optimizador/validador.py` | Validador independiente | Revisa cada resultado |
+| `optimizador/banco.py` | Genera y corre el banco sintético | Benchmark y control de que nada empeore |
+| `optimizador/colores.py`, `dibujo.py`, `informe.py`, `exportar.py` | Colores, SVG de montajes, informe HTML, CSV/XLSX | Fase F2 |
+| `optimizador/importadores.py`, `servidor.py`, `web/` | Importar piezas, servidor local y la página | Fase F3 |
+| `ejemplos/proyecto_ejemplo.json` | Un proyecto inventado para probar la CLI | `python -m optimizador calcular ejemplos/proyecto_ejemplo.json` |
+| `tests/` | Tests (`pytest -q`); `tests/banco/` = 85 casos fijos + `esperado.json` | Controlar que todo ande |
 
 ## `docs/`
 
@@ -48,6 +59,8 @@ la historia de git; ver `DECISIONES.md`).
 | `PREGUNTAS_ABIERTAS.md` | Lo que tiene que contestar Juan, con la opción por defecto | Juan contesta abajo de cada una |
 | `INVENTARIO.md` | Este archivo | |
 | `ENTENDIMIENTO.md` | Qué entendió la sesión de F0, dudas y plan | Fase F0 |
+| `VALIDACION.md` | Qué tan confiable es: banco sintético, tiempos, metas (y la validación histórica cuando lleguen los datos) | Para Juan |
+| `API.md` | La función `optimizar()`, la CLI y el JSON | Para el orquestador |
 
 ## `config/`
 

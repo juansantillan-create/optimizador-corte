@@ -106,6 +106,7 @@ class Limites:
     trabajo: int  # tiras calculadas por el generador (heurística + columnas)
     nodos_entera: int
     segundos_seguridad: float
+    buceo: bool = False
 
 
 # Variantes de la heurística: el valor de cada pieza es su área elevada a este número. Con más
@@ -116,7 +117,7 @@ class Limites:
 ESFUERZOS = {
     "rapido": Limites((1.5,), 0, 0, 0, 30),
     "normal": Limites((1.5, 1.2, 2.0), 80, 9000, 1000, 60),
-    "maximo": Limites((1.5, 1.2, 2.0, 1.0, 1.35, 1.75), 300, 120000, 20000, 300),
+    "maximo": Limites((1.5, 1.2, 2.0, 1.0, 1.35, 1.75), 300, 120000, 20000, 300, buceo=True),
 }
 
 
@@ -171,7 +172,7 @@ class Problema:
 
 # ---------------------------------------------------------------- heurística rápida
 def secuencial(p: Problema, potencia: float = 1.0, restante: list[int] | None = None,
-               cancelar=None, completo: bool = False) -> Solucion | None:
+               cancelar=None, completo: bool = False, progreso=None) -> Solucion | None:
     """Arma un montaje para lo que falta, lo repite lo más posible, y sigue. Con `completo` usa
     el generador completo (más lento, encuentra montajes de más etapas)."""
     generadores = p.generadores if completo else p.generadores_rapidos
@@ -203,6 +204,8 @@ def secuencial(p: Problema, potencia: float = 1.0, restante: list[int] | None = 
         usos.append(Uso(k, nodo, reps, cuenta))
         for i, n in enumerate(cuenta):
             rem[i] = max(0, rem[i] - reps * n)
+        if progreso is not None:
+            progreso(sum(p.demanda) - sum(rem), len(usos))
     if not usos:
         return None
     return Solucion(usos, f"secuencial ({potencia:g})")
@@ -416,6 +419,89 @@ def _juntar_iguales(usos: list[Uso]) -> list[Uso]:
 
 
 # ---------------------------------------------------------------- juntar el sobrante
+def _lp_resto(p: Problema, columnas: list[Columna], demanda: list[int]):
+    """Relajación lineal para cubrir `demanda` con `columnas`. Devuelve (x, duales) o (None, None)."""
+    from scipy.optimize import linprog
+
+    A = np.array([[c.cuenta[i] for c in columnas] for i in range(p.n)], dtype=float)
+    costos = np.array([p.stocks[c.stock].costo for c in columnas])
+    res = linprog(costos, A_ub=-A, b_ub=-np.array(demanda, dtype=float),
+                  bounds=[(0, None)] * len(columnas), method="highs")
+    if res.status != 0:
+        return None, None
+    return np.asarray(res.x), -np.asarray(res.ineqlin.marginals)
+
+
+def bucear(p: Problema, columnas: list[Columna], trabajo_max: int, iteraciones_por_paso: int = 6,
+           cancelar=None) -> Solucion | None:
+    """Buceo ("diving"): se fija el montaje que la relajación lineal más usa, se descuentan sus
+    piezas y se vuelve a resolver lo que falta (generando montajes nuevos para ese resto).
+
+    Sirve sobre todo cuando las piezas son casi todas distintas: ahí la programación entera tiene
+    que encontrar una combinación exacta entre muchos montajes y el buceo la arma de a uno.
+    """
+    resto = list(p.demanda)
+    usos: list[Uso] = []
+    pool = list(columnas)
+    vistos = {(c.stock, c.cuenta) for c in pool}
+    while any(r > 0 for r in resto):
+        if p.trabajo() >= trabajo_max or (cancelar and cancelar()):
+            break
+        validas = [c for c in pool if any(c.cuenta) and all(a <= r for a, r in zip(c.cuenta, resto))]
+        # Que cada tipo que falta tenga al menos un montaje posible.
+        for i in range(p.n):
+            if resto[i] > 0 and not any(c.cuenta[i] > 0 for c in validas):
+                valores = [p.area[j] if j == i else 0.0 for j in range(p.n)]
+                for k, g in enumerate(p.generadores):
+                    for nodo in g.generar(valores, resto):
+                        cuenta = p.cuenta(nodo)
+                        if any(cuenta) and (k, cuenta) not in vistos:
+                            col = Columna(k, nodo, cuenta)
+                            pool.append(col)
+                            validas.append(col)
+                            vistos.add((k, cuenta))
+        x = None
+        for _ in range(iteraciones_por_paso):
+            x, duales = _lp_resto(p, validas, resto)
+            if x is None or p.trabajo() >= trabajo_max:
+                break
+            valores = [max(float(d), 0.0) + 1e-6 * a for d, a in zip(duales, p.area)]
+            nuevas = 0
+            for k, g in enumerate(p.generadores):
+                for nodo in g.generar(valores, resto):
+                    cuenta = p.cuenta(nodo)
+                    if not any(cuenta) or (k, cuenta) in vistos:
+                        continue
+                    if p.stocks[k].costo - sum(float(duales[i]) * n for i, n in enumerate(cuenta)) < \
+                            -1e-9 * p.stocks[k].costo:
+                        col = Columna(k, nodo, cuenta)
+                        pool.append(col)
+                        validas.append(col)
+                        vistos.add((k, cuenta))
+                        nuevas += 1
+            if nuevas == 0:
+                break
+        x, _ = _lp_resto(p, validas, resto)
+        if x is None:
+            break
+        # El más usado por la relajación; si empatan, el más lleno.
+        j = max(range(len(validas)),
+                key=lambda j: (round(x[j], 6), p.aprovechamiento(validas[j].stock, validas[j].cuenta), -j))
+        col = validas[j]
+        veces = max(1, int(x[j] + 1e-6))
+        veces = min([veces] + [resto[i] // n for i, n in enumerate(col.cuenta) if n > 0])
+        usos.append(Uso(col.stock, col.nodo, veces, col.cuenta))
+        for i, n in enumerate(col.cuenta):
+            resto[i] -= veces * n
+    if any(r > 0 for r in resto):
+        final = secuencial(p, 1.5, restante=resto, completo=True)
+        if final is None:
+            return None
+        usos += final.usos
+    columnas[:] = pool
+    return Solucion(_juntar_iguales(usos), "buceo")
+
+
 def juntar_sobrante(p: Problema, sol: Solucion, max_planchas: int = 4) -> Solucion:
     """Reacomoda las planchas menos llenas para que el sobrante quede junto en la última (o
     para ahorrar una plancha), sin agregar montajes ni m²."""
@@ -484,8 +570,26 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
     tiempos: dict[str, float] = {}
 
     def avisar(**kw):
-        if progreso:
-            progreso(**kw)
+        """Progreso para la pantalla "Cálculo en proceso": fase, avance estimado (0 a 1) y
+        cantidad de montajes armados hasta ahora."""
+        if not progreso:
+            return
+        fase = kw.get("fase")
+        trabajo = min(1.0, p.trabajo() / lim.trabajo) if lim.trabajo else 0.0
+        solo_heuristica = lim.iteraciones_columnas == 0
+        if fase == "secuencial":
+            hecho = (kw.get("variante", 1) - 1 + kw.get("parte", 1.0)) / max(kw.get("de", 1), 1)
+            avance = (0.95 if solo_heuristica else 0.3) * hecho
+        elif fase == "columnas":
+            avance = 0.3 + 0.55 * trabajo
+        elif fase == "entera":
+            avance = 0.87
+        elif fase == "buceo":
+            avance = 0.9
+        else:
+            avance = 0.97
+        kw.setdefault("montajes", len(columnas))
+        progreso(avance=round(min(avance, 0.99), 3), **kw)
 
     # 1) Heurística secuencial con algunas variantes.
     mejor: Solucion | None = None
@@ -497,8 +601,14 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
             break
         t0 = time.perf_counter()
         completo = n_var == 0 and sum(p.demanda) <= 400
+        total_piezas = sum(p.demanda)
+
+        def paso(colocadas, montajes, _n=n_var):
+            avisar(fase="secuencial", variante=_n + 1, de=len(lim.variantes_secuencial),
+                   parte=colocadas / total_piezas, montajes=montajes)
+
         sol = secuencial(p, potencia, cancelar=cancelar if mejor is not None else None,
-                         completo=completo)
+                         completo=completo, progreso=paso)
         tiempos['secuencial'] = tiempos.get('secuencial', 0) + time.perf_counter() - t0
         if sol is None:
             continue
@@ -544,6 +654,16 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
             if sol is not None:
                 sol = quitar_sobrantes(p, sol)
                 if sol.clave(stocks) < mejor.clave(stocks):
+                    mejor = sol
+            # Buceo, si todavía no se llegó al mínimo teórico. (El valor de la relajación no
+            # sirve para decidir: si la generación de columnas no terminó, es una cota por arriba.)
+            falta = len(stocks) > 1 or mejor.planchas() > cota_planchas
+            if lim.buceo and falta and not (cancelar and cancelar()):
+                t0 = time.perf_counter()
+                avisar(fase="buceo")
+                sol = bucear(p, columnas, p.trabajo() + lim.trabajo, cancelar=cancelar)
+                tiempos['buceo'] = time.perf_counter() - t0
+                if sol is not None and sol.clave(stocks) < mejor.clave(stocks):
                     mejor = sol
     if time.perf_counter() > reloj_limite:
         avisos.append("el cálculo llegó al límite de tiempo de seguridad: el resultado puede variar "

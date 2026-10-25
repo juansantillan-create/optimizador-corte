@@ -3,6 +3,30 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F1 cerrada (motor + validador + banco sintético + CLI)
+
+**Hecho**
+- Motor (`optimizador/motor/`): generador de montajes de guillotina (tiras, renglones iguales o
+  mixtos, alternancia de la dirección de corte, relleno de sobrantes), heurística secuencial,
+  generación de columnas + programación entera con HiGHS (scipy), cantidades exactas, sobrante
+  junto en la última plancha, mínimo teórico. Trabajo limitado por cantidad (reproducible).
+- Validador independiente (`optimizador/validador.py`), usado en cada cálculo y en los tests.
+- `optimizar()` (`optimizador/api.py`), presets "Como Corte Certo hoy" (con +3 mm en pulido recto,
+  confirmado por Juan) y "Reglas de corte (Lucas)", hipótesis H0–H2, ajustes por material.
+- CLI: `python -m optimizador calcular|materiales|banco|servidor`.
+- Banco sintético en `tests/banco/` (85 casos fijos) y resultados en `docs/VALIDACION.md`.
+- Tests: 49 (mochila contra fuerza bruta, validador con resultados rotos, casos borde del brief,
+  instancias al azar, banco). Además 500 instancias al azar: 0 fallas.
+
+**Números** (detalle en `docs/VALIDACION.md`): 100 % validado; tiempos y memoria dentro de las
+metas; óptimo en 50 % del "corte perfecto" hasta 100 piezas (**meta 95 %: no se cumple**; son
+rompecabezas de piezas todas distintas; los casos realistas quedan en la cota de la relajación en
+11 de 13).
+
+**Pendiente del motor**: mejorar el "corte perfecto" (generador más fuerte o más trabajo en el
+esfuerzo normal sin pasarse de 10 s); máximo tamaño cortado (`corte_max_mm`) todavía no se
+controla (se guarda la opción).
+
 ## 25/10/2026: fase F0 cerrada (inventario y entendimiento)
 
 **Hecho**

@@ -1,6 +1,7 @@
 """Línea de comandos.
 
     python -m optimizador calcular proyecto.json [-o resultado.json] [--preset lucas] [--esfuerzo rapido]
+    python -m optimizador servidor [--puerto 8520] [--no-abrir]
     python -m optimizador materiales [CODIGO]
     python -m optimizador banco [--esfuerzo rapido] [--filtro CP-] [--guardar]
     python -m optimizador --version
@@ -59,6 +60,9 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--silencioso", action="store_true", help="no mostrar el progreso")
     m = sub.add_parser("materiales", help="listar los materiales configurados")
     m.add_argument("codigo", nargs="?")
+    s = sub.add_parser("servidor", help="abrir la interfaz en el navegador (127.0.0.1:8520)")
+    s.add_argument("--puerto", type=int, default=8520)
+    s.add_argument("--no-abrir", action="store_true", help="no abrir el navegador")
     b = sub.add_parser("banco", help="correr el banco de pruebas sintético (sirve de benchmark)")
     b.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="normal")
     b.add_argument("--filtro", default="", help="solo los casos cuyo nombre contiene esto")
@@ -66,6 +70,11 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--guardar", action="store_true", help="guardar los resultados como esperados")
     b.add_argument("--salida", type=Path, help="guardar los resultados en este JSON")
     args = parser.parse_args(argv)
+
+    if args.comando == "servidor":
+        from .servidor import servir
+        servir(args.puerto, abrir=not args.no_abrir)
+        return 0
 
     if args.comando == "banco":
         from . import banco

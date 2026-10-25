@@ -23,6 +23,7 @@ import time
 from pathlib import Path
 
 from .api import optimizar
+from .configuracion import Catalogo
 
 CARPETA = Path(__file__).resolve().parents[1] / "tests" / "banco"
 FECHA_FIJA = "2026-10-25 00:00:00"
@@ -198,7 +199,7 @@ def correr(carpeta: Path = CARPETA, esfuerzo: str = "normal", filtro: str = "",
         caso = json.loads(ruta.read_text(encoding="utf-8"))
         caso["opciones"] = {"esfuerzo": esfuerzo}
         t0 = time.perf_counter()
-        res = optimizar(caso)
+        res = optimizar(caso, catalogo=Catalogo(usar_locales=False))
         segundos = time.perf_counter() - t0
         m = res["materiales"][0]
         fila = {
@@ -214,6 +215,11 @@ def correr(carpeta: Path = CARPETA, esfuerzo: str = "normal", filtro: str = "",
             "verificado": res["verificado"],
             "segundos": round(segundos, 2),
         }
+        # Diagnóstico: la relajación lineal en planchas (vale para los montajes que generó el
+        # motor; no es un mínimo garantizado).
+        lp = (m.get("calculo") or {}).get("relajacion_lineal_m2")
+        if lp and m["planchas"]:
+            fila["relajacion_planchas"] = round(lp / (m["m2_planchas"] / m["planchas"]), 3)
         resultados.append(fila)
         mostrar(f"{fila['caso']:<10} {fila['familia']:<15} {fila['piezas']:>4} piezas  "
                 f"{fila['planchas']:>4} planchas (óptimo {fila['optimo'] or '-'}, mínimo teórico "
