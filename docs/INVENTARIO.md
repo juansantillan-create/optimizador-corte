@@ -39,6 +39,8 @@ la historia de git; ver `DECISIONES.md`).
 | `optimizador/banco.py` | Genera y corre el banco sintético | Benchmark y control de que nada empeore |
 | `optimizador/colores.py`, `dibujo.py`, `informe.py`, `exportar.py` | Colores, SVG de montajes, informe HTML, CSV/XLSX | Fase F2 |
 | `optimizador/importadores.py`, `servidor.py`, `web/` | Importar piezas, servidor local y la página | Fase F3 |
+| `optimizador/historico/` | Validación contra los casos viejos: datos, leyendas, reconstrucción, comparar/calibrar, página de revisión | Fase F4 (`python -m optimizador historico`) |
+| `tests/historico_juguete/` | Caso de juguete **inventado** con el formato del contrato | Probar F4 sin datos reales |
 | `ejemplos/proyecto_ejemplo.json` | Un proyecto inventado para probar la CLI | `python -m optimizador calcular ejemplos/proyecto_ejemplo.json` |
 | `tests/` | Tests (`pytest -q`); `tests/banco/` = 85 casos fijos + `esperado.json` | Controlar que todo ande |
 
@@ -105,6 +107,7 @@ la historia de git; ver `DECISIONES.md`).
 | Archivo | Qué es | Para qué sirve |
 |---|---|---|
 | `importar_medidas_hojas.py` | Convierte `Medidas_hojas.xlsx` en `hojas.csv` | Regenerar la configuración de planchas |
+| `generar_caso_juguete.py` | Genera el caso de juguete de `tests/historico_juguete/` | Tests de F4 |
 
 ## `.claude/agents/`
 

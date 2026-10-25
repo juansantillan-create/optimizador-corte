@@ -43,5 +43,10 @@ leyenda (±0,5 por el redondeo a entero). Si no, el caso se informa aparte.
 
 ## Cobertura
 
-Se completa cuando lleguen los casos (`datos/casos/`): cuántas leyendas se leyeron, cuántas no y
-por qué, con ejemplos de cada formato que aparezca.
+Se completa cuando lleguen los casos (`datos/casos/`): `python -m optimizador historico` deja en
+`salida/historico/cobertura.json` cuántas leyendas se leyeron, cuántas no y por qué, con ejemplos
+de las que no se entendieron (y la página de revisión las lista). Con eso se agregan acá los
+formatos nuevos que aparezcan, con 3 ejemplos de cada uno.
+
+Con el caso de juguete (inventado) se leen todas las líneas del formato A, incluidas las variantes
+con "_" y sin espacio antes de los asteriscos.

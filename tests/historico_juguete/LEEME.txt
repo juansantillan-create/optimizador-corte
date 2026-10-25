@@ -1,0 +1,3 @@
+CASO DE JUGUETE, TODO INVENTADO (no sale de Metrix).
+Lo genera herramientas/generar_caso_juguete.py para probar la validación histórica.
+Contrato: docs/CONTRATO_DATOS.md versión 2. La leyenda está en la columna 'observaciones'.

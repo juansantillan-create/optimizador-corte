@@ -5,8 +5,42 @@ Qué tan confiable es el optimizador, en palabras simples. Se actualiza cada vez
 
 ## 1. Contra Corte Certo (casos históricos)
 
-**Todavía no hay números**: los casos viejos no llegaron (`datos/casos/` está vacío). Todo está
-listo para correr cuando lleguen (fase F4, ver `docs/CONTRATO_DATOS.md`).
+**Todavía no hay números reales**: los casos viejos no llegaron (`datos/casos/` está vacío). Todo
+está listo para correr cuando lleguen:
+
+```text
+python -m optimizador historico                  # primero una muestra de 50 casos
+python -m optimizador historico --todo --docs    # todos; escribe los números acá abajo
+```
+
+Qué hace (detalle en `optimizador/historico/comparar.py`):
+1. Lee el zip o la carpeta del contrato (`docs/CONTRATO_DATOS.md`, versión 2) y avisa si algo no
+   coincide con el contrato.
+2. Busca la leyenda en "Situación de Presupuesto → Observaciones" (y en las otras columnas de texto)
+   y la lee (`docs/FORMATO_LEYENDAS.md`). Cuenta cuántas lee y cuántas no, con ejemplos.
+3. Reconstruye las piezas de cada presupuesto por material (DVH = 2 vidrios; herrajes, fletes,
+   perforaciones y cámaras afuera; cada pieza de `DETPRES2` se cuenta una sola vez).
+4. Relaciona el material abreviado de la leyenda ("4+4 NLIGHT") con el código de Metrix de las
+   piezas del presupuesto (por composición y palabras). Si hay dudas, el caso va aparte.
+5. **Control de la entrada**: los m² de las piezas tienen que cerrar con las hojas y el % de la
+   leyenda (±0,6). De paso dice con qué medida de plancha y si se cargó con el +3 mm del pulido.
+   Lo que no cierra (el presupuesto cambió después, otra plancha) se informa aparte.
+6. Calcula cada caso con H0, H1 y H2 **con la misma medida de plancha**, elige por grupo de
+   material la que más se parece a Corte Certo usando el **70 %** de los casos (siempre los
+   mismos, por número de presupuesto) e informa los números sobre el **30 %** restante.
+7. Arma la página de revisión (`salida/historico/revision.html`): caso por caso, nuestros montajes
+   al lado de los números de Corte Certo, filtros (peores, mejores…), marcas bien/mal/duda y un
+   botón "Copiar mis respuestas" para pegar en la sesión.
+
+Lo calculado se guarda a medida que sale (`salida/historico/`, no va a git): si se corta, se
+vuelve a correr el mismo comando y sigue donde quedó. Con esfuerzo normal tarda unos segundos por
+caso y por hipótesis; para miles de casos conviene `--esfuerzo rapido` primero.
+
+**Prueba con el caso de juguete** (`tests/historico_juguete/`, 19 presupuestos **inventados** que
+genera `herramientas/generar_caso_juguete.py`): corre de punta a punta; lee 17 leyendas, no puede
+leer 1 (a propósito), no puede relacionar 1 (material ambiguo, a propósito), 1 no cierra (a
+propósito) y compara el resto con las 3 hipótesis. **Esos números no dicen nada del optimizador**:
+las "hojas de Corte Certo" del juguete son inventadas (algunas, imposibles).
 
 ## 2. Banco sintético (25/10/2026, versión 0.1 del motor)
 

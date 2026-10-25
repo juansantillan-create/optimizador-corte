@@ -4,6 +4,7 @@
     python -m optimizador servidor [--puerto 8520] [--no-abrir]
     python -m optimizador materiales [CODIGO]
     python -m optimizador banco [--esfuerzo rapido] [--filtro CP-] [--guardar]
+    python -m optimizador historico [--todo] [--datos datos/casos] [--docs] [--publicar]
     python -m optimizador --version
 
 `calcular` lee la entrada (JSON de `docs/API.md`), calcula y escribe el resultado en JSON. Al final
@@ -63,6 +64,14 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("servidor", help="abrir la interfaz en el navegador (127.0.0.1:8520)")
     s.add_argument("--puerto", type=int, default=8520)
     s.add_argument("--no-abrir", action="store_true", help="no abrir el navegador")
+    h = sub.add_parser("historico", help="validación contra los casos viejos de Corte Certo")
+    h.add_argument("--datos", type=Path, help="carpeta o zip de casos (por defecto datos/casos)")
+    h.add_argument("--salida", type=Path, help="dónde guardar (por defecto salida/historico)")
+    h.add_argument("--muestra", type=int, default=50, help="cuántos casos (por defecto 50)")
+    h.add_argument("--todo", action="store_true", help="todos los casos")
+    h.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="normal")
+    h.add_argument("--docs", action="store_true", help="actualizar docs/VALIDACION.md")
+    h.add_argument("--publicar", action="store_true", help="copiar la página a docs/validacion/")
     b = sub.add_parser("banco", help="correr el banco de pruebas sintético (sirve de benchmark)")
     b.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="normal")
     b.add_argument("--filtro", default="", help="solo los casos cuyo nombre contiene esto")
@@ -75,6 +84,14 @@ def main(argv: list[str] | None = None) -> int:
         from .servidor import servir
         servir(args.puerto, abrir=not args.no_abrir)
         return 0
+
+    if args.comando == "historico":
+        from .configuracion import RAIZ
+        from .historico import comparar, principal
+        opciones = comparar.Opciones(esfuerzo=args.esfuerzo, muestra=None if args.todo else args.muestra)
+        res = principal.ejecutar(args.datos or RAIZ / "datos" / "casos", args.salida or RAIZ / "salida" / "historico",
+                                 opciones, docs=args.docs, publicar=args.publicar)
+        return 0 if res else 2
 
     if args.comando == "banco":
         from . import banco

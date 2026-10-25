@@ -3,6 +3,25 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F4 lista para correr (validación histórica; sin datos todavía)
+
+**Hecho**
+- `optimizador/historico/`: lector del zip/carpeta del contrato (v2), lector de leyendas (formato
+  real de Juan), reconstrucción de piezas (DVH = 2 vidrios, sin herrajes/fletes/cámaras, sin contar
+  dos veces), relación material abreviado → código de Metrix, control de la entrada por
+  aprovechamiento, corrida de H0–H2 con la misma plancha, calibración 70/30 por grupo de material,
+  resumen para `docs/VALIDACION.md` y página de revisión con marcas y "Copiar mis respuestas".
+- `python -m optimizador historico [--todo] [--docs] [--publicar]`; guarda resultados parciales y
+  retoma si se corta.
+- Caso de juguete **inventado** en `tests/historico_juguete/` (lo genera
+  `herramientas/generar_caso_juguete.py`) y tests de punta a punta.
+- Se encontró y arregló un error de reconstrucción: con un vidrio en varios renglones, las piezas
+  de `DETPRES2` se contaban dos veces.
+
+**Cuando lleguen los datos**: ponerlos en `datos/casos/` (o adjuntarlos) y usar el prompt 3 de
+`PROMPT_INICIAL.md`. Primero `python -m optimizador historico` (muestra de 50) y mirar la
+cobertura; después `--todo --docs`.
+
 ## 25/10/2026: fase F3 cerrada (interfaz local, .bat, importadores, presets)
 
 **Hecho**
