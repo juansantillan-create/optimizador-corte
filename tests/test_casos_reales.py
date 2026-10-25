@@ -33,11 +33,12 @@ def test_lectura_y_cobertura(preparados):
     assert cob["control_ok"] > 1000 and sum(cob["variantes"].values()) == cob["control_ok"]
     # Cada caso una sola vez, y su variante (si tiene) es la otra de banda 20 ↔ hoja entera.
     assert len({(t["numero"], t["material"]) for t in principales}) == len(principales)
-    assert len(alternativas) == cob["con_alternativa"]
+    assert len(alternativas) == cob["con_alternativa"] + cob["forzadas"]
+    assert sum(bool(a["extra"].get("forzada")) for a in alternativas) == cob["forzadas"]
     por_caso = {(t["numero"], t["material"]): t for t in principales}
     for a in alternativas:
         t = por_caso[(a["numero"], a["material"])]
-        assert t["extra"]["tiene_alternativa"] and t["piezas"] == a["piezas"]
+        assert t["extra"]["tiene_alternativa"] == (not a["extra"]["forzada"]) and t["piezas"] == a["piezas"]
         assert {t["extra"]["variante"], a["extra"]["variante"]} == {"banda 20", "hoja entera"}
 
 
@@ -59,18 +60,21 @@ def test_control_prefiere_lo_que_cierra_redondeando(preparados):
     r = exportados.control(_caso(casos, "4872", "LX5+5IN"), cat)
     assert (r["plancha"], r["variante"], r["redondea"]) == ("3600x2500", "hoja entera", True)
     assert (r["alternativa"]["variante"], r["alternativa"]["redondea"]) == ("banda 20", False)
-    # 4+4 NL, 81 %: con 3580 da 81,28 (redondea); con la hoja entera 80,83 (también redondea): gana
-    # banda 20 y la hoja entera queda como variante.
+    # 4+4 NL, 81 %: con 3580 da 81,28 y con la hoja entera 80,83; las dos redondean y gana la más
+    # cercana (la hoja entera). Banda 20 queda como variante.
     r = exportados.control(_caso(casos, "6348", "LX4+4NL"), cat)
-    assert (r["variante"], r["redondea"], r["alternativa"]["variante"]) == ("banda 20", True, "hoja entera")
+    assert (r["variante"], r["redondea"], r["alternativa"]["variante"]) == ("hoja entera", True, "banda 20")
 
 
-def test_banda_de_lucas_no_cierra_redondeando(preparados):
-    _, casos, _, _ = preparados
-    # El mismo 5+5 con la banda de Lucas (50): 3550 × 2500 da 80,32 %, que no es 79 redondeando.
-    caso = _caso(casos, "4872", "LX5+5IN")
-    calc = exportados._mm2(exportados._piezas(caso, True)) / (caso.hojas * 3550 * 2500) * 100
-    assert not comparar.redondea(calc, caso.aprovechamiento)
+def test_evidencia_de_la_banda(preparados):
+    cat, casos, _, _ = preparados
+    filas = exportados.evidencia_banda(casos, cat)
+    antes = [f for f in filas if f["periodo"] < "2026-07"]
+    assert antes and sum(f["casos"] for f in antes) > 200
+    # Hasta junio de 2026: con 3600 redondeando cierra casi todo; con la banda de Lucas de 50, casi nada.
+    for f in antes:
+        assert f["3600 (hoja entera)"]["redondea_%"] >= 90 and f["3550 (banda 50)"]["redondea_%"] <= 10
+    assert (sum(f["contra_3600_redondeando"] for f in antes) < sum(f["contra_3580_truncando"] for f in antes))
 
 
 def test_medida_anotada_que_ya_es_util_va_tal_cual(preparados):
@@ -103,8 +107,10 @@ def test_control_descarta_la_banda_si_las_piezas_no_entran(preparados):
     r = exportados.control(_caso(casos, "7781", "FL4IN"), cat)
     assert (r["plancha"], r["variante"]) == ("3600x2500", "hoja entera")
     # Con banda 20 cierra solo con otra medida, deducida (3660 × 2440): no hay variante, y como es
-    # menos confiable que la de hojas.csv, se sabe que era la hoja entera.
+    # menos confiable que la de hojas.csv, se sabe que era la hoja entera. Igual se calcula con banda
+    # 20 en la misma medida ("forzada"), para ver cuánto daría cotizar siempre así.
     assert r["alternativa"] is None and r["unica"]
+    assert (r["forzada"]["plancha"], r["forzada"]["variante"]) == ("3600x2500", "banda 20")
 
 
 def test_vistas_eligen_la_variante_pedida():
@@ -117,11 +123,14 @@ def test_vistas_eligen_la_variante_pedida():
     todas = [fila("1", "hoja entera", 10, tiene=True), fila("1", "banda 20", 11, alternativa=True),
              fila("2", "banda 20", 9, tiene=True), fila("2", "hoja entera", 9, alternativa=True),
              fila("3", "banda 20", 12)]
+    # El 3 con la hoja entera "forzada": las piezas no entran (deja piezas sin calcular).
+    todas.append({**fila("3", "hoja entera", 0, alternativa=True), "completo": False})
     filas, vistas = principal.vistas_exportados(todas)
     assert [f["numero"] for f in filas] == ["1", "2", "3"]
     assert vistas["probable"]["casos"] == vistas["banda"]["casos"] == vistas["entera"]["casos"] == 3
-    assert vistas["banda"]["peores_%"] > vistas["entera"]["peores_%"]  # el 1 con banda 20 da 11
-    assert vistas["seguros"]["casos"] == 1  # solo el 3 no tiene otra variante
+    assert vistas["banda"]["peores_%"] == 66.7  # el 1 con banda 20 da 11 y el 3 da 12
+    assert vistas["entera"]["no_entran"] == 1 and vistas["entera"]["peores_%"] == 33.3  # el 3 no se puede
+    assert vistas["seguros"]["casos"] == 1  # solo el 3 no tiene otra variante que cierre
 
 
 def test_algunos_casos_de_punta_a_punta(preparados, tmp_path):

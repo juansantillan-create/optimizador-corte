@@ -373,9 +373,11 @@ def correr(trabajos: list[dict], salida: Path, opciones: Opciones, catalogo: Cat
         for hip in opciones.hipotesis:
             clave = (t["numero"], t["material"], hip, opciones.esfuerzo, t["firma"])
             if clave in hechos and hechos[clave].get("verificado"):
-                # La cuenta es la misma (misma firma); los datos de contexto, los de ahora. (Lo que
-                # no pasó el validador se vuelve a calcular: puede haber sido un error ya arreglado.)
-                por_clave[clave] = {**hechos[clave], "extra": t.get("extra") or {}}
+                # La cuenta es la misma (misma firma); los datos de contexto (avisos, extra…), los de
+                # ahora. (Lo que no pasó el validador se vuelve a calcular: puede haber sido un error
+                # ya arreglado.)
+                por_clave[clave] = {**hechos[clave], **{k: t.get(k) for k in CAMPOS_FILA},
+                                    "extra": t.get("extra") or {}}
             else:
                 pendientes.append((t, hip, opciones.esfuerzo))
     if hechos and pendientes:

@@ -335,3 +335,13 @@ def test_muchisimas_medidas_en_maximo_no_hace_columnas():
     m = material(res, "FL5IN")
     assert res["verificado"] and res["completo"]
     assert any("solo la heurística" in a for a in m["avisos"])
+
+
+def test_hipotesis_de_la_validacion_con_la_misma_plancha():
+    # H0, H1 y H2 cambian solo la separación: la plancha útil es la misma (la de Corte Certo).
+    from optimizador.configuracion import Catalogo
+
+    cat = Catalogo(usar_locales=False)
+    utiles = {h: [(p.ancho - p.corte_banda, p.largo) for p in cat.material("LX5+5IN", h, usar_locales=False).planchas]
+              for h in ("H0", "H1", "H2")}
+    assert utiles["H0"] == utiles["H1"] == utiles["H2"]

@@ -257,11 +257,12 @@ def control(caso: CasoExportado, catalogo: Catalogo) -> dict:
     `minimo_planchas`, con las piezas con o sin el +3) se descarta.
     Entre las que cierran gana, en este orden: con el +3; la de hojas.csv (o la anotada) antes que
     una deducida; la que da el % **redondeando** (lo normal según Juan, pregunta 24) antes que la que
-    solo da truncando; banda 20 antes que hoja entera; la más cercana.
+    solo da truncando; la más cercana (y si quedan iguales, banda 20).
     Devuelve {"plancha", "planchas" (la lista para `optimizar`; None = la del material en
     hojas.csv), "variante", "con_pulido", "redondea", "supuesta", "medida_nueva", "ambigua",
-    "alternativa" (la otra variante con la misma medida, si también cierra), "unica" (la otra
-    variante no cierra con ninguna medida), "detalle"};
+    "alternativa" (la otra variante con la misma medida, si también cierra), "forzada" (la otra
+    variante con la misma medida cuando no cierra), "unica" (la otra variante no cierra con ninguna
+    medida igual de confiable), "detalle"};
     "plancha" None si no cierra."""
     mat = catalogo.material(caso.material, "H0", usar_locales=False)
     piezas = {True: _piezas(caso, True), False: _piezas(caso, False)}
@@ -294,7 +295,7 @@ def control(caso: CasoExportado, catalogo: Catalogo) -> dict:
                                      "supuesta": False})
     salida = {"plancha": None, "planchas": None, "variante": None, "con_pulido": True, "redondea": False,
               "supuesta": False, "medida_nueva": False, "ambigua": [], "alternativa": None, "unica": False,
-              "detalle": "", "no_entran": True}
+              "forzada": None, "detalle": "", "no_entran": True}
     pruebas = []
     for o in opciones:
         util = sum(n * w * h for n, w, h in o["medidas"])
@@ -306,8 +307,8 @@ def control(caso: CasoExportado, catalogo: Catalogo) -> dict:
             calc = mm2[con_pulido] / util * 100
             red = comparar.redondea(calc, caso.aprovechamiento, caso.decimales)
             pruebas.append({**o, "con_pulido": con_pulido, "calc": calc, "redondea": red,
-                            "orden": (not con_pulido, o["prioridad"], not red, o["orden_v"],
-                                      abs(calc - caso.aprovechamiento), o["clave"])})
+                            "orden": (not con_pulido, o["prioridad"], not red,
+                                      round(abs(calc - caso.aprovechamiento), 6), o["orden_v"], o["clave"])})
     pruebas.sort(key=lambda x: x["orden"])
     salida["detalle"] = ", ".join(f"{x['clave']} ({x['variante']}){'' if x['con_pulido'] else ' sin +3'}: {x['calc']:.2f} %"
                                   for x in pruebas[:4])
@@ -326,11 +327,18 @@ def control(caso: CasoExportado, catalogo: Catalogo) -> dict:
     # cuál usó ("unica") solo si la otra no cierra con ninguna medida igual de confiable.
     otras = [y for y in cierran if y["variante"] != x["variante"] and y["variante"] != ANOTADA_UTIL
              and y["con_pulido"] == x["con_pulido"] and y["prioridad"] <= x["prioridad"]]
-    salida["unica"] = not otras
+    salida["unica"] = not otras and x["variante"] != ANOTADA_UTIL
     misma = next((y for y in otras if y["clave"] == x["clave"]), None)
     if misma is not None and x["variante"] != ANOTADA_UTIL:
         salida["alternativa"] = {"plancha": misma["clave"], "planchas": misma["planchas"],
                                  "variante": misma["variante"], "redondea": misma["redondea"]}
+    elif x["variante"] != ANOTADA_UTIL:
+        # La otra variante con la misma medida aunque no cierre (o las piezas no entren): no es lo que
+        # usó Corte Certo, pero dice cuánto daría cotizar siempre así (filas "siempre…").
+        forzada = next((o for o in opciones if o["clave"] == x["clave"] and o["variante"] != x["variante"]), None)
+        if forzada is not None:
+            salida["forzada"] = {"plancha": forzada["clave"], "planchas": forzada["planchas"],
+                                 "variante": forzada["variante"], "redondea": False}
     return salida
 
 
@@ -344,7 +352,7 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
     cob = {"casos": len(casos), "sin_hojas": [], "con_bandas": [], "area_no": [], "sin_piezas": [],
            "varias_medidas": [], "no_cierran": [], "duplicados": [], "control_ok": 0, "sin_mas3": 0,
            "plancha_supuesta": 0, "plancha_ambigua": 0, "con_detalle": 0, "con_avisos": 0, "medida_nueva": {},
-           "variantes": {}, "solo_truncando": 0, "con_alternativa": 0}
+           "variantes": {}, "solo_truncando": 0, "con_alternativa": 0, "forzadas": 0}
     trabajos = []
     vistos: dict[tuple, dict] = {}
     for caso in casos:
@@ -425,22 +433,29 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
                        "tiene_alternativa": bool(c["alternativa"]), "unica": c["unica"]}}
         t["firma"] = comparar._firma(t)
         trabajos.append(t)
-        if c["alternativa"]:
-            # La otra variante (banda 20 ↔ hoja entera), con las mismas piezas.
-            a = c["alternativa"]
-            alt = {**t, "plancha": a["plancha"], "planchas": a["planchas"],
-                   "avisos": [f"variante: {a['variante']} con {a['plancha']} (también cierra)"],
-                   "extra": {**t["extra"], "variante": a["variante"], "redondea": a["redondea"], "alternativa": True}}
+        a = c["alternativa"] or c["forzada"]
+        if a:
+            # La otra variante (banda 20 ↔ hoja entera), con las mismas piezas: si también cierra, es
+            # otra lectura posible de Corte Certo; si no, solo dice cuánto daría cotizar siempre así.
+            forzada = c["alternativa"] is None
+            if forzada:
+                cob["forzadas"] += 1
+            aviso = (f"variante: {a['variante']} con {a['plancha']} "
+                     + ("(no cierra con el % de Corte Certo: solo para ver cómo cotizaría)" if forzada else "(también cierra)"))
+            alt = {**t, "plancha": a["plancha"], "planchas": a["planchas"], "avisos": [aviso],
+                   "extra": {**t["extra"], "variante": a["variante"], "redondea": a["redondea"], "alternativa": True,
+                             "forzada": forzada}}
             alt["firma"] = comparar._firma(alt)
             trabajos.append(alt)
     return trabajos, cob
 
 
-VISTAS = {"probable": "La plancha con la que mejor cierra el % (redondeando primero): **la cuenta principal**",
-          "banda": "Banda 20 (3580) siempre que cierre",
-          "entera": "Hoja entera (3600) siempre que cierre",
-          "seguros": "Solo los casos donde la otra no cierra con ninguna medida de hoja"}
+VISTAS = {"probable": "La plancha con la que mejor cierra el % de cada caso: **la cuenta principal**",
+          "banda": "Cotizando siempre con banda 20 (3580)",
+          "entera": "Cotizando siempre con la hoja entera (3600)",
+          "seguros": "Solo los casos donde la otra no cierra con ninguna medida igual de confiable"}
 
+MARGEN_EVIDENCIA = comparar.MARGEN_CORTE_CERTO
 ANCHOS_EVIDENCIA = (("3600 (hoja entera)", 3600), ("3580 (banda 20)", 3580), ("3570 (banda 30)", 3570),
                     ("3550 (banda 50)", 3550))
 
@@ -477,15 +492,19 @@ def evidencia_banda(casos: list[CasoExportado], catalogo: Catalogo) -> list[dict
         for nombre, _ in ANCHOS_EVIDENCIA:
             fila[nombre] = {"redondea_%": round(sum(comparar.redondea(-f[nombre], 0) for f in fs) / len(fs) * 100),
                             "dif_media": round(sum(f[nombre] for f in fs) / len(fs), 2)}
+        # Las dos lecturas posibles dan casi la misma diferencia media; lo que las separa es qué casos
+        # las contradicen: "3600 redondeando" no admite diferencias de más de 0,5 para ningún lado;
+        # "3580 truncando" no admite que la leyenda sea más que lo calculado (ni 1 o más por debajo).
         a, b = ANCHOS_EVIDENCIA[0][0], ANCHOS_EVIDENCIA[1][0]
-        fila["solo_3600"] = sum(comparar.redondea(-f[a], 0) and not comparar.redondea(-f[b], 0) for f in fs)
-        fila["solo_3580"] = sum(comparar.redondea(-f[b], 0) and not comparar.redondea(-f[a], 0) for f in fs)
+        fila["contra_3600_redondeando"] = sum(not comparar.redondea(-f[a], 0) for f in fs)
+        fila["contra_3580_truncando"] = sum(f[b] > MARGEN_EVIDENCIA or f[b] <= -1 - MARGEN_EVIDENCIA for f in fs)
         salida.append(fila)
     return salida
 
 
 def _fila_vista(nombre: str, r: dict) -> str:
-    return (f"| {nombre} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | {r['peores_%']} % | "
+    no_entran = f" (con {r['no_entran']} donde las piezas no entran)" if r.get("no_entran") else ""
+    return (f"| {nombre} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | {r['peores_%']} %{no_entran} | "
             f"{r['diferencia_media']:+} | {r['peor_diferencia']:+} |")
 
 
@@ -509,12 +528,14 @@ def markdown(cob: dict, prueba: dict, opciones: comparar.Opciones, origen: str, 
     for motivo, n in sorted(motivos.items()):
         lineas.append(f"| No cierran: {comparar.MOTIVOS_NO_CIERRAN.get(motivo, motivo)} | {n} |")
     variantes = cob.get("variantes", {})
-    lineas += [f"| Iguales a otro caso (mismas piezas, plancha y resultado de Corte Certo): se cuentan una vez | "
+    lineas += [f"| Iguales a otro caso (mismas piezas, plancha y resultado de Corte Certo; a veces el mismo pedido "
+               f"en otro vidrio, a veces otro presupuesto): se cuentan una vez | "
                f"{len(cob['duplicados'])} |",
                f"| **Pasaron el control y se compararon** | **{cob['control_ok']}** |",
                f"| … calculados con la hoja entera / con banda 20 / con la medida útil anotada | "
                f"{variantes.get('hoja entera', 0)} / {variantes.get('banda 20', 0)} / {variantes.get(ANOTADA_UTIL, 0)} |",
                f"| … donde también cierra la otra (banda 20 ↔ hoja entera): se calcularon las dos | {cob['con_alternativa']} |",
+               f"| … donde la otra no cierra: se calculó igual, solo para \"cotizando siempre con…\" | {cob['forzadas']} |",
                f"| … donde el % cierra solo truncando, no redondeando | {cob['solo_truncando']} |",
                f"| … que cierran solo SIN el +3 mm del pulido (se calcularon sin el +3) | {cob['sin_mas3']} |",
                f"| … con las medidas de hoja anotadas en la leyenda | {cob['con_detalle']} |",
@@ -531,19 +552,28 @@ def markdown(cob: dict, prueba: dict, opciones: comparar.Opciones, origen: str, 
     if evidencia:
         nombres = [n for n, _ in ANCHOS_EVIDENCIA]
         lineas += ["**¿Corte Certo cortaba sobre 3600 o sobre 3580?** (pregunta 28). Casos con % entero y hoja de "
-                   "3600 × 2500 en hojas.csv que cierran con alguna de las dos: cuántos dan el % **redondeando** "
-                   "con cada ancho, y la diferencia media leyenda − calculado (con el ancho que usó Corte Certo, "
-                   "si la oficina redondeaba, tiene que dar cerca de 0).", "",
-                   "| Período | Casos | " + " | ".join(nombres) + " | Solo 3600 | Solo 3580 |",
+                   "3600 × 2500 en hojas.csv que cierran con alguna de las dos. Para cada ancho: cuántos dan el % "
+                   "**redondeando** y, entre paréntesis, la diferencia media leyenda − calculado. Hay dos lecturas "
+                   "que dan casi lo mismo en promedio: \"3600 y la oficina redondeaba\" y \"3580 y la oficina "
+                   "truncaba\". Lo que las separa son las dos últimas columnas: cuántos casos contradicen cada una "
+                   "(con 3600, una diferencia de más de 0,5; con 3580, una leyenda más alta que lo calculado).", "",
+                   "| Período | Casos | " + " | ".join(nombres) + " | Contradicen 3600 redondeando | "
+                   "Contradicen 3580 truncando |",
                    "|---|---|" + "---|" * len(nombres) + "---|---|"]
         for f in evidencia:
             celdas = " | ".join(f"{f[n]['redondea_%']} % ({f[n]['dif_media']:+.2f})" for n in nombres)
-            lineas.append(f"| {f['periodo']} | {f['casos']} | {celdas} | {f['solo_3600']} | {f['solo_3580']} |")
-        lineas.append("")
+            lineas.append(f"| {f['periodo']} | {f['casos']} | {celdas} | {f['contra_3600_redondeando']} | "
+                          f"{f['contra_3580_truncando']} |")
+        tot = {k: sum(f[k] for f in evidencia) for k in ("casos", "contra_3600_redondeando", "contra_3580_truncando")}
+        lineas += [f"| **Total** | {tot['casos']} | " + " | ".join("" for _ in nombres) + f" | "
+                   f"{tot['contra_3600_redondeando']} | {tot['contra_3580_truncando']} |", ""]
     if vistas:
-        lineas += ["**Según qué plancha tenía Corte Certo**: si el % cierra con la banda de 20 y con la hoja entera, "
-                   "se calcularon las dos. La cuenta principal usa la que mejor cierra (redondeando primero); las "
-                   "otras filas muestran los dos extremos.", "",
+        lineas += ["**Según qué plancha**: la cuenta principal usa, en cada caso, la plancha con la que mejor cierra "
+                   "el % de Corte Certo (redondeando primero, y la más cercana). Las filas \"cotizando siempre "
+                   "con…\" calculan todos los casos con esa plancha, cierre o no con el %: dicen cuánto se "
+                   "parecería el programa a Corte Certo si cotizara siempre así. Si las piezas no entran, cuenta "
+                   "como más hojas (no se puede cotizar). La diferencia media y la peor son de los que sí se "
+                   "calcularon.", "",
                    "| Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |",
                    "|---|---|---|---|---|---|---|"]
         lineas += [_fila_vista(nombre, vistas[clave]) for clave, nombre in VISTAS.items()

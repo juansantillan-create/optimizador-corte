@@ -153,10 +153,26 @@ def ejecutar_exportados(carpeta: Path, salida: Path, opciones: comparar.Opciones
             "evidencia_banda": evidencia, "repaso_maximo": repaso}
 
 
+def _total_siempre(fs: list[dict]) -> dict:
+    """Totales de una fila "cotizando siempre con…": un caso donde las piezas no entran en esa
+    plancha (el cálculo deja piezas afuera) no se puede cotizar así, y cuenta como "más hojas"."""
+    total = comparar.informe_prueba(fs, {}, solo_prueba=False)["total"]
+    no_entran = sum(1 for f in fs if f["verificado"] and not comparar.cuenta(f))
+    if not no_entran:
+        return {**total, "no_entran": 0}
+    validos = [f for f in fs if comparar.cuenta(f)]
+    difs = [f["planchas"] - f["cc_hojas"] for f in validos]
+    n = len(validos) + no_entran
+    return {**total, "casos": n, "no_entran": no_entran,
+            "iguales_%": round(sum(d == 0 for d in difs) / n * 100, 1),
+            "mejores_%": round(sum(d < 0 for d in difs) / n * 100, 1),
+            "peores_%": round((sum(d > 0 for d in difs) + no_entran) / n * 100, 1)}
+
+
 def vistas_exportados(todas: list[dict]) -> tuple[list[dict], dict]:
     """Las filas de la cuenta principal (un resultado por caso: la plancha con la que mejor cierra
     el %) y los totales de cada vista de `exportados.VISTAS`. Las variantes (la otra de banda 20 ↔
-    hoja entera) solo entran en las vistas "banda" y "entera"."""
+    hoja entera, cierre o no) solo entran en las filas "siempre con…"."""
     filas = [f for f in todas if not (f.get("extra") or {}).get("alternativa")]
     otras = {(f["numero"], f["material"]): f for f in todas if (f.get("extra") or {}).get("alternativa")}
 
@@ -168,9 +184,11 @@ def vistas_exportados(todas: list[dict]) -> tuple[list[dict], dict]:
             salida.append(alt if usar_alt else f)
         return salida
 
-    grupos = {"probable": filas, "banda": con("banda 20"), "entera": con("hoja entera"),
-              "seguros": [f for f in filas if f["extra"].get("unica")]}
-    return filas, {k: comparar.informe_prueba(v, {}, solo_prueba=False)["total"] for k, v in grupos.items()}
+    vistas = {"probable": comparar.informe_prueba(filas, {}, solo_prueba=False)["total"],
+              "banda": _total_siempre(con("banda 20")), "entera": _total_siempre(con("hoja entera")),
+              "seguros": comparar.informe_prueba([f for f in filas if f["extra"].get("unica")], {},
+                                                 solo_prueba=False)["total"]}
+    return filas, vistas
 
 
 def repaso_maximo(trabajos: list[dict], todas: list[dict], salida: Path, opciones: comparar.Opciones,

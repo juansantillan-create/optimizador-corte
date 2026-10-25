@@ -74,6 +74,13 @@ def test_interfaz_dvh_y_herrajes_por_posicion():
     assert any("herrajes" in a for a in r.avisos) and any("escalonado" in a for a in r.avisos)
 
 
+def test_interfaz_ancho2_sin_largo2_avisa():
+    fila = ["DVH", "FL4IN", "CAM12", "FL5IN", 1000, 1200, 960, "", 1, "", "", "", "", "", ""]
+    r = imp.desde_interfaz(_xlsx([fila]), "planilla.xlsx")
+    assert [(p["material"], p["ancho"], p["largo"]) for p in r.piezas] == [("FL4IN", 1000, 1200), ("FL5IN", 1000, 1200)]
+    assert any("ANCHO2 o LARGO2 pero no los dos" in a for a in r.avisos)
+
+
 def test_interfaz_con_encabezados():
     r = imp.desde_interfaz(_xlsx([["TIPO", "VIDRIO1", "CAMARA", "VIDRIO2", "ANCHO", "LARGO", "CANT"],
                                   ["VS", "FL5IN", "", "", 500, 600, 3]]), "x.xlsx")
