@@ -1,0 +1,71 @@
+CASOS HISTORICOS PARA EL OPTIMIZADOR DE CORTE
+Generado: 2026-10-25
+Fuente: Metrix (SQL Server, solo lectura). Presupuestos del 2024-05-06 al 2026-10-23.
+
+QUE ES CADA CASO
+Un caso = un vidrio (articulo) de un presupuesto que se optimizo con Corte Certo: las piezas
+que se optimizaron y lo que dio Corte Certo (hojas y % de aprovechamiento). Sirve para correr
+el optimizador con esas piezas y ver si da igual, mejor o peor que Corte Certo.
+
+DE DONDE SALE EL RESULTADO DE CORTE CERTO
+Lo anotaron a mano en "Situacion de Presupuesto -> Observaciones", que en la base es la
+columna PRESUP.NOTAS_SITUACION (no NOTAS_CAUSA). Ejemplo, presupuesto 12135:
+  "4+4 NLIGHT: 88 HOJAS - 91%"  ->  LX4+4NL, 88 hojas, 91 %
+Filtro: observaciones con un % y alguna de HOJA / BANDA / APROV / CONSUMO (con las faltas de
+tipeo que aparecen: HOAJS, HPJAS, etc.). Los % de descuento ("8% DESC", "L.DIST -10%") no se
+toman como aprovechamiento. Las erratas "74$" y "845%" se leen como 74 % y 84 %.
+
+CANTIDADES
+  1257 presupuestos con leyenda de Corte Certo
+  1641 renglones de leyenda leidos (uno por vidrio)
+  1341 casos exportados, de 1040 presupuestos
+  Descartados:
+  - presupuestos sin ningun renglon legible: 16
+  - renglon descartado: ambiguo: 20
+  - renglon descartado: duplicado exacto de otro presupuesto: 119
+  - renglon descartado: sin % legible: 40
+  - renglon descartado: sin articulo compatible: 42
+  - renglon descartado: sin etiqueta y mas de un articulo: 79
+  - renglon descartado: vidrio sin piezas con cantidad: 0
+  Control de area (ver area_ok): SI 1166, NO 34, sin control (casos con bandas o solo %) 141
+  Emparejamiento: etiqueta: 1188, unico vidrio: 153
+  Piezas exportadas: 28275 filas, 186587 unidades
+
+ARCHIVOS (separador ;, UTF-8, punto decimal, fechas AAAA-MM-DD, medidas en mm)
+
+resultados_corte_certo.csv - un renglon por caso
+  numero, fecha              presupuesto de Metrix
+  v_codart, descripcion, familia, espesor_mm    el vidrio (articulo de Metrix)
+  etiqueta_leyenda           como lo escribieron en la observacion ("4+4 NLIGHT")
+  hojas                      hojas enteras que dio Corte Certo (0 = solo bandas; vacio = solo anotaron el %)
+  detalle_hojas              cantidad x medida de hoja, solo si la anotaron (ej. 16x3210x2200;1x4000x2500)
+  bandas                     bandas/recortes ademas de las hojas: cantidad x largo x ancho (ej. 1x1718x2400)
+  aprovechamiento_pct        % de aprovechamiento que dio Corte Certo
+  piezas, m2_piezas          unidades y m2 del caso (con la sobremedida de pulido recto)
+  area_hoja_implicita_m2     m2_piezas / aprovechamiento / hojas (solo casos sin bandas). Control: tiene
+                             que dar el area de una hoja real. Mediana 8,15 m2 = 3210x2540; 9,0 = 3600x2500;
+                             ~4,5 en laminados gruesos (6+6, 8+8) y ~4 en GRAPHITE. Si da cualquier cosa, la
+                             leyenda esta mal anotada (ej. "945 HOJAS" por 45) o el vidrio mal emparejado.
+  area_ok                    SI = area_hoja_implicita_m2 entre 3,9 y 10,2. Recomendado: usar SI y vacio
+                             (vacio = casos con bandas o solo %, que no se pueden controlar asi).
+  criterio_emparejamiento    etiqueta = la etiqueta de la leyenda coincide con el articulo;
+                             unico vidrio = la leyenda no nombra el vidrio y el presupuesto tiene uno solo.
+
+piezas.csv - las piezas de cada caso (se unen por numero + v_codart)
+  origen         DVH = cada vidrio de un DVH (ART1 y ART3 de DETPRES; cantidad = unidades de DVH)
+                 SUELTO = piezas de DETPRES2; LAM = laminado armado (XLAM)
+  cantidad       unidades
+  largo, ancho   MEDIDA A OPTIMIZAR. Las piezas con PULIDO RECTO se optimizaron con +3 mm en ancho
+                 y en largo, y aca YA ESTAN SUMADOS.
+  pulido_recto   1 si la clase del vidrio lleva pulido recto (CLASES.BD = 1: "LAM PR", "FLOAT PR TEMP"...)
+  largo_original, ancho_original   medida tal cual esta en Metrix, sin los +3 mm
+
+A TENER EN CUENTA
+- La medida de la hoja casi nunca esta anotada: area_hoja_implicita_m2 ayuda a deducirla.
+- En los DVH solo va el vidrio que tiene resultado en la leyenda (muchas veces anotan solo el
+  especial, ej. el KNT, y no el incoloro del otro lado).
+- etiqueta_leyenda queda vacia cuando lo que anotaron no era el nombre del vidrio.
+- Las clases "TEMPLUX", "6 temp" y vacia no estan en la tabla CLASES: se tomaron sin pulido recto
+  (215 filas de piezas en los 1257 presupuestos; no todas quedaron en casos).
+- Se ignoraron 86 filas de piezas con cantidad 0.
+- No hay datos de clientes, obras, usuarios, precios ni texto libre de las observaciones.
