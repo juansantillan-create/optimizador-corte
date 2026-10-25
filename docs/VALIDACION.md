@@ -164,13 +164,15 @@ seguridad, y si eso pasa sale un aviso.
 ### 2.5 Esfuerzo máximo
 
 Más trabajo (hasta 13 veces el normal), sigue buscando mientras la relajación diga que se puede
-bajar una plancha, y bucea. Solo los casos de "corte perfecto" (corrida del 25/10, versión anterior
-a la corrección de la caché del 25/10 — ver la próxima corrida):
+bajar una plancha, y bucea. Solo los casos de "corte perfecto" (corrida del 25/10 con el motor
+actual; con otras pruebas corriendo a la vez en la misma máquina):
 
 | Familia (hasta 100 piezas) | Normal | Máximo | Tiempo medio con máximo | Máximo |
 |---|---|---|---|---|
-| 3 etapas | 20 de 36 | **23 de 36 (64 %)** | 6,6 s | 40 s |
-| Guillotina libre | 10 de 24 | **13 de 24 (54 %)** | 39 s | 153 s |
+| 3 etapas | 20 de 36 | **23 de 36 (64 %)** | 6,2 s | 29 s |
+| Guillotina libre | 10 de 24 | **13 de 24 (54 %)** | 8,1 s | 28 s |
+
+Los 12 casos de 101 a 121 piezas siguen con 1 plancha de más (hasta 129 s cada uno).
 
 Mejora, pero tampoco llega al 95 %. Para un presupuesto difícil se puede elegir "Máximo" en la
 interfaz.
