@@ -293,3 +293,30 @@ def test_veta_no_marca_piezas_giradas():
     res = calcular([{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": 800, "largo": 1500}],
                    materiales={"FL4IN": {"textura": "horizontal"}})
     assert not any(p["girada"] for mo in material(res, "FL4IN")["montajes"] for p in mo["piezas"])
+
+
+# ------------------------------------------------ lo que encontró la revisión de F5
+def test_plancha_inservible_es_aviso_si_hay_otras():
+    res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 2, "ancho": 1000, "largo": 500}],
+                   materiales={"FL5IN": {"planchas": [{"ancho": 3600, "largo": 2500, "corte_banda": 20},
+                                                      {"ancho": 300, "largo": 200, "corte_banda": 400}]}})
+    m = material(res, "FL5IN")
+    assert res["completo"] and m["planchas"] == 1 and any("sin medida útil" in a for a in m["avisos"])
+
+
+def test_pulido_recto_no_y_planchas_con_punto_de_miles():
+    res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 1, "ancho": 1000, "largo": 500,
+                     "pulido_recto": "no"}],
+                   materiales={"FL5IN": {"planchas": [{"ancho": "3.600", "largo": "2.500", "corte_banda": 20}]}})
+    m = material(res, "FL5IN")
+    assert m["m2_piezas"] == 0.5 and m["configuracion"]["planchas"][0]["ancho"] == 3600
+
+
+def test_muchisimas_medidas_en_maximo_no_hace_columnas():
+    from optimizador.motor import calculo
+    piezas = [{"item": str(i), "material": "FL5IN", "cantidad": 1, "ancho": 200 + i, "largo": 300 + (7 * i) % 500}
+              for i in range(calculo.MAX_TIPOS_COLUMNAS + 1)]
+    res = optimizar({"piezas": piezas, "opciones": {"esfuerzo": "maximo"}, "fecha": FECHA})
+    m = material(res, "FL5IN")
+    assert res["verificado"] and res["completo"]
+    assert any("solo la heurística" in a for a in m["avisos"])

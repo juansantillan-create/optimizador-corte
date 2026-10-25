@@ -28,7 +28,9 @@ if %errorlevel%==0 (
   if not errorlevel 1 set "BASE=python"
 )
 if not defined BASE goto :sinpython
-rem Hace falta Python 3.10 o mas nuevo.
+rem Que sea un Python de verdad (no el acceso directo de la Microsoft Store) y 3.10 o mas nuevo.
+%BASE% -c "import sys" >nul 2>nul
+if errorlevel 1 goto :sinpython
 %BASE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
 if errorlevel 1 (
   echo.
@@ -82,6 +84,11 @@ exit /b 1
 :abrir
 echo.
 "%PY%" -m optimizador servidor
+rem 3 = ya estaba abierto en otra ventana: se abrio el navegador ahi y esta ventana no hace falta.
+if %errorlevel%==3 (
+  timeout /t 4 >nul
+  exit /b 0
+)
 echo.
 echo El programa se cerro.
 pause

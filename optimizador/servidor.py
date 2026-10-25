@@ -275,17 +275,26 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
 
     @app.post("/api/calcular")
     def calcular(entrada: dict = Body(...)):
+        c = Calculo(entrada)
         with cerrojo:
             if any(x.estado == "calculando" for x in calculos.values()):
                 # Dos a la vez se pisan la PC (CPU y memoria): primero que termine o se cancele.
-                raise HTTPException(409, "ya hay un cálculo en curso: esperá que termine o cancelalo")
-        c = Calculo(entrada)
-        with cerrojo:
+                raise HTTPException(409, "ya hay un cálculo en curso: esperá que termine o cancelalo "
+                                         "(pestaña Calcular)")
             calculos[c.id] = c
             while len(calculos) > MAX_RESULTADOS:
                 calculos.popitem(last=False)
         threading.Thread(target=c.correr, args=(catalogo,), daemon=True).start()
         return c.a_dict()
+
+    @app.get("/api/calculo_en_curso")
+    def calculo_en_curso():
+        """El cálculo que está corriendo (si se recargó la página, para poder seguirlo o cancelarlo)."""
+        with cerrojo:
+            for c in calculos.values():
+                if c.estado == "calculando":
+                    return c.a_dict()
+        raise HTTPException(404, "no hay ningún cálculo en curso")
 
     @app.get("/api/calculo/{id_}")
     def estado_calculo(id_: str):
@@ -378,27 +387,36 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
     return app
 
 
+YA_ABIERTO = 3  # código de salida cuando el programa ya estaba abierto en otra ventana
+
+
 def ya_abierto(puerto: int = PUERTO) -> bool:
-    """¿Ya hay un optimizador andando en ese puerto? (Por ejemplo, si se hizo doble clic dos veces.)"""
+    """¿Ya hay un optimizador andando en ese puerto? (Por ejemplo, si se hizo doble clic dos veces.)
+    Sin pasar por el proxy de la oficina: es esta misma PC."""
     import urllib.request
+    abridor = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{puerto}/api/estado", timeout=1.5) as r:
+        with abridor.open(f"http://127.0.0.1:{puerto}/api/estado", timeout=1.5) as r:
             return json.loads(r.read()).get("app") == "optimizador-corte"
     except Exception:
         return False
 
 
-def servir(puerto: int | None = None, abrir: bool = True) -> None:
+def servir(puerto: int | None = None, abrir: bool = True) -> int:
+    """Levanta el servidor. Si ya hay uno andando (en el 8520 o en los siguientes), abre el
+    navegador ahí y devuelve `YA_ABIERTO`."""
     import uvicorn
 
-    if ya_abierto(puerto or PUERTO):
-        # Otro programa en otro puerto tendría otro borrador (el navegador lo guarda por puerto):
-        # mejor usar el que ya está abierto.
-        url = f"http://127.0.0.1:{puerto or PUERTO}/"
-        print(f"El optimizador ya está abierto en {url} (en otra ventana negra). Se abre el navegador ahí.")
-        if abrir:
-            webbrowser.open(url)
-        return
+    desde = puerto or PUERTO
+    for p in range(desde, desde + 11):
+        if p not in OCUPADOS and ya_abierto(p):
+            # Otro programa en otro puerto tendría otro borrador (el navegador lo guarda por puerto):
+            # mejor usar el que ya está abierto.
+            url = f"http://127.0.0.1:{p}/"
+            print(f"El optimizador ya está abierto en {url} (en otra ventana negra). Se abre el navegador ahí.")
+            if abrir:
+                webbrowser.open(url)
+            return YA_ABIERTO
     puerto = puerto_libre(puerto or PUERTO)
     url = f"http://127.0.0.1:{puerto}/"
     print(f"Optimizador de corte {__version__} andando en {url}")
@@ -406,3 +424,4 @@ def servir(puerto: int | None = None, abrir: bool = True) -> None:
     if abrir:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
     uvicorn.run(crear_app(), host="127.0.0.1", port=puerto, log_level="warning")
+    return 0

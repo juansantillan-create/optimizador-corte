@@ -52,7 +52,7 @@
    "montajes": 3,
    "aprovechamiento": 100.0,
    "verificado": true,
-   "segundos": 1.01,
+   "segundos": 0.92,
    "relajacion_planchas": 3.0
   },
   {
@@ -66,7 +66,7 @@
    "montajes": 4,
    "aprovechamiento": 100.0,
    "verificado": true,
-   "segundos": 2.36,
+   "segundos": 2.43,
    "relajacion_planchas": 4.0
   },
   {
@@ -80,7 +80,7 @@
    "montajes": 7,
    "aprovechamiento": 85.71,
    "verificado": true,
-   "segundos": 3.57,
+   "segundos": 3.32,
    "relajacion_planchas": 6.011
   },
   {
@@ -94,7 +94,7 @@
    "montajes": 9,
    "aprovechamiento": 88.89,
    "verificado": true,
-   "segundos": 5.88,
+   "segundos": 6.57,
    "relajacion_planchas": 8.199
   },
   {
@@ -108,7 +108,7 @@
    "montajes": 11,
    "aprovechamiento": 90.91,
    "verificado": true,
-   "segundos": 6.03,
+   "segundos": 6.2,
    "relajacion_planchas": 10.302
   },
   {
@@ -122,7 +122,7 @@
    "montajes": 6,
    "aprovechamiento": 83.33,
    "verificado": true,
-   "segundos": 4.86,
+   "segundos": 5.09,
    "relajacion_planchas": 5.096
   },
   {
@@ -175,7 +175,7 @@
    "montajes": 3,
    "aprovechamiento": 100.0,
    "verificado": true,
-   "segundos": 0.37,
+   "segundos": 0.41,
    "relajacion_planchas": 3.0
   },
   {
@@ -189,7 +189,7 @@
    "montajes": 4,
    "aprovechamiento": 100.0,
    "verificado": true,
-   "segundos": 0.2
+   "segundos": 0.24
   },
   {
    "caso": "CP3-1015",
@@ -202,7 +202,7 @@
    "montajes": 7,
    "aprovechamiento": 85.71,
    "verificado": true,
-   "segundos": 3.43,
+   "segundos": 3.82,
    "relajacion_planchas": 6.013
   },
   {
@@ -216,7 +216,7 @@
    "montajes": 9,
    "aprovechamiento": 88.89,
    "verificado": true,
-   "segundos": 6.92,
+   "segundos": 7.68,
    "relajacion_planchas": 8.206
   },
   {
@@ -230,7 +230,7 @@
    "montajes": 11,
    "aprovechamiento": 90.91,
    "verificado": true,
-   "segundos": 6.6,
+   "segundos": 6.84,
    "relajacion_planchas": 10.333
   },
   {
@@ -244,7 +244,7 @@
    "montajes": 6,
    "aprovechamiento": 83.33,
    "verificado": true,
-   "segundos": 9.49,
+   "segundos": 9.57,
    "relajacion_planchas": 5.293
   },
   {
@@ -284,7 +284,7 @@
    "montajes": 2,
    "aprovechamiento": 98.29,
    "verificado": true,
-   "segundos": 0.34,
+   "segundos": 0.27,
    "relajacion_planchas": 2.0
   },
   {
@@ -298,7 +298,7 @@
    "montajes": 3,
    "aprovechamiento": 98.55,
    "verificado": true,
-   "segundos": 0.07
+   "segundos": 0.09
   },
   {
    "caso": "CP3-1023",
@@ -311,7 +311,7 @@
    "montajes": 5,
    "aprovechamiento": 78.06,
    "verificado": true,
-   "segundos": 3.62,
+   "segundos": 3.79,
    "relajacion_planchas": 4.077
   },
   {
@@ -325,7 +325,7 @@
    "montajes": 7,
    "aprovechamiento": 83.77,
    "verificado": true,
-   "segundos": 3.91,
+   "segundos": 4.01,
    "relajacion_planchas": 6.037
   },
   {
@@ -339,7 +339,7 @@
    "montajes": 9,
    "aprovechamiento": 86.98,
    "verificado": true,
-   "segundos": 4.68,
+   "segundos": 4.34,
    "relajacion_planchas": 8.025
   },
   {
@@ -353,7 +353,7 @@
    "montajes": 11,
    "aprovechamiento": 88.91,
    "verificado": true,
-   "segundos": 6.33,
+   "segundos": 6.5,
    "relajacion_planchas": 10.261
   },
   {
@@ -367,7 +367,7 @@
    "montajes": 5,
    "aprovechamiento": 97.83,
    "verificado": true,
-   "segundos": 3.75,
+   "segundos": 4.25,
    "relajacion_planchas": 5.0
   },
   {
@@ -407,7 +407,7 @@
    "montajes": 2,
    "aprovechamiento": 97.79,
    "verificado": true,
-   "segundos": 0.02
+   "segundos": 0.03
   },
   {
    "caso": "CP3-1031",
@@ -420,7 +420,7 @@
    "montajes": 3,
    "aprovechamiento": 99.18,
    "verificado": true,
-   "segundos": 0.05
+   "segundos": 0.03
   },
   {
    "caso": "CP3-1032",
@@ -433,7 +433,7 @@
    "montajes": 4,
    "aprovechamiento": 98.27,
    "verificado": true,
-   "segundos": 1.26,
+   "segundos": 1.45,
    "relajacion_planchas": 4.0
   },
   {
@@ -447,7 +447,7 @@
    "montajes": 7,
    "aprovechamiento": 84.02,
    "verificado": true,
-   "segundos": 1.21,
+   "segundos": 1.27,
    "relajacion_planchas": 7.0
   },
   {
@@ -461,7 +461,7 @@
    "montajes": 9,
    "aprovechamiento": 86.78,
    "verificado": true,
-   "segundos": 5.8,
+   "segundos": 6.2,
    "relajacion_planchas": 8.126
   },
   {
@@ -475,7 +475,7 @@
    "montajes": 11,
    "aprovechamiento": 88.73,
    "verificado": true,
-   "segundos": 3.57,
+   "segundos": 3.89,
    "relajacion_planchas": 11.0
   },
   {
@@ -489,7 +489,7 @@
    "montajes": 6,
    "aprovechamiento": 80.64,
    "verificado": true,
-   "segundos": 9.13,
+   "segundos": 9.47,
    "relajacion_planchas": 5.305
   },
   {
@@ -529,7 +529,7 @@
    "montajes": 3,
    "aprovechamiento": 66.67,
    "verificado": true,
-   "segundos": 0.66,
+   "segundos": 0.59,
    "relajacion_planchas": 2.184
   },
   {
@@ -543,7 +543,7 @@
    "montajes": 3,
    "aprovechamiento": 100.0,
    "verificado": true,
-   "segundos": 1.87,
+   "segundos": 1.91,
    "relajacion_planchas": 3.0
   },
   {
@@ -557,7 +557,7 @@
    "montajes": 5,
    "aprovechamiento": 80.0,
    "verificado": true,
-   "segundos": 6.92,
+   "segundos": 6.84,
    "relajacion_planchas": 4.287
   },
   {
@@ -571,7 +571,7 @@
    "montajes": 7,
    "aprovechamiento": 85.71,
    "verificado": true,
-   "segundos": 6.55,
+   "segundos": 6.16,
    "relajacion_planchas": 6.339
   },
   {
@@ -585,7 +585,7 @@
    "montajes": 9,
    "aprovechamiento": 88.89,
    "verificado": true,
-   "segundos": 7.1,
+   "segundos": 7.83,
    "relajacion_planchas": 9.0
   },
   {
@@ -599,7 +599,7 @@
    "montajes": 11,
    "aprovechamiento": 90.91,
    "verificado": true,
-   "segundos": 7.41,
+   "segundos": 8.29,
    "relajacion_planchas": 11.0
   },
   {
@@ -613,7 +613,7 @@
    "montajes": 6,
    "aprovechamiento": 83.33,
    "verificado": true,
-   "segundos": 6.18,
+   "segundos": 8.2,
    "relajacion_planchas": 6.0
   },
   {
@@ -653,7 +653,7 @@
    "montajes": 3,
    "aprovechamiento": 66.67,
    "verificado": true,
-   "segundos": 2.45,
+   "segundos": 2.48,
    "relajacion_planchas": 2.06
   },
   {
@@ -667,7 +667,7 @@
    "montajes": 4,
    "aprovechamiento": 75.0,
    "verificado": true,
-   "segundos": 4.46,
+   "segundos": 3.94,
    "relajacion_planchas": 3.111
   },
   {
@@ -681,7 +681,7 @@
    "montajes": 5,
    "aprovechamiento": 80.0,
    "verificado": true,
-   "segundos": 8.27,
+   "segundos": 8.12,
    "relajacion_planchas": 4.317
   },
   {
@@ -695,7 +695,7 @@
    "montajes": 7,
    "aprovechamiento": 85.71,
    "verificado": true,
-   "segundos": 2.9,
+   "segundos": 3.22,
    "relajacion_planchas": 7.0
   },
   {
@@ -709,7 +709,7 @@
    "montajes": 9,
    "aprovechamiento": 88.89,
    "verificado": true,
-   "segundos": 7.55,
+   "segundos": 8.6,
    "relajacion_planchas": 9.0
   },
   {
@@ -723,7 +723,7 @@
    "montajes": 11,
    "aprovechamiento": 90.91,
    "verificado": true,
-   "segundos": 8.83,
+   "segundos": 9.27,
    "relajacion_planchas": 11.0
   },
   {
@@ -737,7 +737,7 @@
    "montajes": 6,
    "aprovechamiento": 83.33,
    "verificado": true,
-   "segundos": 7.04,
+   "segundos": 9.22,
    "relajacion_planchas": 6.0
   },
   {
@@ -751,7 +751,7 @@
    "montajes": 1,
    "aprovechamiento": 98.23,
    "verificado": true,
-   "segundos": 0.02
+   "segundos": 0.01
   },
   {
    "caso": "CPL-1056",
@@ -764,7 +764,7 @@
    "montajes": 2,
    "aprovechamiento": 48.12,
    "verificado": true,
-   "segundos": 0.43,
+   "segundos": 0.39,
    "relajacion_planchas": 1.182
   },
   {
@@ -778,7 +778,7 @@
    "montajes": 2,
    "aprovechamiento": 96.71,
    "verificado": true,
-   "segundos": 2.62,
+   "segundos": 2.68,
    "relajacion_planchas": 2.0
   },
   {
@@ -792,7 +792,7 @@
    "montajes": 4,
    "aprovechamiento": 72.8,
    "verificado": true,
-   "segundos": 3.5,
+   "segundos": 3.35,
    "relajacion_planchas": 3.085
   },
   {
@@ -806,7 +806,7 @@
    "montajes": 5,
    "aprovechamiento": 76.75,
    "verificado": true,
-   "segundos": 7.28,
+   "segundos": 7.19,
    "relajacion_planchas": 4.359
   },
   {
@@ -820,7 +820,7 @@
    "montajes": 7,
    "aprovechamiento": 83.01,
    "verificado": true,
-   "segundos": 7.35,
+   "segundos": 6.91,
    "relajacion_planchas": 6.348
   },
   {
@@ -834,7 +834,7 @@
    "montajes": 9,
    "aprovechamiento": 85.21,
    "verificado": true,
-   "segundos": 7.33,
+   "segundos": 8.89,
    "relajacion_planchas": 9.0
   },
   {
@@ -848,7 +848,7 @@
    "montajes": 11,
    "aprovechamiento": 87.48,
    "verificado": true,
-   "segundos": 7.34,
+   "segundos": 7.94,
    "relajacion_planchas": 11.0
   },
   {
@@ -862,7 +862,7 @@
    "montajes": 6,
    "aprovechamiento": 78.93,
    "verificado": true,
-   "segundos": 5.97,
+   "segundos": 7.26,
    "relajacion_planchas": 6.0
   },
   {
@@ -889,7 +889,7 @@
    "montajes": 1,
    "aprovechamiento": 96.25,
    "verificado": true,
-   "segundos": 0.05
+   "segundos": 0.06
   },
   {
    "caso": "CPL-1066",
@@ -902,7 +902,7 @@
    "montajes": 2,
    "aprovechamiento": 97.13,
    "verificado": true,
-   "segundos": 2.41,
+   "segundos": 2.59,
    "relajacion_planchas": 2.0
   },
   {
@@ -916,7 +916,7 @@
    "montajes": 4,
    "aprovechamiento": 72.77,
    "verificado": true,
-   "segundos": 1.5,
+   "segundos": 1.62,
    "relajacion_planchas": 3.158
   },
   {
@@ -930,7 +930,7 @@
    "montajes": 5,
    "aprovechamiento": 76.95,
    "verificado": true,
-   "segundos": 7.32,
+   "segundos": 7.86,
    "relajacion_planchas": 4.354
   },
   {
@@ -944,7 +944,7 @@
    "montajes": 7,
    "aprovechamiento": 83.09,
    "verificado": true,
-   "segundos": 6.34,
+   "segundos": 7.31,
    "relajacion_planchas": 6.418
   },
   {
@@ -958,7 +958,7 @@
    "montajes": 9,
    "aprovechamiento": 85.18,
    "verificado": true,
-   "segundos": 6.67,
+   "segundos": 8.19,
    "relajacion_planchas": 9.0
   },
   {
@@ -972,7 +972,7 @@
    "montajes": 11,
    "aprovechamiento": 87.62,
    "verificado": true,
-   "segundos": 8.18,
+   "segundos": 9.52,
    "relajacion_planchas": 11.0
   },
   {
@@ -986,7 +986,7 @@
    "montajes": 6,
    "aprovechamiento": 78.79,
    "verificado": true,
-   "segundos": 6.58,
+   "segundos": 8.39,
    "relajacion_planchas": 6.0
   },
   {
@@ -1000,7 +1000,7 @@
    "montajes": 2,
    "aprovechamiento": 79.05,
    "verificado": true,
-   "segundos": 0.04
+   "segundos": 0.06
   },
   {
    "caso": "RE-2001",
@@ -1013,7 +1013,7 @@
    "montajes": 6,
    "aprovechamiento": 88.9,
    "verificado": true,
-   "segundos": 0.19
+   "segundos": 0.23
   },
   {
    "caso": "RE-2002",
@@ -1026,7 +1026,7 @@
    "montajes": 6,
    "aprovechamiento": 89.39,
    "verificado": true,
-   "segundos": 0.48
+   "segundos": 0.4
   },
   {
    "caso": "RE-2003",
@@ -1053,7 +1053,7 @@
    "montajes": 25,
    "aprovechamiento": 92.44,
    "verificado": true,
-   "segundos": 5.4,
+   "segundos": 5.33,
    "relajacion_planchas": 44.229
   },
   {
@@ -1067,7 +1067,7 @@
    "montajes": 13,
    "aprovechamiento": 90.94,
    "verificado": true,
-   "segundos": 7.42,
+   "segundos": 7.92,
    "relajacion_planchas": 12.003
   },
   {
@@ -1081,7 +1081,7 @@
    "montajes": 7,
    "aprovechamiento": 78.76,
    "verificado": true,
-   "segundos": 0.14,
+   "segundos": 0.2,
    "relajacion_planchas": 8.5
   },
   {
@@ -1095,7 +1095,7 @@
    "montajes": 20,
    "aprovechamiento": 93.58,
    "verificado": true,
-   "segundos": 3.7,
+   "segundos": 3.89,
    "relajacion_planchas": 24.066
   },
   {
@@ -1109,7 +1109,7 @@
    "montajes": 3,
    "aprovechamiento": 81.71,
    "verificado": true,
-   "segundos": 0.2
+   "segundos": 0.26
   },
   {
    "caso": "RE-2009",
@@ -1122,7 +1122,7 @@
    "montajes": 31,
    "aprovechamiento": 93.91,
    "verificado": true,
-   "segundos": 2.38,
+   "segundos": 2.57,
    "relajacion_planchas": 49.463
   },
   {
@@ -1136,7 +1136,7 @@
    "montajes": 20,
    "aprovechamiento": 87.39,
    "verificado": true,
-   "segundos": 0.32,
+   "segundos": 0.3,
    "relajacion_planchas": 72.944
   },
   {
@@ -1150,7 +1150,7 @@
    "montajes": 18,
    "aprovechamiento": 83.14,
    "verificado": true,
-   "segundos": 0.4,
+   "segundos": 0.32,
    "relajacion_planchas": 72.056
   },
   {
@@ -1164,7 +1164,7 @@
    "montajes": 20,
    "aprovechamiento": 79.75,
    "verificado": true,
-   "segundos": 0.36,
+   "segundos": 0.38,
    "relajacion_planchas": 72.019
   }
  ],
@@ -1181,7 +1181,7 @@
   "otros": 13,
   "otros_en_minimo": 4,
   "otros_dif_minimo": 46,
-  "segundos_max": 9.49,
-  "segundos_total": 276.7
+  "segundos_max": 9.57,
+  "segundos_total": 297.5
  }
 }

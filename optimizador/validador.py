@@ -76,9 +76,11 @@ def _controlar_configuracion(codigo: str, cfg: dict) -> list[str]:
             continue
         w = p["ancho"] - p.get("corte_banda", 0) - cfg.get("margen_izquierda_mm", 0) - cfg.get("margen_derecha_mm", 0)
         h = p["largo"] - cfg.get("margen_arriba_mm", 0) - cfg.get("margen_abajo_mm", 0)
-        if p.get("corte_banda", 0) < 0 or not (0 < w <= p["ancho"]) or not (0 < h <= p["largo"]):
+        # Una plancha que queda sin medida útil no se puede usar (si un montaje la usa, falla el
+        # control de que las piezas estén adentro); una útil más grande que la hoja es imposible.
+        if p.get("corte_banda", 0) < 0 or w > p["ancho"] or h > p["largo"]:
             errores.append(f"{codigo}: la plancha {p['ancho']} × {p['largo']} da una útil de {w} × {h}, "
-                           "que no tiene sentido")
+                           "más grande que la hoja")
     return errores
 
 
@@ -124,7 +126,10 @@ def _num(v):
 
 def _pulido(d: dict) -> bool:
     if d.get("pulido_recto") is not None:
-        return bool(d["pulido_recto"])
+        valor = d["pulido_recto"]
+        if isinstance(valor, str):
+            return valor.strip().lower() in ("si", "sí", "s", "true", "1", "x", "verdadero")
+        return bool(valor)
     return re.search(r"(^|[^A-Z0-9])PR([^A-Z0-9]|$)", str(d.get("clase") or "").upper()) is not None
 
 

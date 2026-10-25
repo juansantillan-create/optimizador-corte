@@ -8,8 +8,9 @@
     python -m optimizador --version
 
 `calcular` lee la entrada (JSON de `docs/API.md`), calcula y escribe el resultado en JSON. Al final
-muestra un resumen por material. Devuelve 0 si el resultado pasó el validador, 1 si no, y 2 si la
-entrada no se pudo leer.
+muestra un resumen por material. Devuelve 0 si el resultado pasó el validador y está completo, 1 si
+no pasó el validador, y 2 si la entrada no se pudo leer o el resultado está incompleto (alguna
+pieza no se calculó). `servidor` devuelve 3 si el programa ya estaba abierto en otra ventana.
 """
 
 from __future__ import annotations
@@ -84,8 +85,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.comando == "servidor":
         from .servidor import servir
-        servir(args.puerto, abrir=not args.no_abrir)
-        return 0
+        return servir(args.puerto, abrir=not args.no_abrir)
 
     if args.comando == "historico":
         from .configuracion import RAIZ

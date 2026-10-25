@@ -352,7 +352,11 @@ async function sondear() {
   estado.resultado = c;
   mostrarResultados();
   irA("resultados");
-  mensaje(c.estado === "cancelado" ? "Cálculo cancelado: se muestra lo mejor encontrado" : "Cálculo terminado");
+  if (c.estado === "cancelado") {
+    const sinNada = (c.resumen || []).some((m) => !m.planchas);
+    mensaje(sinNada ? "Cálculo cancelado: algún material no llegó a tener un primer resultado (ver el informe)"
+                    : "Cálculo cancelado: se muestra lo mejor encontrado", sinNada);
+  } else mensaje("Cálculo terminado");
 }
 $("#b-cancelar").addEventListener("click", async () => {
   if (!estado.calculo) return;
@@ -596,6 +600,18 @@ async function guardarMaterial() {
   } catch (err) { mensaje("No se pudo conectar con el programa: ¿está abierta la ventana negra?", true); }
   leerBorrador();
   if (!estado.proyecto.piezas.length) agregarRenglon(); else dibujarGrilla();
+  // Si se recargó la página mientras calculaba, se retoma la pantalla del cálculo (para verlo o
+  // cancelarlo).
+  try {
+    const c = await api("/api/calculo_en_curso");
+    estado.calculo = c.id;
+    $("#proceso").hidden = false;
+    $("#c-ayuda").hidden = true;
+    $("#b-cancelar").disabled = false;
+    $("#b-calcular").disabled = true;
+    irA("calcular");
+    sondear();
+  } catch (e) { /* no hay ninguno */ }
   cargarMateriales().catch(() => {});
   dibujarTorta(0);
   $("#proceso").hidden = true;

@@ -278,8 +278,8 @@ def test_retomar_recalcula_si_cambian_las_piezas_y_tolera_una_linea_cortada(tmp_
 def test_publicar_y_docs_no_aceptan_datos_inventados_ni_nombres(tmp_path, monkeypatch):
     casos = datos.leer(JUGUETE)
     assert principal.es_inventado(casos)
-    c = _casos([{"numero": "11", "observaciones": "OBRA GOMEZ PEREZ 5 INC: 2 HOJAS - 56%"}])
-    assert "GOMEZ" in principal.palabras_sospechosas("<p>Presupuesto 11 GOMEZ</p>", c)
+    c = _casos([{"numero": "11", "observaciones": "OBRA FULANITO DETAL 5 INC: 2 HOJAS - 56%"}])
+    assert "FULANITO" in principal.palabras_sospechosas("<p>Presupuesto 11 FULANITO</p>", c)
     assert not principal.palabras_sospechosas("<p>Presupuesto 11 FL5IN plancha</p>", c)
     escritos = []
     monkeypatch.setattr(principal, "actualizar_validacion", lambda *a, **k: escritos.append(a))

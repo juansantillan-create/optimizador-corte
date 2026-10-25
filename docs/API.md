@@ -67,7 +67,7 @@ Código de salida: 0 = resultado verificado y completo, 1 = el validador encontr
 | `piezas[].clase` o `pulido_recto` | si la clase tiene "PR" (o `pulido_recto: true`) se suman 3 mm al ancho y al largo (confirmado por Juan) |
 | `piezas[].sobremedida_mm` | sobremedida extra opcional (se suma a las dos medidas) |
 | `materiales` | ajustes por material encima del preset (el código, sin importar mayúsculas): cualquier campo de "Propiedades físicas" (ver abajo), `planchas` (lista que reemplaza a la de `hojas.csv`) o `planchas_habilitadas` (`{"3600x2200": false}`). Un valor que no se puede usar (negativo, no numérico, textura desconocida) deja ese material sin calcular, con el error |
-| `opciones.esfuerzo` | `rapido` (solo la heurística, < 2 s), `normal`, `maximo` |
+| `opciones.esfuerzo` | `rapido` (solo la heurística: menos de 2 s en un presupuesto típico; con cientos de medidas distintas, 10 a 70 s), `normal`, `maximo` |
 | `fecha` | opcional; si no viene, la hora actual (es lo único que cambia entre dos corridas iguales) |
 
 Campos de material que se pueden ajustar: `separacion_piezas_mm` (ancho de la sierra),

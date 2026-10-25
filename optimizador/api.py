@@ -80,6 +80,8 @@ def leer_piezas(lista: list[dict]) -> tuple[list[Pieza], list[str], list[str]]:
             rota = rota.strip().lower() in ("si", "sí", "s", "true", "1", "x")
         clase = str(d.get("clase") or "")
         pulido = d.get("pulido_recto")
+        if isinstance(pulido, str):  # "no" es falso
+            pulido = pulido.strip().lower() in ("si", "sí", "s", "true", "1", "x", "verdadero")
         pulido = tiene_pulido_recto(clase) if pulido is None else bool(pulido)
         sobremedida = _entero(d.get("sobremedida_mm"), "sobremedida", avisos, donde) or 0
         piezas.append(Pieza(item=item, material=material, cantidad=cantidad, ancho=ancho,
@@ -168,18 +170,23 @@ def armar_tipos(mat: Material, piezas: list[Pieza], stocks: list[Stock]):
 
 
 def armar_stocks(mat: Material) -> tuple[list[Stock], list[str]]:
+    """Las planchas que se pueden usar. Una que queda sin medida útil (por la banda y los márgenes)
+    no se usa: es un aviso si quedan otras y un error si no queda ninguna."""
     stocks: list[Stock] = []
-    errores: list[str] = []
+    problemas: list[str] = []
     for i, pl in enumerate(mat.planchas):
         if not pl.habilitada:
             continue
         ancho, largo = mat.util(pl)
         if ancho <= 0 or largo <= 0:
-            errores.append(f"{mat.codigo}: la plancha {pl.ancho} × {pl.largo} queda sin medida útil "
-                           f"({ancho} × {largo}) con la banda y los márgenes")
+            problemas.append(f"{mat.codigo}: la plancha {pl.ancho} × {pl.largo} queda sin medida útil "
+                             f"({ancho} × {largo}) con la banda y los márgenes; no se usa")
             continue
         stocks.append(Stock(i, ancho, largo, ancho * largo / 1e6))
-    return stocks, errores
+    if stocks:
+        mat.avisos.extend(p for p in problemas if p not in mat.avisos)
+        return stocks, []
+    return stocks, problemas
 
 
 # --------------------------------------------------------------------------- salida

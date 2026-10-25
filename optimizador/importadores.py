@@ -43,7 +43,7 @@ SINONIMOS = {
 POSICIONES = ["material", "cantidad", "ancho", "largo", "descripcion"]
 # Encabezados que empiezan así también valen ("Cantidad de piezas", "Cant. pzas", "Descripción del
 # vano"…). Solo para nombres largos: "a" o "l" sueltos tienen que ser exactos.
-PREFIJOS = {"cantidad": ["cant", "qty", "unid"], "material": ["materia", "vidrio", "articul"],
+PREFIJOS = {"cantidad": ["cant", "qty"], "material": ["materia", "vidrio", "articul"],
             "ancho": ["ancho"], "largo": ["largo", "alto"], "descripcion": ["descrip", "detalle", "observ"],
             "item": ["item"]}
 
@@ -76,28 +76,46 @@ def numero_mm(valor) -> float | None:
     return x if math.isfinite(x) else None
 
 
-def _campo_de_encabezado(celda) -> str | None:
+def _campo_de_encabezado(celda) -> tuple[str | None, bool]:
+    """(campo, si el nombre es exacto) o (None, False)."""
     n = _norm(celda)
     n = re.sub(r"(enmm|mm)$", "", n) or n  # "Ancho (mm)"
     if not n:
-        return None
+        return None, False
     for campo, nombres in SINONIMOS.items():
         if n in nombres:
-            return campo
+            return campo, True
     for campo, prefijos in PREFIJOS.items():
         if any(n.startswith(p) for p in prefijos):
-            return campo
-    return None
+            if campo == "cantidad" and re.search(r"m2|mt2|metro", n):
+                return None, False  # "Cant. m2" son metros cuadrados, no piezas
+            return campo, False
+    return None, False
 
 
-def _detectar_encabezado(fila: list) -> dict[str, int] | None:
-    mapa: dict[str, int] = {}
+def _detectar_encabezado(fila: list, avisos: list[str] | None = None) -> dict[str, int] | None:
+    """Columna de cada campo. Si dos columnas sirven para lo mismo ("Alto" y "Largo"), gana la de
+    nombre exacto (o la primera) y se avisa en `avisos`."""
+    candidatas: dict[str, list[tuple[int, bool]]] = {}
     for i, celda in enumerate(fila):
-        campo = _campo_de_encabezado(celda)
-        if campo and campo not in mapa:
-            mapa[campo] = i
+        campo, exacto = _campo_de_encabezado(celda)
+        if campo:
+            candidatas.setdefault(campo, []).append((i, exacto))
+    mapa: dict[str, int] = {}
+    dobles = []
+    for campo, lista in candidatas.items():
+        # Primero la que se llama igual que el campo ("Largo" antes que "Alto"), después otro nombre
+        # exacto, después la primera.
+        elegida = next((i for i, _ in lista if re.sub(r"(enmm|mm)$", "", _norm(fila[i])) == campo),
+                       next((i for i, exacto in lista if exacto), lista[0][0]))
+        mapa[campo] = elegida
+        if len(lista) > 1:
+            otras = ", ".join(f"«{fila[i]}»" for i, _ in lista if i != elegida)
+            dobles.append(f"hay más de una columna para {campo}: se usó «{fila[elegida]}» y no {otras}")
     # Es encabezado si trae al menos ancho y largo y otra columna conocida.
     if "ancho" in mapa and "largo" in mapa and len(mapa) >= 3:
+        if avisos is not None:
+            avisos.extend(dobles)
         return mapa
     return None
 
@@ -128,7 +146,7 @@ def desde_filas(filas: list[list], origen: str = "tabla") -> Importacion:
     mapa = None
     encabezado = None
     for k, (n, fila) in enumerate(numeradas[:5]):
-        mapa = _detectar_encabezado(fila)
+        mapa = _detectar_encabezado(fila, imp.avisos)
         if mapa is not None:
             encabezado = fila
             if k > 0:

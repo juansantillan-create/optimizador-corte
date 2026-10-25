@@ -64,9 +64,11 @@ Cuando haya una versión nueva:
 1. Bajá el ZIP nuevo y descomprimilo **en otra carpeta**.
 2. Copiá de la carpeta vieja a la nueva, si existen:
    - `config\local\` (los cambios de materiales que hicieron en esta PC);
-   - `proyectos\` (los proyectos guardados).
-3. Usá el `Abrir_Optimizador.bat` de la carpeta nueva (la primera vez vuelve a instalar las
-   librerías si cambiaron).
+   - `proyectos\` (los proyectos guardados);
+   - `paquetes\`, si la PC no tiene internet (si cambió `requirements.txt`, hay que bajarla de
+     nuevo: ver "Sin internet").
+3. Usá el `Abrir_Optimizador.bat` de la carpeta nueva. La primera vez arma su propia carpeta
+   `.venv` e instala todo de nuevo (unos minutos), como en el paso 3 de arriba.
 
 ## Si algo falla
 

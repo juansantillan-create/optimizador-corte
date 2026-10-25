@@ -34,6 +34,16 @@ no llegaron**.
 - `herramientas/prueba_estres.py`: casos al azar, también de tamaño real, contra el validador.
 - Banco sintético corrido de nuevo: los mismos resultados que antes en los 85 casos.
 
+**Revisión del subagente revisor (F5)**: no encontró resultados inválidos ni nombres de clientes.
+Lo grave: con esfuerzo "Máximo" y 2000 medidas distintas llegaba a 1053 MB y 23 minutos (ahora:
+con más de 500 medidas se usa solo la heurística, matrices ralas, caché acotado entre todos los
+generadores; 69 s y 107 MB). Medios: con 61 a 150 medidas la heurística salía a veces peor (el
+generador completo ahora se usa hasta 150 medidas); al recargar la página no se podía cancelar
+(ahora vuelve a la pantalla del cálculo); columnas repetidas al importar; Cancelar antes del primer
+montaje (ahora se explica en pantalla). Menores: aviso de reloj falso, una plancha inservible
+invalidaba todo, mensajes del `.bat`, detección del programa ya abierto (sin proxy, en varios
+puertos), "3.600" en planchas, `pulido_recto: "no"`, documentos. Todo corregido, con tests.
+
 **Qué falta**
 1. **Correr la validación histórica** cuando lleguen los datos (`docs/CONTRATO_DATOS.md`): ahí se
    sabe si da lo mismo que Corte Certo y cuál de las hipótesis H0–H2 usaba la oficina.
@@ -42,7 +52,8 @@ no llegaron**.
 3. **Motor**: el "corte perfecto" (piezas todas distintas que llenan justo k planchas) da el óptimo
    en el 50 % de los casos hasta 100 piezas; la meta del brief es 95 %. En presupuestos reales
    (piezas repetidas) queda en la cota de la relajación en 11 de 13 casos. Y el peor caso de 2000
-   piezas todas distintas tarda más de 60 s.
+   piezas todas distintas tarda más de 60 s; con 45 a 160 medidas distintas (más que un presupuesto
+   típico) algunos casos pasan los 10 s.
 4. Las preguntas abiertas de `docs/PREGUNTAS_ABIERTAS.md` (las importantes: 1, 3, 13, 24).
 5. No se hizo: exportar al formato de Corte Certo (no se conoce), precios en "Propiedades
    comerciales" (no hay captura), y que el máximo tamaño cortado lo respete el motor (hoy solo

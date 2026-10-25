@@ -53,8 +53,8 @@ def sobrantes_ok(nodo: Nodo, destaque: int) -> bool:
 
 TIPOS_VECTORIAL = 64
 # Tope del caché (en "casilleros" guardados: un par tipo-cantidad cuenta uno). Al llegar, se vacía
-# entero: así la memoria queda acotada (< 500 MB en el peor caso) y el resultado sigue siendo el
-# mismo en cualquier PC (no depende del reloj ni de la memoria libre).
+# entero: así la memoria queda acotada y el resultado sigue siendo el mismo en cualquier PC (no
+# depende del reloj ni de la memoria libre). `calculo.Problema` lo reparte entre sus generadores.
 TOPE_CACHE = 1_500_000
 
 
@@ -96,6 +96,7 @@ class Generador:
         self.llamadas = 0  # cantidad de trabajo hecho (para medir esfuerzo, no por reloj)
         self._cache: dict = {}
         self._tamano_cache = 0
+        self.tope_cache = TOPE_CACHE
         self._valores_cache: tuple | None = None
         self._orden_valor: list[int] | None = None
         # Las dos listas de orientaciones (normal y transpuesta), calculadas una sola vez: el
@@ -224,7 +225,7 @@ class Generador:
 
     def _contar_cache(self, tamano: int) -> None:
         self._tamano_cache += tamano
-        if self._tamano_cache > TOPE_CACHE:
+        if self._tamano_cache > self.tope_cache:
             self._cache.clear()
             self._tamano_cache = tamano
 

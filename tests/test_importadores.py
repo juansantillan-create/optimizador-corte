@@ -112,3 +112,10 @@ def test_csv_con_coma_decimal_sin_comillas_y_unicode():
 def test_nan_e_infinito_no_son_numeros():
     assert imp.numero_mm("nan") is None and imp.numero_mm("inf") is None
     assert imp.numero_mm(float("nan")) is None
+
+
+def test_dos_columnas_para_lo_mismo():
+    r = imp.desde_texto("Material\tCant. m2\tCant. piezas\tAncho\tLargo\nFL4IN\t1,92\t2\t1200\t800")
+    assert r.piezas[0]["cantidad"] == 2
+    r = imp.desde_texto("Material\tCantidad\tAncho\tAlto\tLargo\nFL4IN\t2\t1200\t800\t900")
+    assert r.piezas[0]["largo"] == 900 and any("más de una columna" in a for a in r.avisos)

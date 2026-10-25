@@ -192,7 +192,15 @@ def _numero(mat: Material, campo: str, valor, origen: str, entero: bool, minimo:
     """Un número de la configuración: finito, no negativo; si es entero y vino con decimales, se
     redondea con aviso. Si no se puede usar, `ConfiguracionInvalida`."""
     try:
-        x = float(str(valor).strip().replace(",", ".")) if not isinstance(valor, (int, float)) else float(valor)
+        if isinstance(valor, (int, float)):
+            x = float(valor)
+        else:
+            texto = str(valor).strip()
+            if re.fullmatch(r"\d{1,3}(\.\d{3})+", texto):
+                texto = texto.replace(".", "")  # "3.600" es 3600 (punto de miles)
+            elif "," in texto and "." in texto:
+                texto = texto.replace(".", "").replace(",", ".")
+            x = float(texto.replace(",", "."))
     except ValueError:
         raise ConfiguracionInvalida(f"{mat.codigo}: {campo} = {valor!r} no es un número ({origen})") from None
     if x != x or x in (float("inf"), float("-inf")):
@@ -218,7 +226,11 @@ def _aplicar(mat: Material, valores: dict, origen: str) -> None:
         if campo == "planchas":
             planchas = []
             for p in valor:
-                pl = Plancha(**p) if isinstance(p, dict) else p
+                try:
+                    pl = Plancha(**p) if isinstance(p, dict) else p
+                except TypeError:
+                    raise ConfiguracionInvalida(f"{mat.codigo}: una plancha tiene que tener ancho, largo y "
+                                                f"corte_banda ({origen}): {p!r}") from None
                 pl.ancho = _numero(mat, "ancho de plancha", pl.ancho, origen, True, 1)
                 pl.largo = _numero(mat, "largo de plancha", pl.largo, origen, True, 1)
                 pl.corte_banda = _numero(mat, "corte banda", pl.corte_banda, origen, True)

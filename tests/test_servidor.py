@@ -138,3 +138,24 @@ def test_importar_archivo(servidor):
     datos = base64.b64encode("material;cantidad;ancho;largo\nFL5IN;2;300;400\n".encode()).decode()
     r = pedir(base, "/api/importar/archivo", {"nombre": "piezas.csv", "datos": datos})
     assert r["piezas"][0]["ancho"] == 300
+
+
+def test_calculo_en_curso_y_uno_a_la_vez(servidor):
+    base, _, _ = servidor
+    piezas = [{"item": str(i), "material": "FL4IN", "cantidad": 1, "ancho": 200 + 3 * i, "largo": 300 + 5 * i}
+              for i in range(150)]
+    c = pedir(base, "/api/calcular", {"piezas": piezas, "opciones": {"esfuerzo": "normal"}})
+    try:
+        assert pedir(base, "/api/calculo_en_curso")["id"] == c["id"]  # p. ej., después de recargar
+        with pytest.raises(urllib.error.HTTPError) as error:
+            pedir(base, "/api/calcular", ENTRADA)
+        assert error.value.code == 409
+    finally:
+        pedir(base, f"/api/calculo/{c['id']}/cancelar", {})
+    for _ in range(200):
+        if pedir(base, f"/api/calculo/{c['id']}")["estado"] != "calculando":
+            break
+        time.sleep(0.2)
+    with pytest.raises(urllib.error.HTTPError) as error:
+        pedir(base, "/api/calculo_en_curso")
+    assert error.value.code == 404

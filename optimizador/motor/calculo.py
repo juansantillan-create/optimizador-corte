@@ -144,7 +144,9 @@ class ResultadoMaterial:
 MAX_ANCHOS_RAPIDO = 40  # anchos de tira que prueba el generador barato en la plancha entera
 MAX_ANCHOS_RAPIDO_MUCHOS = 20  # ídem con más de 400 medidas distintas (si no, tarda minutos)
 MUCHAS_MEDIDAS = 400
-MAX_TIPOS_COMPLETO = 60  # la heurística usa el generador completo solo hasta tantas medidas
+MAX_TIPOS_COLUMNAS = 500  # con más medidas distintas no se hace generación de columnas
+TOPE_CACHE_TOTAL = 1_500_000  # tope del caché de todos los generadores juntos (ver generador.py)
+MAX_TIPOS_COMPLETO = 150  # la heurística usa el generador completo solo hasta tantas medidas
 # Tipos de pieza que se consideran adentro de cada tira (los de más valor): solo pesa con
 # muchísimas medidas distintas, para que no tarde minutos ni use demasiada memoria.
 MAX_TIPOS_TIRA_RAPIDO = 60
@@ -175,6 +177,9 @@ class Problema:
                                               max_tipos_tira=MAX_TIPOS_TIRA_RAPIDO,
                                               max_anchos_adentro=6 if muchas else 12)
                                     for st in stocks]
+        for g in self.generadores + self.generadores_rapidos:
+            g.tope_cache = TOPE_CACHE_TOTAL // len(self.generadores + self.generadores_rapidos)
+        self.cortado_por_reloj = False  # se puso en True si algo cortó por el reloj de seguridad
         # Área agrandada de cada tipo: es el "valor" natural de una pieza.
         self.area = [float((t.ancho_corte + separacion) * (t.largo_corte + separacion)) for t in tipos]
         self.area_real = [float(t.ancho_corte * t.largo_corte) for t in tipos]
@@ -248,10 +253,25 @@ class Columna:
     cuenta: tuple[int, ...]
 
 
+def _matriz(n: int, columnas: list[Columna]):
+    """Tipos × montajes: cuántas piezas de cada tipo tiene cada montaje. Rala (casi todo es cero):
+    con miles de medidas distintas, una matriz común no entra en la memoria."""
+    from scipy.sparse import csc_matrix
+
+    filas, cols, datos = [], [], []
+    for j, c in enumerate(columnas):
+        for i, v in enumerate(c.cuenta):
+            if v:
+                filas.append(i)
+                cols.append(j)
+                datos.append(float(v))
+    return csc_matrix((datos, (filas, cols)), shape=(n, len(columnas)))
+
+
 def _resolver_lp(p: Problema, columnas: list[Columna]):
     from scipy.optimize import linprog
 
-    A = np.array([[c.cuenta[i] for c in columnas] for i in range(p.n)], dtype=float)
+    A = _matriz(p.n, columnas)
     costos = np.array([p.stocks[c.stock].costo for c in columnas])
     res = linprog(costos, A_ub=-A, b_ub=-np.array(p.demanda, dtype=float),
                   bounds=[(0, None)] * len(columnas), method="highs")
@@ -280,6 +300,7 @@ def generar_columnas(p: Problema, columnas: list[Columna], iteraciones: int, pro
         if cancelar is not None and cancelar():
             break
         if reloj_limite is not None and time.perf_counter() > reloj_limite:
+            p.cortado_por_reloj = True
             break
         if trabajo_max is not None and p.trabajo() >= trabajo_max:
             # Se sigue (hasta `trabajo_extendido`) solo si la relajación todavía muestra que se
@@ -345,7 +366,7 @@ def resolver_entera(p: Problema, columnas: list[Columna], nodos: int, segundos: 
     from scipy.optimize import Bounds, LinearConstraint, milp
 
     m = len(columnas)
-    A = np.array([[c.cuenta[i] for c in columnas] for i in range(p.n)], dtype=float)
+    A = _matriz(p.n, columnas)
     d = np.array(p.demanda, dtype=float)
     # Costo en unidades enteras (el área útil dividida por el máximo común divisor de las áreas):
     # así HiGHS sabe que el objetivo es entero y corta apenas prueba que no se puede mejorar.
@@ -460,7 +481,7 @@ def _lp_resto(p: Problema, columnas: list[Columna], demanda: list[int]):
     """Relajación lineal para cubrir `demanda` con `columnas`. Devuelve (x, duales) o (None, None)."""
     from scipy.optimize import linprog
 
-    A = np.array([[c.cuenta[i] for c in columnas] for i in range(p.n)], dtype=float)
+    A = _matriz(p.n, columnas)
     costos = np.array([p.stocks[c.stock].costo for c in columnas])
     res = linprog(costos, A_ub=-A, b_ub=-np.array(demanda, dtype=float),
                   bounds=[(0, None)] * len(columnas), method="highs")
@@ -470,7 +491,7 @@ def _lp_resto(p: Problema, columnas: list[Columna], demanda: list[int]):
 
 
 def bucear(p: Problema, columnas: list[Columna], trabajo_max: int, iteraciones_por_paso: int = 6,
-           cancelar=None) -> Solucion | None:
+           cancelar=None, reloj_limite: float | None = None) -> Solucion | None:
     """Buceo ("diving"): se fija el montaje que la relajación lineal más usa, se descuentan sus
     piezas y se vuelve a resolver lo que falta (generando montajes nuevos para ese resto).
 
@@ -483,6 +504,9 @@ def bucear(p: Problema, columnas: list[Columna], trabajo_max: int, iteraciones_p
     vistos = {(c.stock, c.cuenta) for c in pool}
     while any(r > 0 for r in resto):
         if p.trabajo() >= trabajo_max or (cancelar and cancelar()):
+            break
+        if reloj_limite is not None and time.perf_counter() > reloj_limite:
+            p.cortado_por_reloj = True
             break
         validas = [c for c in pool if any(c.cuenta) and all(a <= r for a, r in zip(c.cuenta, resto))]
         # Que cada tipo que falta tenga al menos un montaje posible.
@@ -672,7 +696,13 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
     # Si la heurística ya gastó todo el trabajo (muchísimas medidas distintas), no se sigue: la
     # generación de columnas no haría ninguna vuelta y solo armar sus columnas iniciales tarda.
     queda_trabajo = p.trabajo() < lim.trabajo
-    if lim.iteraciones_columnas > 0 and not ya_optimo and queda_trabajo and not (cancelar and cancelar()):
+    # Con muchísimas medidas distintas tampoco: las matrices y los montajes no entran en la memoria
+    # de la PC y tardaría mucho más que la meta. Queda el resultado de la heurística.
+    if lim.iteraciones_columnas > 0 and not ya_optimo and p.n > MAX_TIPOS_COLUMNAS:
+        avisos.append(f"{p.n} medidas distintas: se usó solo la heurística (con más de "
+                      f"{MAX_TIPOS_COLUMNAS} no se buscan combinaciones mejores)")
+    if (lim.iteraciones_columnas > 0 and not ya_optimo and queda_trabajo and p.n <= MAX_TIPOS_COLUMNAS
+            and not (cancelar and cancelar())):
         # Columnas "homogéneas": la mayor cantidad posible de cada tipo solo.
         for i in range(p.n):
             valores = [1.0 if j == i else 0.0 for j in range(p.n)]
@@ -706,11 +736,12 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
             if lim.buceo and falta and not (cancelar and cancelar()):
                 t0 = time.perf_counter()
                 avisar(fase="buceo")
-                sol = bucear(p, columnas, p.trabajo() + lim.trabajo, cancelar=cancelar)
+                sol = bucear(p, columnas, p.trabajo() + lim.trabajo, cancelar=cancelar,
+                             reloj_limite=reloj_limite)
                 tiempos['buceo'] = time.perf_counter() - t0
                 if sol is not None and sol.clave(stocks) < mejor.clave(stocks):
                     mejor = sol
-    if time.perf_counter() > reloj_limite:
+    if p.cortado_por_reloj:
         avisos.append("el cálculo llegó al límite de tiempo de seguridad: el resultado puede variar "
                       "entre PCs")
     # Control: ¿quedó alguna pieza sin ubicar? (no debería pasar)

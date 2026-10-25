@@ -91,8 +91,8 @@ rompecabezas exacto. En un presupuesto real hay muchas piezas repetidas.
 
 | Familia (hasta 100 piezas) | Casos | Encontró el óptimo | Planchas de más (en total) | Tiempo máximo |
 |---|---|---|---|---|
-| 3 etapas | 36 | **20 (56 %)** | 16 (siempre 1 en los que falló) | 9,5 s |
-| Guillotina libre | 24 | **10 (42 %)** | 14 (siempre 1) | 8,3 s |
+| 3 etapas | 36 | **20 (56 %)** | 16 (siempre 1 en los que falló) | 9,6 s |
+| Guillotina libre | 24 | **10 (42 %)** | 14 (siempre 1) | 8,1 s |
 
 Además hay 12 casos de guillotina libre con 101 a 121 piezas: ninguno en el óptimo (1 plancha de
 más en todos).
@@ -118,18 +118,18 @@ esos montajes no se puede hacer mejor).
 
 | Caso | Piezas | Planchas | Mínimo teórico | Relajación lineal | Montajes | Segundos |
 |---|---|---|---|---|---|---|
-| RE-2000 | 20 | 2 | 2 | — | 2 | 0,04 |
+| RE-2000 | 20 | 2 | 2 | — | 2 | 0,06 |
 | RE-2001 | 50 | 6 | 6 | — | 6 | 0,2 |
-| RE-2002 | 80 | 6 | 6 | — | 6 | 0,5 |
+| RE-2002 | 80 | 6 | 6 | — | 6 | 0,4 |
 | RE-2003 | 120 | 21 | 19 | 19,90 | 15 | 1,8 |
-| RE-2004 | 300 | 46 | 43 | 44,28 | 25 | 5,4 |
-| RE-2005 | 300 | 13 | 12 | 12,02 | 13 | 7,4 |
-| RE-2006 | 40 | 9 | 8 | 8,50 | 7 | 0,1 |
-| RE-2007 | 200 | 25 | 24 | 24,06 | 20 | 3,7 |
-| RE-2008 | 60 | 3 | 3 | — | 3 | 0,2 |
-| RE-2009 | 250 | 50 | 47 | 49,46 | 31 | 2,4 |
+| RE-2004 | 300 | 46 | 43 | 44,23 | 25 | 5,3 |
+| RE-2005 | 300 | 13 | 12 | 12,00 | 13 | 7,9 |
+| RE-2006 | 40 | 9 | 8 | 8,50 | 7 | 0,2 |
+| RE-2007 | 200 | 25 | 24 | 24,07 | 20 | 3,9 |
+| RE-2008 | 60 | 3 | 3 | — | 3 | 0,3 |
+| RE-2009 | 250 | 50 | 47 | 49,46 | 31 | 2,6 |
 | T413-3000 | 252 | 73 | 64 | 72,94 | 20 | 0,3 |
-| T413-3001 | 252 | 73 | 61 | 72,06 | 18 | 0,4 |
+| T413-3001 | 252 | 73 | 61 | 72,06 | 18 | 0,3 |
 | T413-3002 | 252 | 73 | 59 | 72,02 | 20 | 0,4 |
 
 ("—" = la heurística ya llegó al mínimo teórico y no hizo falta seguir.)
@@ -150,12 +150,15 @@ esos montajes no se puede hacer mejor).
 | Grande: 2000 piezas, 60 medidas | 4,4 s | 23 s | ≤ 60 s ✔ |
 | Fuera del típico: 200 piezas **todas distintas** | 12 s | 11 s | (no es "típico": > 30 medidas) |
 | Peor caso: 2000 piezas **todas distintas** | 68 s | 69 s | ≤ 60 s ✘ (se pasa) |
-| Memoria máxima | | 110 MB (grande); 310 MB (2000 todas distintas) | < 500 MB ✔ |
+| Ídem con esfuerzo "Máximo" (3 medidas de plancha) | | 69 s | antes de la revisión de F5: 23 minutos y 1053 MB |
+| Entre el típico y el peor: 40 casos de 45 a 160 medidas distintas (revisor de F5) | | 9 de los 40 pasan los 10 s (el más lento, 21 s) | — |
+| Memoria máxima | | 110 MB (grande); 310 MB (2000 todas distintas, en cualquier esfuerzo) | < 500 MB ✔ |
 
 Las medidas del banco y de esta tabla son con otras pruebas corriendo a la vez en la misma
 máquina (puede sumar algo de tiempo). Con muchas medidas distintas el motor prueba menos
 combinaciones (ver `DECISIONES.md`): antes de esta corrección, 200 piezas distintas tardaban 78 s
-y 2000 distintas pasaban los 700 MB.
+y 2000 distintas pasaban los 700 MB. Con más de 500 medidas distintas se usa solo la heurística
+(con aviso), también en "Máximo".
 
 El trabajo se corta por **cantidad** (tiras calculadas por el generador), no por reloj: en una PC
 más lenta tarda más, pero da **el mismo resultado**. El reloj solo corta a los 60 s (normal) como

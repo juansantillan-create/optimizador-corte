@@ -56,8 +56,9 @@ Lo mismo que hoy se hace con Corte Certo, en el navegador. Para instalarlo: `doc
 
 Como la pantalla de Corte Certo: material en curso, tiempo de cálculo, estimado y restante, la torta
 con el % y la cantidad de montajes armados. **Cancelar** se queda con lo mejor encontrado hasta ese
-momento (termina el paso que está haciendo, puede tardar unos segundos). Mientras calcula no se
-puede empezar otro cálculo.
+momento (termina el paso que está haciendo, puede tardar unos segundos); si se cancela antes del
+primer montaje, ese material queda sin calcular. Mientras calcula no se puede empezar otro cálculo;
+si se recarga la página, vuelve a esta pantalla.
 
 ### Resultados
 
