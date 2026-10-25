@@ -1,0 +1,45 @@
+{
+ "proyecto": {
+  "codigo": "CP3-1028",
+  "descripcion": "corte perfecto (3 etapas): 1 planchas"
+ },
+ "preset": "lucas",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 559,
+   "largo": 2500
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 808,
+   "largo": 2500
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 870,
+   "largo": 2500
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1283,
+   "largo": 2500
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "corte_perfecto",
+  "etapas": "3",
+  "optimo": 1,
+  "separacion": 20,
+  "piezas": 4
+ }
+}

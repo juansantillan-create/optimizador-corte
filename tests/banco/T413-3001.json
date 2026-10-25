@@ -1,0 +1,98 @@
+{
+ "proyecto": {
+  "codigo": "T413-3001",
+  "descripcion": "parecido al 413 (inventado)"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 22,
+   "ancho": 975,
+   "largo": 2395
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 22,
+   "ancho": 1085,
+   "largo": 2390
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 26,
+   "ancho": 1920,
+   "largo": 990
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 23,
+   "ancho": 1565,
+   "largo": 795
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 19,
+   "ancho": 1425,
+   "largo": 1000
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 22,
+   "ancho": 1155,
+   "largo": 1285
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 21,
+   "ancho": 1095,
+   "largo": 2410
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 15,
+   "ancho": 1205,
+   "largo": 2325
+  },
+  {
+   "item": "9",
+   "material": "FL5IN",
+   "cantidad": 22,
+   "ancho": 1085,
+   "largo": 2105
+  },
+  {
+   "item": "10",
+   "material": "FL5IN",
+   "cantidad": 23,
+   "ancho": 945,
+   "largo": 2305
+  },
+  {
+   "item": "11",
+   "material": "FL5IN",
+   "cantidad": 15,
+   "ancho": 1230,
+   "largo": 2010
+  },
+  {
+   "item": "12",
+   "material": "FL5IN",
+   "cantidad": 22,
+   "ancho": 1250,
+   "largo": 2260
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "tipo_413",
+  "piezas": 252
+ }
+}

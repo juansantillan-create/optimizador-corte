@@ -1,0 +1,794 @@
+{
+ "proyecto": {
+  "codigo": "CPL-1043",
+  "descripcion": "corte perfecto (guillotina libre): 8 planchas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 260,
+   "largo": 1540
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 270,
+   "largo": 530
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 270,
+   "largo": 1570
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 270,
+   "largo": 1780
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 270,
+   "largo": 1970
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 280,
+   "largo": 600
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 290,
+   "largo": 1720
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 300,
+   "largo": 760
+  },
+  {
+   "item": "9",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 320,
+   "largo": 1570
+  },
+  {
+   "item": "10",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 350,
+   "largo": 1220
+  },
+  {
+   "item": "11",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 350,
+   "largo": 1570
+  },
+  {
+   "item": "12",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 360,
+   "largo": 520
+  },
+  {
+   "item": "13",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 370,
+   "largo": 1180
+  },
+  {
+   "item": "14",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 390,
+   "largo": 2500
+  },
+  {
+   "item": "15",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 410,
+   "largo": 1720
+  },
+  {
+   "item": "16",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 420,
+   "largo": 1220
+  },
+  {
+   "item": "17",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 430,
+   "largo": 930
+  },
+  {
+   "item": "18",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 450,
+   "largo": 1780
+  },
+  {
+   "item": "19",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 460,
+   "largo": 640
+  },
+  {
+   "item": "20",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 480,
+   "largo": 340
+  },
+  {
+   "item": "21",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 480,
+   "largo": 860
+  },
+  {
+   "item": "22",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 480,
+   "largo": 960
+  },
+  {
+   "item": "23",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 480,
+   "largo": 1090
+  },
+  {
+   "item": "24",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 480,
+   "largo": 1190
+  },
+  {
+   "item": "25",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 480,
+   "largo": 1310
+  },
+  {
+   "item": "26",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 500,
+   "largo": 540
+  },
+  {
+   "item": "27",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 500,
+   "largo": 1010
+  },
+  {
+   "item": "28",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 510,
+   "largo": 480
+  },
+  {
+   "item": "29",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 530,
+   "largo": 1290
+  },
+  {
+   "item": "30",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 550,
+   "largo": 960
+  },
+  {
+   "item": "31",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 560,
+   "largo": 540
+  },
+  {
+   "item": "32",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 560,
+   "largo": 840
+  },
+  {
+   "item": "33",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 560,
+   "largo": 1660
+  },
+  {
+   "item": "34",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 580,
+   "largo": 600
+  },
+  {
+   "item": "35",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 580,
+   "largo": 880
+  },
+  {
+   "item": "36",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 580,
+   "largo": 1010
+  },
+  {
+   "item": "37",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 590,
+   "largo": 1210
+  },
+  {
+   "item": "38",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 590,
+   "largo": 1570
+  },
+  {
+   "item": "39",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 600,
+   "largo": 910
+  },
+  {
+   "item": "40",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 600,
+   "largo": 1010
+  },
+  {
+   "item": "41",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 600,
+   "largo": 1070
+  },
+  {
+   "item": "42",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 620,
+   "largo": 450
+  },
+  {
+   "item": "43",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 620,
+   "largo": 1220
+  },
+  {
+   "item": "44",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 640,
+   "largo": 760
+  },
+  {
+   "item": "45",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 640,
+   "largo": 810
+  },
+  {
+   "item": "46",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 670,
+   "largo": 600
+  },
+  {
+   "item": "47",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 680,
+   "largo": 600
+  },
+  {
+   "item": "48",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 690,
+   "largo": 710
+  },
+  {
+   "item": "49",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 700,
+   "largo": 490
+  },
+  {
+   "item": "50",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 700,
+   "largo": 600
+  },
+  {
+   "item": "51",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 700,
+   "largo": 1080
+  },
+  {
+   "item": "52",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 710,
+   "largo": 1570
+  },
+  {
+   "item": "53",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 720,
+   "largo": 720
+  },
+  {
+   "item": "54",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 740,
+   "largo": 350
+  },
+  {
+   "item": "55",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 740,
+   "largo": 610
+  },
+  {
+   "item": "56",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 740,
+   "largo": 1210
+  },
+  {
+   "item": "57",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 760,
+   "largo": 1180
+  },
+  {
+   "item": "58",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 770,
+   "largo": 610
+  },
+  {
+   "item": "59",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 770,
+   "largo": 930
+  },
+  {
+   "item": "60",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 780,
+   "largo": 930
+  },
+  {
+   "item": "61",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 790,
+   "largo": 910
+  },
+  {
+   "item": "62",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 800,
+   "largo": 1290
+  },
+  {
+   "item": "63",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 810,
+   "largo": 1180
+  },
+  {
+   "item": "64",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 840,
+   "largo": 710
+  },
+  {
+   "item": "65",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 840,
+   "largo": 720
+  },
+  {
+   "item": "66",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 860,
+   "largo": 930
+  },
+  {
+   "item": "67",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 890,
+   "largo": 450
+  },
+  {
+   "item": "68",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 890,
+   "largo": 1220
+  },
+  {
+   "item": "69",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 900,
+   "largo": 880
+  },
+  {
+   "item": "70",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 910,
+   "largo": 1010
+  },
+  {
+   "item": "71",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 960,
+   "largo": 360
+  },
+  {
+   "item": "72",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 960,
+   "largo": 370
+  },
+  {
+   "item": "73",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 960,
+   "largo": 910
+  },
+  {
+   "item": "74",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 990,
+   "largo": 620
+  },
+  {
+   "item": "75",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 990,
+   "largo": 660
+  },
+  {
+   "item": "76",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 990,
+   "largo": 780
+  },
+  {
+   "item": "77",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1030,
+   "largo": 520
+  },
+  {
+   "item": "78",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1060,
+   "largo": 310
+  },
+  {
+   "item": "79",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1060,
+   "largo": 580
+  },
+  {
+   "item": "80",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1190,
+   "largo": 710
+  },
+  {
+   "item": "81",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1200,
+   "largo": 480
+  },
+  {
+   "item": "82",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1200,
+   "largo": 950
+  },
+  {
+   "item": "83",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1280,
+   "largo": 750
+  },
+  {
+   "item": "84",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1300,
+   "largo": 500
+  },
+  {
+   "item": "85",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1300,
+   "largo": 720
+  },
+  {
+   "item": "86",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1300,
+   "largo": 760
+  },
+  {
+   "item": "87",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1340,
+   "largo": 750
+  },
+  {
+   "item": "88",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1380,
+   "largo": 290
+  },
+  {
+   "item": "89",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1380,
+   "largo": 320
+  },
+  {
+   "item": "90",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1380,
+   "largo": 460
+  },
+  {
+   "item": "91",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1390,
+   "largo": 790
+  },
+  {
+   "item": "92",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1390,
+   "largo": 800
+  },
+  {
+   "item": "93",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1480,
+   "largo": 300
+  },
+  {
+   "item": "94",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1500,
+   "largo": 720
+  },
+  {
+   "item": "95",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1510,
+   "largo": 480
+  },
+  {
+   "item": "96",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1600,
+   "largo": 310
+  },
+  {
+   "item": "97",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1640,
+   "largo": 580
+  },
+  {
+   "item": "98",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1640,
+   "largo": 600
+  },
+  {
+   "item": "99",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1640,
+   "largo": 640
+  },
+  {
+   "item": "100",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1730,
+   "largo": 260
+  },
+  {
+   "item": "101",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1730,
+   "largo": 540
+  },
+  {
+   "item": "102",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1850,
+   "largo": 260
+  },
+  {
+   "item": "103",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1850,
+   "largo": 540
+  },
+  {
+   "item": "104",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1880,
+   "largo": 250
+  },
+  {
+   "item": "105",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2080,
+   "largo": 340
+  },
+  {
+   "item": "106",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2080,
+   "largo": 380
+  },
+  {
+   "item": "107",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2100,
+   "largo": 540
+  },
+  {
+   "item": "108",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2110,
+   "largo": 480
+  },
+  {
+   "item": "109",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2190,
+   "largo": 520
+  },
+  {
+   "item": "110",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2590,
+   "largo": 270
+  },
+  {
+   "item": "111",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2620,
+   "largo": 310
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "corte_perfecto",
+  "etapas": "libre",
+  "optimo": 8,
+  "separacion": 0,
+  "piezas": 114
+ }
+}

@@ -1,0 +1,52 @@
+{
+ "proyecto": {
+  "codigo": "CPL-1055",
+  "descripcion": "corte perfecto (guillotina libre): 1 planchas"
+ },
+ "preset": "lucas",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 630,
+   "largo": 1880
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1380,
+   "largo": 1880
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1530,
+   "largo": 1150
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1530,
+   "largo": 1330
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2030,
+   "largo": 600
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "corte_perfecto",
+  "etapas": "libre",
+  "optimo": 1,
+  "separacion": 20,
+  "piezas": 5
+ }
+}

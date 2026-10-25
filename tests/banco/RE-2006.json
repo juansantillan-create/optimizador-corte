@@ -1,0 +1,70 @@
+{
+ "proyecto": {
+  "codigo": "RE-2006",
+  "descripcion": "realista: 40 piezas, 8 medidas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 11,
+   "ancho": 740,
+   "largo": 1920
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 14,
+   "ancho": 745,
+   "largo": 1925
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 1100,
+   "largo": 1035
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 1260,
+   "largo": 1935
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1505,
+   "largo": 1195
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1735,
+   "largo": 1405
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1750,
+   "largo": 1930
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 2465,
+   "largo": 705
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "realista",
+  "piezas": 40
+ }
+}

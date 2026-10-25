@@ -1,0 +1,224 @@
+{
+ "proyecto": {
+  "codigo": "RE-2005",
+  "descripcion": "realista: 300 piezas, 30 medidas"
+ },
+ "preset": "corte_certo",
+ "piezas": [
+  {
+   "item": "1",
+   "material": "FL5IN",
+   "cantidad": 40,
+   "ancho": 300,
+   "largo": 810
+  },
+  {
+   "item": "2",
+   "material": "FL5IN",
+   "cantidad": 30,
+   "ancho": 325,
+   "largo": 625
+  },
+  {
+   "item": "3",
+   "material": "FL5IN",
+   "cantidad": 27,
+   "ancho": 360,
+   "largo": 790
+  },
+  {
+   "item": "4",
+   "material": "FL5IN",
+   "cantidad": 24,
+   "ancho": 375,
+   "largo": 795
+  },
+  {
+   "item": "5",
+   "material": "FL5IN",
+   "cantidad": 20,
+   "ancho": 395,
+   "largo": 540
+  },
+  {
+   "item": "6",
+   "material": "FL5IN",
+   "cantidad": 14,
+   "ancho": 415,
+   "largo": 710
+  },
+  {
+   "item": "7",
+   "material": "FL5IN",
+   "cantidad": 16,
+   "ancho": 415,
+   "largo": 1120
+  },
+  {
+   "item": "8",
+   "material": "FL5IN",
+   "cantidad": 14,
+   "ancho": 465,
+   "largo": 705
+  },
+  {
+   "item": "9",
+   "material": "FL5IN",
+   "cantidad": 11,
+   "ancho": 465,
+   "largo": 1070
+  },
+  {
+   "item": "10",
+   "material": "FL5IN",
+   "cantidad": 10,
+   "ancho": 510,
+   "largo": 775
+  },
+  {
+   "item": "11",
+   "material": "FL5IN",
+   "cantidad": 7,
+   "ancho": 550,
+   "largo": 330
+  },
+  {
+   "item": "12",
+   "material": "FL5IN",
+   "cantidad": 10,
+   "ancho": 565,
+   "largo": 420
+  },
+  {
+   "item": "13",
+   "material": "FL5IN",
+   "cantidad": 7,
+   "ancho": 645,
+   "largo": 705
+  },
+  {
+   "item": "14",
+   "material": "FL5IN",
+   "cantidad": 7,
+   "ancho": 655,
+   "largo": 755
+  },
+  {
+   "item": "15",
+   "material": "FL5IN",
+   "cantidad": 12,
+   "ancho": 685,
+   "largo": 375
+  },
+  {
+   "item": "16",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 755,
+   "largo": 1145
+  },
+  {
+   "item": "17",
+   "material": "FL5IN",
+   "cantidad": 8,
+   "ancho": 760,
+   "largo": 310
+  },
+  {
+   "item": "18",
+   "material": "FL5IN",
+   "cantidad": 6,
+   "ancho": 760,
+   "largo": 340
+  },
+  {
+   "item": "19",
+   "material": "FL5IN",
+   "cantidad": 5,
+   "ancho": 860,
+   "largo": 655
+  },
+  {
+   "item": "20",
+   "material": "FL5IN",
+   "cantidad": 4,
+   "ancho": 880,
+   "largo": 570
+  },
+  {
+   "item": "21",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 960,
+   "largo": 740
+  },
+  {
+   "item": "22",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 960,
+   "largo": 785
+  },
+  {
+   "item": "23",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1000,
+   "largo": 1125
+  },
+  {
+   "item": "24",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1030,
+   "largo": 615
+  },
+  {
+   "item": "25",
+   "material": "FL5IN",
+   "cantidad": 2,
+   "ancho": 1105,
+   "largo": 300
+  },
+  {
+   "item": "26",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1110,
+   "largo": 1160
+  },
+  {
+   "item": "27",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 1115,
+   "largo": 570
+  },
+  {
+   "item": "28",
+   "material": "FL5IN",
+   "cantidad": 3,
+   "ancho": 1140,
+   "largo": 415
+  },
+  {
+   "item": "29",
+   "material": "FL5IN",
+   "cantidad": 1,
+   "ancho": 1165,
+   "largo": 1110
+  },
+  {
+   "item": "30",
+   "material": "FL5IN",
+   "cantidad": 4,
+   "ancho": 1170,
+   "largo": 1155
+  }
+ ],
+ "fecha": "2026-10-25 00:00:00",
+ "banco": {
+  "familia": "realista",
+  "piezas": 300
+ }
+}
