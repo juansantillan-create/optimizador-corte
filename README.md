@@ -40,4 +40,5 @@ python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .venv\Scripts\python.exe -m pytest -q
 .venv\Scripts\python.exe -m optimizador banco      # banco de pruebas sintético
+.venv\Scripts\python.exe herramientas\prueba_estres.py   # 500 casos al azar contra el validador
 ```

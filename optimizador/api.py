@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+from decimal import ROUND_HALF_UP, Decimal
 import re
 from collections import OrderedDict
 
@@ -19,12 +20,18 @@ from .motor.calculo import ResultadoMaterial, Stock, Tipo, calcular
 
 
 # --------------------------------------------------------------------------- entrada
+MEDIDA_SOSPECHOSA_MM = 50  # una pieza con un lado de menos de 5 cm probablemente no está en mm
 def _entero(valor, campo: str, avisos: list[str], donde: str) -> int | None:
     """Medidas y cantidades: enteros. Un decimal se redondea con aviso; lo que no es número, error."""
     if valor is None or valor == "":
         return None
+    texto = str(valor).strip()
+    if re.fullmatch(r"\d{1,3}(\.\d{3})+", texto):
+        texto = texto.replace(".", "")  # "1.200" es 1200 (punto de miles), como al pegar desde Excel
+    elif "," in texto and "." in texto:
+        texto = texto.replace(".", "").replace(",", ".")  # "1.200,5"
     try:
-        x = float(str(valor).replace(",", "."))
+        x = float(texto.replace(",", "."))
     except ValueError:
         return None
     if not math.isfinite(x):
@@ -66,6 +73,8 @@ def leer_piezas(lista: list[dict]) -> tuple[list[Pieza], list[str], list[str]]:
         if problemas:
             errores.append(f"{donde}: {', '.join(problemas)}; no se calcula")
             continue
+        if min(ancho, largo) < MEDIDA_SOSPECHOSA_MM:
+            avisos.append(f"{donde}: medida muy chica ({ancho} × {largo} mm): ¿está en mm?")
         rota = d.get("rota")
         if isinstance(rota, str):
             rota = rota.strip().lower() in ("si", "sí", "s", "true", "1", "x")
@@ -77,6 +86,13 @@ def leer_piezas(lista: list[dict]) -> tuple[list[Pieza], list[str], list[str]]:
                             largo=largo, rota=rota, descripcion=str(d.get("descripcion") or ""),
                             origen=d.get("origen"), sobremedida_mm=sobremedida,
                             pulido_recto=pulido))
+    vistos: dict[str, int] = {}
+    for pz in piezas:
+        vistos[pz.item] = vistos.get(pz.item, 0) + 1
+    repetidos = [i for i, n in vistos.items() if n > 1]
+    if repetidos:
+        avisos.append(f"ítems repetidos: {', '.join(repetidos[:10])}" + (" …" if len(repetidos) > 10 else "")
+                      + " (en los dibujos no se van a poder distinguir)")
     return piezas, errores, avisos
 
 
@@ -168,7 +184,11 @@ def armar_stocks(mat: Material) -> tuple[list[Stock], list[str]]:
 
 # --------------------------------------------------------------------------- salida
 def _redondear(x: float, decimales: int) -> float:
-    return float(f"{x:.{decimales}f}")
+    """Redondeo "de toda la vida" (76,925 → 76,93), no el "al par" de Python, que es el que
+    probablemente usa Corte Certo. Se redondea el número tal como se escribe (repr), así 76,925 no
+    se vuelve 76,92 por cómo se guarda en binario."""
+    paso = Decimal(1).scaleb(-decimales)
+    return float(Decimal(repr(x)).quantize(paso, rounding=ROUND_HALF_UP))
 
 
 def config_material(mat: Material) -> dict:
@@ -230,7 +250,9 @@ def _montajes(mat: Material, res: ResultadoMaterial) -> list[dict]:
             ancho, largo = hoja.ancho - s, hoja.alto - s
             if hoja.tipo == "pieza":
                 t = tipos[hoja.pieza]
-                girada = not (ancho == t.ancho_corte and largo == t.largo_corte)
+                # Girada = con el largo donde se cargó el ancho. Con veta la orientación la pone la
+                # veta: no es "girada".
+                girada = mat.textura == "sin" and (ancho, largo) != (t.ancho_corte, t.largo_corte)
                 piezas.append({"tipo": t.indice + 1, "item": t.etiqueta, "x": x, "y": y,
                                "ancho": ancho, "largo": largo, "girada": girada})
                 area += t.ancho * t.largo
@@ -285,6 +307,7 @@ def informe_material(mat: Material, piezas: list[Pieza], res: ResultadoMaterial 
                    "color": colores.color_pieza(t.indice + 1)} for t in calculadas],
         "avisos": list(mat.avisos) + avisos,
         "errores": errores,
+        "calculado": res is not None and res.solucion is not None,
     }
     if res is None or res.solucion is None:
         salida.update({"layouts": 0, "planchas": 0, "m2_planchas": 0.0, "aprovechamiento": 0.0,
@@ -339,6 +362,21 @@ def informe_material(mat: Material, piezas: list[Pieza], res: ResultadoMaterial 
 
 
 # ------------------------------------------------------------------------- principal
+def ajustes_por_material(entrada: dict, piezas: list[Pieza], avisos: list[str]) -> dict:
+    """Los ajustes de la entrada ("materiales"), con el código en mayúsculas como las piezas. Un
+    ajuste para un material que no está en las piezas se avisa (no se aplica a nada)."""
+    salida: dict[str, dict] = {}
+    usados = {pz.material for pz in piezas}
+    for codigo, valores in (entrada.get("materiales") or {}).items():
+        normal = str(codigo).strip().upper()
+        if normal in salida:
+            avisos.append(f"ajustes de {normal} repetidos (con otra forma de escribir el código): se juntan")
+        salida[normal] = {**salida.get(normal, {}), **(valores or {})}
+        if normal not in usados:
+            avisos.append(f"hay ajustes para {codigo}, pero ninguna pieza es de ese material: no se usan")
+    return salida
+
+
 def optimizar(entrada: dict, progreso=None, cancelar=None, catalogo: Catalogo | None = None,
               validar: bool = True) -> dict:
     """Calcula todos los materiales de la entrada. Ver `docs/API.md`.
@@ -346,6 +384,7 @@ def optimizar(entrada: dict, progreso=None, cancelar=None, catalogo: Catalogo | 
     `progreso(**datos)` se llama a medida que avanza; `cancelar()` devuelve True para cortar y
     quedarse con lo mejor encontrado hasta ese momento.
     """
+    from .configuracion import ConfiguracionInvalida
     from .validador import validar as validar_resultado
 
     catalogo = catalogo or Catalogo()
@@ -356,16 +395,23 @@ def optimizar(entrada: dict, progreso=None, cancelar=None, catalogo: Catalogo | 
         raise ValueError(f"preset desconocido: {preset!r}")
     opciones = entrada.get("opciones") or {}
     esfuerzo = opciones.get("esfuerzo", "normal")
-    ajustes = entrada.get("materiales") or {}
     piezas, errores_generales, avisos_generales = leer_piezas(entrada.get("piezas") or [])
+    ajustes = ajustes_por_material(entrada, piezas, avisos_generales)
     por_material: "OrderedDict[str, list[Pieza]]" = OrderedDict()
     for pz in piezas:
         por_material.setdefault(pz.material, []).append(pz)
     materiales_salida = []
     for n_mat, (codigo, lista) in enumerate(por_material.items()):
-        mat = catalogo.material(codigo, preset, ajustes.get(codigo))
-        stocks, errores = armar_stocks(mat)
         avisos: list[str] = []
+        try:
+            mat = catalogo.material(codigo, preset, ajustes.get(codigo))
+        except ConfiguracionInvalida as exc:
+            # No se calcula con un valor que no se puede usar; se muestra el material sin calcular.
+            mat = catalogo.material(codigo, preset, usar_locales=False)
+            materiales_salida.append(informe_material(mat, lista, None, [f"{exc}; no se calcula este material"],
+                                                      avisos))
+            continue
+        stocks, errores = armar_stocks(mat)
         if not stocks:
             errores.append(f"{codigo}: no tiene planchas habilitadas; no se calcula este material")
             materiales_salida.append(informe_material(mat, lista, None, errores, avisos))
@@ -395,6 +441,10 @@ def optimizar(entrada: dict, progreso=None, cancelar=None, catalogo: Catalogo | 
         "avisos": avisos_generales,
         "errores": errores_generales,
     }
+    # Completo = se calcularon todas las piezas de la entrada. Un resultado verificado pero
+    # incompleto (una pieza que no entra, un material sin planchas) no es una cotización entera.
+    resultado["completo"] = not errores_generales and all(m["calculado"] and not m["errores"]
+                                                          for m in materiales_salida)
     if validar:
         errores_val = validar_resultado(entrada, resultado, catalogo)
         resultado["verificado"] = not errores_val

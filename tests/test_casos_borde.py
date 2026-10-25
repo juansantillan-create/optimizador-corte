@@ -213,3 +213,83 @@ def test_maximo_tamano_cortado_avisa():
     assert any("máximo tamaño cortado" in a for a in material(res, "FL5IN")["avisos"])
     res = calcular(piezas)
     assert not any("máximo tamaño cortado" in a for a in material(res, "FL5IN")["avisos"])
+
+
+# ------------------------------------------------ lo que encontró la revisión de F1
+def test_configuracion_imposible_no_se_calcula():
+    piezas = [{"item": "1", "material": "FL4IN", "cantidad": 3, "ancho": 1200, "largo": 2500}]
+    for ajuste in ({"separacion_piezas_mm": -10}, {"margen_derecha_mm": -40}, {"textura": "diagonal"},
+                   {"destaque_min_mm": "x"}, {"planchas": [{"ancho": 3600, "largo": 2500, "corte_banda": -5}]}):
+        res = calcular(piezas, materiales={"FL4IN": ajuste})
+        m = material(res, "FL4IN")
+        assert m["planchas"] == 0 and any("no se calcula este material" in e for e in m["errores"]), ajuste
+
+
+def test_textura_como_la_escribe_corte_certo():
+    piezas = [{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": 1700, "largo": 2400}]
+    sin = material(calcular(piezas, materiales={"FL4IN": {"textura": "Sem"}}), "FL4IN")
+    assert sin["configuracion"]["textura"] == "sin" and sin["planchas"] == 1
+    hor = material(calcular(piezas, materiales={"FL4IN": {"textura": "Horizontal"}}), "FL4IN")
+    assert hor["configuracion"]["textura"] == "horizontal"
+
+
+def test_ajustes_en_minuscula_y_de_materiales_que_no_estan():
+    piezas = [{"item": "1", "material": "FL5IN", "cantidad": 2, "ancho": 1000, "largo": 1000}]
+    res = calcular(piezas, materiales={"fl5in": {"separacion_piezas_mm": 7}, "FL8IN": {"rotacion": False}})
+    assert material(res, "FL5IN")["configuracion"]["separacion_piezas_mm"] == 7
+    assert any("FL8IN" in a and "ninguna pieza" in a for a in res["avisos"])
+
+
+def test_punto_de_miles_en_la_entrada():
+    res = calcular([{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": "1.200", "largo": "800"}])
+    m = material(res, "FL4IN")
+    assert m["tipos"][0]["ancho"] == 1200 and m["m2_piezas"] == 1.92
+
+
+def test_validador_compara_con_la_configuracion_de_la_entrada():
+    from optimizador.configuracion import Catalogo
+    from optimizador.validador import validar
+    ent = {"preset": "corte_certo", "fecha": FECHA, "opciones": {"esfuerzo": "rapido"},
+           "piezas": [{"item": "1", "material": "FL4IN", "cantidad": 3, "ancho": 1200, "largo": 2500}],
+           "materiales": {"FL4IN": {"separacion_piezas_mm": 10}}}
+    res = optimizar(ent)
+    assert res["verificado"]
+    cat = Catalogo()
+    m = material(res, "FL4IN")
+    m["configuracion"]["separacion_piezas_mm"] = 0  # el resultado "dice" que usó otra separación
+    assert any("separacion_piezas_mm" in e for e in validar(ent, res, cat))
+    m["configuracion"]["separacion_piezas_mm"] = -10
+    assert any("no es una medida válida" in e for e in validar(ent, res))
+
+
+def test_caso_grande_que_ponia_piezas_de_mas():
+    # Revisión de F1: este presupuesto típico daba 303 piezas de 300 (el validador lo atajaba).
+    from optimizador.banco import caso_realista
+    ent = caso_realista(4020, 30, 300, 300, 2400)
+    ent["opciones"] = {"esfuerzo": "normal"}
+    res = optimizar(ent)
+    assert res["verificado"], res["validacion"][:3]
+    assert res["completo"] and res["materiales"][0]["piezas"] == 300
+
+
+def test_resultado_incompleto_se_marca():
+    res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 1, "ancho": 5000, "largo": 500},
+                    {"item": "2", "material": "FL5IN", "cantidad": 2, "ancho": 1000, "largo": 500}])
+    assert res["completo"] is False and material(res, "FL5IN")["planchas"] == 1
+    assert calcular([{"item": "1", "material": "FL5IN", "cantidad": 2, "ancho": 1000, "largo": 500}])["completo"]
+
+
+def test_cancelar_antes_del_primer_montaje():
+    piezas = [{"item": str(i), "material": "FL4IN", "cantidad": 1, "ancho": 300 + 7 * i, "largo": 400 + 5 * i}
+              for i in range(80)]
+    ent = {"piezas": piezas, "opciones": {"esfuerzo": "normal"}, "fecha": FECHA}
+    res = optimizar(ent, cancelar=lambda: True)
+    m = material(res, "FL4IN")
+    assert res["verificado"] and not res["completo"] and m["planchas"] == 0
+    assert any("cancelado" in e for e in m["errores"])
+
+
+def test_veta_no_marca_piezas_giradas():
+    res = calcular([{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": 800, "largo": 1500}],
+                   materiales={"FL4IN": {"textura": "horizontal"}})
+    assert not any(p["girada"] for mo in material(res, "FL4IN")["montajes"] for p in mo["piezas"])

@@ -38,6 +38,8 @@ def _resumen(res: dict) -> str:
         lineas.append(f"  ERROR: {e}")
     for a in res.get("avisos", []):
         lineas.append(f"  aviso: {a}")
+    if res.get("completo") is False:
+        lineas.append("RESULTADO INCOMPLETO: hay piezas que no se calcularon (ver los errores de arriba)")
     if res.get("verificado"):
         lineas.append("Validador: OK")
     else:
@@ -160,7 +162,9 @@ def main(argv: list[str] | None = None) -> int:
         args.html.write_text(html_resultado(res, coma=args.coma), encoding="utf-8")
         print(f"Informe guardado en {args.html} (abrilo con el navegador; se imprime en A4 apaisada)")
     print(_resumen(res))
-    return 0 if res.get("verificado") else 1
+    if not res.get("verificado"):
+        return 1
+    return 0 if res.get("completo", True) else 2
 
 
 if __name__ == "__main__":

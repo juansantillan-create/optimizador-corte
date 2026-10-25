@@ -5,6 +5,7 @@ import json
 import shutil
 import threading
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -90,9 +91,37 @@ def test_ajustes_de_material_en_la_pc(servidor):
     m = pedir(base, "/api/materiales/FL4IN")
     assert m["separacion_piezas_mm"] == 7 and m["base"]["separacion_piezas_mm"] == 0
     assert [p["habilitada"] for p in m["planchas"]] == [True, True, False]
-    assert json.loads((config / "local" / "materiales.json").read_text())["FL4IN"]["separacion_piezas_mm"] == 7
+    guardado = json.loads((config / "local" / "materiales.json").read_text())["FL4IN"]
+    # La sierra depende del preset: se guarda solo para "Como Corte Certo hoy".
+    assert guardado["por_preset"]["corte_certo"]["separacion_piezas_mm"] == 7
+    assert pedir(base, "/api/materiales/FL4IN?preset=lucas")["separacion_piezas_mm"] == 20
+    assert [p["habilitada"] for p in pedir(base, "/api/materiales/FL4IN?preset=lucas")["planchas"]] == [True, True, False]
+    # Un valor imposible no se guarda.
+    with pytest.raises(urllib.error.HTTPError) as error:
+        pedir(base, "/api/materiales/FL4IN", {"separacion_piezas_mm": -10}, "PUT")
+    assert error.value.code == 400
     pedir(base, "/api/materiales/FL4IN/locales", metodo="DELETE")
     assert pedir(base, "/api/materiales/FL4IN")["separacion_piezas_mm"] == 0
+
+
+def test_solo_atiende_a_esta_pc(servidor):
+    base, _, _ = servidor
+    req = urllib.request.Request(base + "/api/estado", headers={"Host": "malicioso.example.com"})
+    with pytest.raises(urllib.error.HTTPError) as error:
+        urllib.request.urlopen(req, timeout=10)
+    assert error.value.code == 403
+
+
+def test_proyectos_con_el_mismo_nombre_de_archivo(servidor):
+    base, _, proyectos = servidor
+    largo = {**ENTRADA, "proyecto": {"codigo": "P" * 70, "descripcion": ""}}
+    r = pedir(base, "/api/proyectos", largo)
+    assert pedir(base, "/api/proyectos/" + r["archivo"])["proyecto"]["codigo"] == "P" * 70
+    pedir(base, "/api/proyectos", {**ENTRADA, "proyecto": {"codigo": "11580/A"}})
+    with pytest.raises(urllib.error.HTTPError) as error:
+        pedir(base, "/api/proyectos", {**ENTRADA, "proyecto": {"codigo": "11580 A"}})
+    assert error.value.code == 409
+    pedir(base, "/api/proyectos?sobrescribir=1", {**ENTRADA, "proyecto": {"codigo": "11580 A"}})
 
 
 def test_guardar_y_abrir_proyecto(servidor):

@@ -76,3 +76,39 @@ def test_interfaz_con_encabezados():
     r = imp.desde_interfaz(_xlsx([["TIPO", "VIDRIO1", "CAMARA", "VIDRIO2", "ANCHO", "LARGO", "CANT"],
                                   ["VS", "FL5IN", "", "", 500, 600, 3]]), "x.xlsx")
     assert r.piezas[0]["cantidad"] == 3 and not any("SUPUESTA" in v for v in r.columnas.values())
+
+
+# ------------------------------------------------ lo que encontró la revisión de F3
+def test_encabezados_con_otros_nombres_unidades_y_titulo():
+    for texto in ("Material\tCantidad de piezas\tAncho\tLargo\nFL4IN\t5\t1200\t800",
+                  "Material\tCant. pzas\tAncho (mm)\tAlto (mm)\nFL4IN\t5\t1200\t800",
+                  "Presupuesto 123\n\nMaterial\tQty\tAncho\tLargo\nFL4IN\t5\t1200\t800",
+                  "Cantidad\tMaterial\tAncho\tLargo\n5\tFL4IN\t1200\t800"):
+        r = imp.desde_texto(texto)
+        assert [(p["material"], p["cantidad"], p["ancho"], p["largo"]) for p in r.piezas] == \
+            [("FL4IN", 5, 1200, 800)], texto
+
+
+def test_sin_columna_de_cantidad_avisa():
+    r = imp.desde_texto("Material\tAncho\tLargo\tDescripción\nFL4IN\t1000\t500\tpuerta")
+    assert r.piezas[0]["cantidad"] == 1 and any("cantidad" in a for a in r.avisos)
+
+
+def test_planilla_de_la_interfaz_pegada_o_en_xlsx():
+    texto = ("TIPO\tVIDRIO1\tCAMARA\tVIDRIO2\tANCHO\tLARGO\tCANTIDAD\n"
+             "DVH\tFL4IN\tCAM12\tFL5IN\t900\t1400\t2\nDIST\tHERR\t\t\t500\t1\t4")
+    r = imp.desde_texto(texto)
+    assert [(p["material"], p["cantidad"]) for p in r.piezas] == [("FL4IN", 2), ("FL5IN", 2)]
+    assert any("herrajes" in a for a in r.avisos)
+
+
+def test_csv_con_coma_decimal_sin_comillas_y_unicode():
+    r = imp.desde_csv(b"material,cantidad,ancho,largo\nFL4IN,2,1200,5,800\nFL4IN,2,1200,800")
+    assert len(r.piezas) == 1 and any("más columnas" in a for a in r.avisos)
+    r = imp.desde_csv("material;cantidad;ancho;largo\nFL4IN;2;1200;800".encode("utf-16"))
+    assert r.piezas[0]["ancho"] == 1200
+
+
+def test_nan_e_infinito_no_son_numeros():
+    assert imp.numero_mm("nan") is None and imp.numero_mm("inf") is None
+    assert imp.numero_mm(float("nan")) is None

@@ -26,12 +26,30 @@ TOLERANCIA_M2 = 5e-7  # el informe redondea los m² a 6 decimales
 LIMITE_PASOS_GUILLOTINA = 200_000
 
 
+CAMPOS_MM = ("separacion_piezas_mm", "destaque_min_mm", "constante_ancho_mm", "constante_largo_mm",
+             "margen_arriba_mm", "margen_abajo_mm", "margen_izquierda_mm", "margen_derecha_mm",
+             "sobremedida_pulido_mm")
+# Lo que se compara contra la configuración armada de nuevo desde la entrada.
+CAMPOS_COMPARAR = CAMPOS_MM + ("rotacion", "textura")
+
+
 def validar(entrada: dict, resultado: dict, catalogo=None) -> list[str]:
+    """Con `catalogo`, además arma de nuevo la configuración de cada material desde la entrada
+    (preset y ajustes) y controla que el resultado diga haber usado esa misma."""
     errores: list[str] = []
     esperado = _piezas_esperadas(entrada, resultado)
     for mat in resultado.get("materiales", []):
         codigo = mat.get("codigo", "?")
         try:
+            if mat.get("calculado") is False:
+                # No se calculó (configuración imposible, sin planchas): no puede tener montajes.
+                if mat.get("montajes") or mat.get("planchas"):
+                    errores.append(f"{codigo}: dice que no se calculó pero tiene montajes")
+                continue
+            errores += _controlar_configuracion(codigo, mat.get("configuracion", {}))
+            if catalogo is not None and mat.get("montajes"):
+                errores += _comparar_configuracion(codigo, mat.get("configuracion", {}), entrada,
+                                                   resultado, catalogo)
             errores += _validar_material(mat, esperado.get(codigo, []))
         except Exception as exc:  # un resultado roto tiene que aparecer como error, no romper
             errores.append(f"{codigo}: no se pudo validar ({type(exc).__name__}: {exc})")
@@ -42,11 +60,64 @@ def validar(entrada: dict, resultado: dict, catalogo=None) -> list[str]:
     return errores
 
 
+# --------------------------------------------------------------- la configuración
+def _controlar_configuracion(codigo: str, cfg: dict) -> list[str]:
+    """Valores que no tienen sentido: medidas negativas, plancha útil más grande que la hoja o sin
+    medida, textura desconocida."""
+    errores = []
+    for campo in CAMPOS_MM:
+        v = cfg.get(campo, 0)
+        if not isinstance(v, (int, float)) or v != v or v < 0:
+            errores.append(f"{codigo}: {campo} = {v!r} no es una medida válida")
+    if cfg.get("textura", "sin") not in ("sin", "horizontal", "vertical"):
+        errores.append(f"{codigo}: textura {cfg.get('textura')!r} desconocida")
+    for p in cfg.get("planchas", []):
+        if not p.get("habilitada", True):
+            continue
+        w = p["ancho"] - p.get("corte_banda", 0) - cfg.get("margen_izquierda_mm", 0) - cfg.get("margen_derecha_mm", 0)
+        h = p["largo"] - cfg.get("margen_arriba_mm", 0) - cfg.get("margen_abajo_mm", 0)
+        if p.get("corte_banda", 0) < 0 or not (0 < w <= p["ancho"]) or not (0 < h <= p["largo"]):
+            errores.append(f"{codigo}: la plancha {p['ancho']} × {p['largo']} da una útil de {w} × {h}, "
+                           "que no tiene sentido")
+    return errores
+
+
+def _comparar_configuracion(codigo: str, cfg: dict, entrada: dict, resultado: dict, catalogo) -> list[str]:
+    """Arma la configuración desde la entrada (sin usar la del resultado) y la compara."""
+    preset = entrada.get("preset") or "corte_certo"
+    ajustes: dict = {}
+    for k, v in (entrada.get("materiales") or {}).items():
+        if str(k).strip().upper() == codigo:
+            ajustes.update(v or {})
+    try:
+        mat = catalogo.material(codigo, preset, ajustes)
+    except ValueError as exc:
+        return [f"{codigo}: la configuración de la entrada no se puede usar ({exc}) y sin embargo hay montajes"]
+    errores = []
+    for campo in CAMPOS_COMPARAR:
+        if getattr(mat, campo) != cfg.get(campo):
+            errores.append(f"{codigo}: el resultado dice {campo} = {cfg.get(campo)!r} y la entrada pide "
+                           f"{getattr(mat, campo)!r}")
+    planchas = [(p.ancho, p.largo, p.corte_banda, p.habilitada) for p in mat.planchas]
+    del_resultado = [(p["ancho"], p["largo"], p.get("corte_banda", 0), p.get("habilitada", True))
+                     for p in cfg.get("planchas", [])]
+    if planchas != del_resultado:
+        errores.append(f"{codigo}: las planchas del resultado no son las de la configuración")
+    return errores
+
+
 # ------------------------------------------------------------------- lo que se pidió
 def _num(v):
+    t = str(v).strip()
+    if re.fullmatch(r"\d{1,3}(\.\d{3})+", t):  # "1.200" = 1200 (punto de miles)
+        t = t.replace(".", "")
+    elif "," in t and "." in t:  # "1.200,5"
+        t = t.replace(".", "").replace(",", ".")
     try:
-        x = float(str(v).replace(",", "."))
+        x = float(t.replace(",", "."))
     except (TypeError, ValueError):
+        return None
+    if x != x or x in (float("inf"), float("-inf")):
         return None
     return int(round(x))
 

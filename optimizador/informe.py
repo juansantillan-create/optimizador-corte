@@ -170,6 +170,9 @@ def _alarma(res: dict) -> str:
     if res.get("verificado") is False:
         return ("<div class='alarma'>⚠ EL VALIDADOR ENCONTRÓ UN PROBLEMA EN ESTE RESULTADO: NO USARLO PARA "
                 "COTIZAR. El detalle está en el recuadro de abajo.</div>")
+    if res.get("completo") is False:
+        return ("<div class='alarma'>⚠ RESULTADO INCOMPLETO: hay piezas que no se calcularon (ver los errores "
+                "de cada material). Las planchas de este informe no las incluyen.</div>")
     return ""
 
 

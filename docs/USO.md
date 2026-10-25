@@ -13,7 +13,8 @@ Lo mismo que hoy se hace con Corte Certo, en el navegador. Para instalarlo: `doc
    descripción y clase), copiá con **Ctrl+C**, volvé al optimizador y apretá **Ctrl+V**. Se abre
    una **vista previa**: revisá que las columnas estén bien y apretá **"Agregar al proyecto"**.
 5. Apretá **Calcular ▶**. Primero muestra lo que conviene mirar (materiales que no están en la
-   planilla, piezas que no entran…). Después aparece "Cálculo en proceso".
+   planilla, piezas que no entran…) y, si hay algo, pregunta si calcular igual. Después aparece
+   "Cálculo en proceso".
 6. Al terminar se abre **Resultados**: el **Informe de cálculo** (como el de Corte Certo) y, abajo,
    los **montajes** de cada material. Las planchas, los m² y el aprovechamiento están ahí.
 7. **Imprimir informe** o **Imprimir montajes** (en la impresora o "Guardar como PDF").
@@ -31,8 +32,12 @@ Lo mismo que hoy se hace con Corte Certo, en el navegador. Para instalarlo: `doc
 - **Clase**: si tiene "PR" (por ejemplo "FLOAT PR TEMP"), se le suman **3 mm al ancho y al largo**
   (pulido recto, como se hacía en Corte Certo).
 - **Importar archivo…**: CSV, Excel (`.xlsx`) o la planilla `.xls` de la Interfaz de Metrix (un
-  DVH se convierte en sus 2 vidrios; los herrajes se ignoran). Siempre muestra la vista previa.
-- **Guardar** / **Abrir…**: los proyectos quedan en la carpeta `proyectos` del programa.
+  DVH se convierte en sus 2 vidrios; los herrajes se ignoran; la planilla de la Interfaz también se
+  reconoce si se pega o se guarda como `.xlsx`). Siempre muestra la vista previa. Los encabezados
+  pueden tener otros nombres ("Cant. pzas", "Alto (mm)"…) o un título arriba; si no encuentra la
+  columna de la cantidad, lo avisa y toma 1 por renglón.
+- **Guardar** / **Abrir…**: los proyectos quedan en la carpeta `proyectos` del programa. Si dos
+  códigos van al mismo archivo ("11580/A" y "11580 A"), pregunta antes de reemplazar.
 - **Revisar**: muestra los avisos sin calcular.
 
 ### Materiales
@@ -42,15 +47,17 @@ Lo mismo que hoy se hace con Corte Certo, en el navegador. Para instalarlo: `doc
   rotación, textura, retazo, constante, márgenes…). El número rojo entre paréntesis es el valor de
   la configuración elegida arriba.
 - **Planchas**: las medidas de plancha del material. Destildá una para no usarla.
-- **Ok (guardar en esta PC)**: los cambios quedan guardados en esta PC (`config\local`), valen para
-  todos los cálculos y se marcan con ✎ en la lista. **"Volver a los valores de la configuración"**
-  los borra.
+- **Ok (guardar en esta PC)**: los cambios quedan guardados en esta PC (`config\local`) y se marcan
+  con ✎ en la lista. El ancho de la sierra, el destaque y el pulido recto valen **solo para la
+  configuración elegida arriba** (cada una los pone a su manera); lo demás vale para todas.
+  **"Volver a los valores de la configuración"** los borra. No se aceptan valores negativos.
 
 ### Calcular
 
 Como la pantalla de Corte Certo: material en curso, tiempo de cálculo, estimado y restante, la torta
 con el % y la cantidad de montajes armados. **Cancelar** se queda con lo mejor encontrado hasta ese
-momento.
+momento (termina el paso que está haciendo, puede tardar unos segundos). Mientras calcula no se
+puede empezar otro cálculo.
 
 ### Resultados
 
@@ -85,6 +92,7 @@ aprovechamiento) al lado de cada material; la diferencia sale en verde (a favor)
 | "entraría girada, pero el material no permite girarla" | El material tiene veta o está marcado sin rotación |
 | "separación supuesta" | Con "Reglas de corte", el material no está en la regla de Lucas: se usa la de su espesor (pregunta 15) |
 | "medida muy chica" | Menos de 50 mm: ¿está en milímetros? |
+| "RESULTADO INCOMPLETO" (en rojo) | Alguna pieza no se calculó (no entra, material sin planchas, un valor del material imposible): las planchas no la incluyen. Ver los errores |
 | "Validador: FALLÓ" (en rojo) | El resultado tiene un error: **no usarlo** y avisar |
 
 ## Números: cómo se calculan (iguales a Corte Certo)

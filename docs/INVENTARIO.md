@@ -108,6 +108,8 @@ la historia de git; ver `DECISIONES.md`).
 |---|---|---|
 | `importar_medidas_hojas.py` | Convierte `Medidas_hojas.xlsx` en `hojas.csv` | Regenerar la configuración de planchas |
 | `generar_caso_juguete.py` | Genera el caso de juguete de `tests/historico_juguete/` | Tests de F4 |
+| `prueba_estres.py` | Casos al azar (chicos y de tamaño real) contra el validador | Prueba de estrés (`docs/VALIDACION.md` §2.1) |
+| `Bajar_paquetes.bat` | Baja las librerías para instalar sin internet | `docs/INSTALACION.md`, "Sin internet" |
 
 ## `.claude/agents/`
 

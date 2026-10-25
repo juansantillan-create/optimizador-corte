@@ -12,6 +12,8 @@ from optimizador.api import optimizar
 resultado = optimizar(entrada)            # entrada y resultado: dicts (el JSON de abajo)
 if not resultado["verificado"]:
     print(resultado["validacion"])        # el validador encontró un problema: no usar
+elif not resultado["completo"]:
+    print("faltan piezas")                # hay piezas que no se calcularon: ver los errores
 ```
 
 Opcionales: `optimizar(entrada, progreso=f, cancelar=g)`. `progreso(**datos)` se llama mientras
@@ -35,8 +37,8 @@ imprimir), `--coma` (coma decimal en el HTML), `--preset`, `--esfuerzo`, `--sile
 Para exportar el consumo a planilla desde Python: `optimizador.exportar.a_csv(resultado)` (coma
 decimal, `;`) o `a_xlsx(resultado, "consumo.xlsx")`.
 
-Código de salida: 0 = resultado verificado, 1 = el validador encontró un problema, 2 = no se pudo
-leer la entrada.
+Código de salida: 0 = resultado verificado y completo, 1 = el validador encontró un problema,
+2 = no se pudo leer la entrada o el resultado está **incompleto** (alguna pieza no se calculó).
 
 ## Entrada
 
@@ -60,17 +62,17 @@ leer la entrada.
 |---|---|
 | `proyecto` | código y descripción (van al informe) |
 | `preset` | `corte_certo` ("Como Corte Certo hoy", por defecto), `lucas` ("Reglas de corte"), o las hipótesis `H0`, `H1`, `H2` de la validación |
-| `piezas[]` | un renglón por medida. `material` = código de Metrix; `cantidad`, `ancho`, `largo` en mm enteros |
+| `piezas[]` | un renglón por medida. `material` = código de Metrix; `cantidad`, `ancho`, `largo` en mm enteros (como texto también vale "1.200" = 1200) |
 | `piezas[].rota` | `true`/`false`; si no viene, lo que diga el material |
 | `piezas[].clase` o `pulido_recto` | si la clase tiene "PR" (o `pulido_recto: true`) se suman 3 mm al ancho y al largo (confirmado por Juan) |
 | `piezas[].sobremedida_mm` | sobremedida extra opcional (se suma a las dos medidas) |
-| `materiales` | ajustes por material encima del preset: cualquier campo de "Propiedades físicas" (ver abajo), `planchas` (lista que reemplaza a la de `hojas.csv`) o `planchas_habilitadas` (`{"3600x2200": false}`) |
+| `materiales` | ajustes por material encima del preset (el código, sin importar mayúsculas): cualquier campo de "Propiedades físicas" (ver abajo), `planchas` (lista que reemplaza a la de `hojas.csv`) o `planchas_habilitadas` (`{"3600x2200": false}`). Un valor que no se puede usar (negativo, no numérico, textura desconocida) deja ese material sin calcular, con el error |
 | `opciones.esfuerzo` | `rapido` (solo la heurística, < 2 s), `normal`, `maximo` |
 | `fecha` | opcional; si no viene, la hora actual (es lo único que cambia entre dos corridas iguales) |
 
 Campos de material que se pueden ajustar: `separacion_piezas_mm` (ancho de la sierra),
 `destaque_min_mm`, `genera_retazo`, `retazo_ancho_min_mm`, `retazo_largo_min_mm`, `usar_area_min`,
-`retazo_area_min_m2`, `rotacion`, `textura` (`sin`/`horizontal`/`vertical`), `constante_ancho_mm`,
+`retazo_area_min_m2`, `rotacion`, `textura` (`sin`/`horizontal`/`vertical`; también "Sem" = sin), `constante_ancho_mm`,
 `constante_largo_mm`, `margen_arriba_mm`, `margen_abajo_mm`, `margen_izquierda_mm`,
 `margen_derecha_mm`, `corte_max_libre`, `corte_max_mm`, `sobremedida_pulido_mm`, `espesor_mm`,
 `peso_kg_m2`, `descripcion`, `color`.
@@ -82,6 +84,8 @@ Lo principal (los mismos números que el informe de Corte Certo):
 | Campo | Qué es |
 |---|---|
 | `verificado` | `true` si pasó el **validador independiente**; si es `false`, `validacion` dice por qué y el resultado no se debe usar |
+| `completo` | `true` si se calcularon **todas** las piezas. Si es `false` (una pieza no entra, un material sin planchas o con una configuración imposible), las planchas no las incluyen: ver `errores` |
+| `materiales[].calculado` | `false` si ese material no se calculó (no tiene montajes) |
 | `materiales[]` | uno por material, en el orden en que aparecen |
 | `materiales[].piezas`, `m2_piezas` | cantidad de piezas y m² (6 decimales, con el +3 del pulido recto). No cuentan los renglones con error (que no se calcularon) |
 | `m2_piezas_presupuesto` | m² con las medidas del presupuesto (sin el +3) |
@@ -195,6 +199,7 @@ La salida real de la entrada de arriba (con `configuracion`, `calculo`, los cort
    ],
    "avisos": [],
    "errores": [],
+   "calculado": true,
    "layouts": 2,
    "planchas": 2,
    "m2_planchas": 17.9,
@@ -327,6 +332,7 @@ La salida real de la entrada de arriba (con `configuracion`, `calculo`, los cort
  ],
  "avisos": [],
  "errores": [],
+ "completo": true,
  "verificado": true,
  "validacion": []
 }
@@ -340,4 +346,4 @@ La salida real de la entrada de arriba (con `configuracion`, `calculo`, los cort
 - **Nunca inventa en silencio**: material que no está en `hojas.csv` → plancha supuesta con aviso;
   pieza que no entra o con datos inválidos → error por pieza, y los demás se calculan igual.
 - **Todo resultado pasa por el validador** (`optimizador/validador.py`), que no comparte código
-  con el motor.
+  con el motor y arma de nuevo la configuración de cada material desde la entrada.

@@ -49,7 +49,7 @@ leer 1 (a propósito), no puede relacionar 1 (material ambiguo, a propósito), 1
 propósito) y compara el resto con las 3 hipótesis. **Esos números no dicen nada del optimizador**:
 las "hojas de Corte Certo" del juguete son inventadas (algunas, imposibles).
 
-## 2. Banco sintético (25/10/2026, versión 0.1 del motor)
+## 2. Banco sintético (25/10/2026, motor con las correcciones de las revisiones de F1 a F4)
 
 Máquina: nube, Linux, Python 3.13, Intel Xeon 2,8 GHz, 4 núcleos (el cálculo usa uno solo). La PC
 de la oficina va a ser más lenta: para medirla, `python -m optimizador banco` (ver §4).
@@ -62,8 +62,13 @@ de la oficina va a ser más lenta: para medirla, `python -m optimizador banco` (
 | Prueba | Casos | Pasaron el validador |
 |---|---|---|
 | Banco sintético | 85 | **85 (100 %)** |
-| Instancias al azar (con separación, destaque, veta, constantes, márgenes, varias planchas) | 500 | **500 (100 %)** |
+| Prueba de estrés (`herramientas/prueba_estres.py`, semilla 1): 3 de cada 4 chicos con separación, destaque, veta, constantes, márgenes y varias planchas; 1 de cada 4 de tamaño real (plancha 3600 × 2500, 20 a 400 piezas, 3 a 60 medidas) | 500 (342 chicos y 158 de tamaño real) | **500 (100 %)** |
 | Tests con instancias al azar (`hypothesis`, en cada `pytest`) | 60 por corrida | 100 % |
+
+La revisión de F1 encontró que la versión anterior ponía **piezas de más** en algunos casos grandes
+(300 piezas de 30 medidas, o 2000 piezas): el validador lo atajaba, pero el caso no se podía
+calcular. Las 500 instancias al azar de esa versión eran todas chicas y no lo mostraban. Está
+corregido (con tests) y la prueba de estrés de ahora incluye casos de tamaño real.
 
 El validador (`optimizador/validador.py`) no usa nada del motor: revisa de nuevo que cada pieza
 esté adentro de la plancha útil, que no se solapen, la separación, que la plancha se pueda cortar
@@ -86,11 +91,11 @@ rompecabezas exacto. En un presupuesto real hay muchas piezas repetidas.
 
 | Familia (hasta 100 piezas) | Casos | Encontró el óptimo | Planchas de más (en total) | Tiempo máximo |
 |---|---|---|---|---|
-| 3 etapas | 36 | **20 (56 %)** | 16 (siempre 1 en los que falló) | 9 s |
-| Guillotina libre | 24 | **10 (42 %)** | 14 | 15 s |
+| 3 etapas | 36 | **20 (56 %)** | 16 (siempre 1 en los que falló) | 9,5 s |
+| Guillotina libre | 24 | **10 (42 %)** | 14 (siempre 1) | 8,3 s |
 
-Además hay 12 casos de guillotina libre con 100 a 121 piezas: ninguno en el óptimo (1 o 2 planchas
-de más).
+Además hay 12 casos de guillotina libre con 101 a 121 piezas: ninguno en el óptimo (1 plancha de
+más en todos).
 
 - **La meta del brief (≥ 95 % de óptimos hasta 100 piezas) no se cumple todavía.** Los casos de 1 a
   3 planchas salen casi todos bien; desde 4 o 5 planchas suele sobrar una.
@@ -115,16 +120,16 @@ esos montajes no se puede hacer mejor).
 |---|---|---|---|---|---|---|
 | RE-2000 | 20 | 2 | 2 | — | 2 | 0,04 |
 | RE-2001 | 50 | 6 | 6 | — | 6 | 0,2 |
-| RE-2002 | 80 | 6 | 6 | — | 6 | 0,4 |
-| RE-2003 | 120 | 21 | 19 | 19,90 | 15 | 2,3 |
-| RE-2004 | 300 | 46 | 43 | 44,28 | 25 | 5,5 |
+| RE-2002 | 80 | 6 | 6 | — | 6 | 0,5 |
+| RE-2003 | 120 | 21 | 19 | 19,90 | 15 | 1,8 |
+| RE-2004 | 300 | 46 | 43 | 44,28 | 25 | 5,4 |
 | RE-2005 | 300 | 13 | 12 | 12,02 | 13 | 7,4 |
-| RE-2006 | 40 | 9 | 8 | 8,50 | 7 | 0,2 |
-| RE-2007 | 200 | 25 | 24 | 24,06 | 20 | 4,0 |
+| RE-2006 | 40 | 9 | 8 | 8,50 | 7 | 0,1 |
+| RE-2007 | 200 | 25 | 24 | 24,06 | 20 | 3,7 |
 | RE-2008 | 60 | 3 | 3 | — | 3 | 0,2 |
-| RE-2009 | 250 | 50 | 47 | 49,46 | 31 | 3,1 |
-| T413-3000 | 252 | 73 | 64 | 72,94 | 20 | 0,6 |
-| T413-3001 | 252 | 73 | 61 | 72,06 | 18 | 0,3 |
+| RE-2009 | 250 | 50 | 47 | 49,46 | 31 | 2,4 |
+| T413-3000 | 252 | 73 | 64 | 72,94 | 20 | 0,3 |
+| T413-3001 | 252 | 73 | 61 | 72,06 | 18 | 0,4 |
 | T413-3002 | 252 | 73 | 59 | 72,02 | 20 | 0,4 |
 
 ("—" = la heurística ya llegó al mínimo teórico y no hizo falta seguir.)
@@ -139,11 +144,18 @@ esos montajes no se puede hacer mejor).
 
 | Caso | Primera solución (esfuerzo "rápido") | Final (esfuerzo "normal") | Meta |
 |---|---|---|---|
-| Típico: 300 piezas, 30 medidas de 300 a 2400 mm | 1,1 s | 4–5 s | < 2 s / ≤ 10 s ✔ |
-| Típico: 300 piezas, 30 medidas de 300 a 1200 mm | 1,8 s | 7–12 s | < 2 s / ≤ 10 s (justo) |
+| Típico: 300 piezas, 30 medidas de 300 a 2400 mm | 1,2 s | 5,4 s | < 2 s / ≤ 10 s ✔ |
+| Típico: 300 piezas, 30 medidas de 300 a 1200 mm | 1,7 s | 8,1 s | < 2 s / ≤ 10 s ✔ (justo) |
 | Como el 413: 252 piezas grandes | 0,1 s | 0,3 s | ✔ |
-| Grande: 2000 piezas, 60 medidas | 6,9 s | 21 s | ≤ 60 s ✔ |
-| Memoria máxima (caso grande) | | 109 MB | < 500 MB ✔ |
+| Grande: 2000 piezas, 60 medidas | 4,4 s | 23 s | ≤ 60 s ✔ |
+| Fuera del típico: 200 piezas **todas distintas** | 12 s | 11 s | (no es "típico": > 30 medidas) |
+| Peor caso: 2000 piezas **todas distintas** | 68 s | 69 s | ≤ 60 s ✘ (se pasa) |
+| Memoria máxima | | 110 MB (grande); 310 MB (2000 todas distintas) | < 500 MB ✔ |
+
+Las medidas del banco y de esta tabla son con otras pruebas corriendo a la vez en la misma
+máquina (puede sumar algo de tiempo). Con muchas medidas distintas el motor prueba menos
+combinaciones (ver `DECISIONES.md`): antes de esta corrección, 200 piezas distintas tardaban 78 s
+y 2000 distintas pasaban los 700 MB.
 
 El trabajo se corta por **cantidad** (tiras calculadas por el generador), no por reloj: en una PC
 más lenta tarda más, pero da **el mismo resultado**. El reloj solo corta a los 60 s (normal) como
@@ -167,12 +179,12 @@ interfaz.
 
 | Meta | Estado |
 |---|---|
-| 100 % de los resultados pasa el validador | ✔ (585 de 585 casos) |
+| 100 % de los resultados pasa el validador | ✔ (85 de 85 del banco y 500 de 500 de la prueba de estrés) |
 | Óptimo en ≥ 95 % del "corte perfecto" hasta 100 piezas | ✘ 50 % (56 % en 3 etapas, 42 % en guillotina libre) |
-| Tiempos de §6.5 | ✔ en la nube (el típico de piezas medianas queda justo en 10 s) |
+| Tiempos de §6.5 | ✔ en la nube para el típico y el grande; ✘ el peor caso (2000 piezas todas distintas) tarda 68 s. En la PC de la oficina va a tardar más: medirlo con §4 |
 | Reproducir a Corte Certo en ≥ 90 % de los casos históricos | pendiente: faltan los datos |
 | Igual o menos planchas que Corte Certo en ≥ 95 % | pendiente: faltan los datos |
-| Números con la fórmula de Corte Certo al 0,01 % | ✔ (test con las cuentas del 413: 733,9 m² y 76,93 %) |
+| Números con la fórmula de Corte Certo al 0,01 % | ✔ el validador los recalcula en cada resultado; además, un test con las cuentas del 413 (733,9 m² y 76,93 %), que prueba la fórmula (no pasa por el motor) |
 
 ## 4. Para medir en la PC de la oficina
 

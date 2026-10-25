@@ -61,6 +61,15 @@ HIPOTESIS = {
 }
 
 CAMPOS_EDITABLES = {f.name for f in fields(Material)} - {"codigo", "planchas", "avisos"}
+# Campos que cada preset pone a su manera: un cambio hecho en esta PC vale solo para ese preset.
+CAMPOS_POR_PRESET = {"separacion_piezas_mm", "destaque_min_mm", "sobremedida_pulido_mm"}
+# Campos de texto y los valores que aceptan.
+TEXTURAS = {"sin": "sin", "sem": "sin", "no": "sin", "ninguna": "sin", "": "sin",
+            "horizontal": "horizontal", "h": "horizontal", "vertical": "vertical", "v": "vertical"}
+
+
+class ConfiguracionInvalida(ValueError):
+    """Un valor de la configuración de un material que no se puede usar (negativo, no numérico…)."""
 
 
 def todos_los_presets() -> dict[str, dict]:
@@ -148,7 +157,12 @@ class Catalogo:
             else:
                 mat.destaque_min_mm = separacion
         mat.sobremedida_pulido_mm = conf["pulido_mm"]
-        for origen, valores in (("locales", self.ajustes_locales().get(codigo, {}) if usar_locales else {}),
+        locales = dict(self.ajustes_locales().get(codigo, {})) if usar_locales else {}
+        # La separación, el destaque y el pulido dependen del preset: si se cambiaron en esta PC,
+        # se guardaron para ese preset solo (ver `CAMPOS_POR_PRESET`).
+        por_preset = locales.pop("por_preset", {}) or {}
+        for origen, valores in (("locales", locales),
+                                (f"locales del preset {preset}", por_preset.get(preset, {})),
                                 ("entrada", (ajustes or {}))):
             _aplicar(mat, valores, origen)
         return mat
@@ -174,13 +188,40 @@ class Catalogo:
         return [self.materiales[c] for c in sorted(self.materiales)]
 
 
+def _numero(mat: Material, campo: str, valor, origen: str, entero: bool, minimo: float = 0) -> float | int:
+    """Un número de la configuración: finito, no negativo; si es entero y vino con decimales, se
+    redondea con aviso. Si no se puede usar, `ConfiguracionInvalida`."""
+    try:
+        x = float(str(valor).strip().replace(",", ".")) if not isinstance(valor, (int, float)) else float(valor)
+    except ValueError:
+        raise ConfiguracionInvalida(f"{mat.codigo}: {campo} = {valor!r} no es un número ({origen})") from None
+    if x != x or x in (float("inf"), float("-inf")):
+        raise ConfiguracionInvalida(f"{mat.codigo}: {campo} = {valor!r} no es un número ({origen})")
+    if x < minimo:
+        raise ConfiguracionInvalida(f"{mat.codigo}: {campo} = {valor!r} no puede ser menor que {minimo:g} ({origen})")
+    if not entero:
+        return x
+    if x != int(x):
+        mat.avisos.append(f"{mat.codigo}: {campo} = {valor} no es entero; se usa {round(x)} ({origen})")
+    return int(round(x))
+
+
+def normalizar_textura(valor) -> str | None:
+    """'Sem', 'sin', '' -> 'sin'; 'Horizontal' -> 'horizontal'; … Lo que no se entiende, None."""
+    return TEXTURAS.get(str(valor or "").strip().lower())
+
+
 def _aplicar(mat: Material, valores: dict, origen: str) -> None:
-    """Pisa campos del material. `planchas` reemplaza la lista entera."""
+    """Pisa campos del material. `planchas` reemplaza la lista entera. Un valor que no se puede usar
+    (negativo, no numérico, textura desconocida) es `ConfiguracionInvalida`: no se calcula con él."""
     for campo, valor in valores.items():
         if campo == "planchas":
             planchas = []
             for p in valor:
                 pl = Plancha(**p) if isinstance(p, dict) else p
+                pl.ancho = _numero(mat, "ancho de plancha", pl.ancho, origen, True, 1)
+                pl.largo = _numero(mat, "largo de plancha", pl.largo, origen, True, 1)
+                pl.corte_banda = _numero(mat, "corte banda", pl.corte_banda, origen, True)
                 if pl.ancho < pl.largo:
                     mat.avisos.append(f"{mat.codigo}: la plancha {pl.ancho} × {pl.largo} venía parada; "
                                       f"se toma {pl.largo} × {pl.ancho} (el ancho es el lado largo)")
@@ -199,14 +240,20 @@ def _aplicar(mat: Material, valores: dict, origen: str) -> None:
                                       f"(tiene: {', '.join(claves)})")
                     continue
                 claves[normal].habilitada = _booleano(habilitada)
+        elif campo == "textura":
+            textura = normalizar_textura(valor)
+            if textura is None:
+                raise ConfiguracionInvalida(f"{mat.codigo}: textura {valor!r} no se entiende ({origen}); "
+                                            "tiene que ser sin, horizontal o vertical")
+            mat.textura = textura
         elif campo in CAMPOS_EDITABLES:
             actual = getattr(mat, campo)
             if isinstance(actual, bool):
                 valor = _booleano(valor)
             elif isinstance(actual, int):
-                valor = int(valor)
+                valor = _numero(mat, campo, valor, origen, True)
             elif isinstance(actual, float):
-                valor = float(valor)
+                valor = _numero(mat, campo, valor, origen, False)
             setattr(mat, campo, valor)
         else:
             mat.avisos.append(f"ajuste desconocido para {mat.codigo} ({origen}): {campo!r}, se ignora")

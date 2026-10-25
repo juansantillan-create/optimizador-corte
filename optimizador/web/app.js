@@ -29,7 +29,9 @@ async function api(url, opciones = {}) {
   if (!r.ok) {
     let detalle = r.statusText;
     try { detalle = (await r.json()).detail || detalle; } catch (e) { /* sin detalle */ }
-    throw new Error(detalle);
+    const error = new Error(detalle);
+    error.status = r.status;
+    throw error;
   }
   return r.json();
 }
@@ -118,6 +120,8 @@ function filaGrilla(p, i) {
   return tr;
 }
 function cuerpoFila(i) { return $$("#grilla tbody tr")[i]; }
+function renglonVacio(p) { return !p.material && !p.ancho && !p.largo; }
+function hayPiezas() { return estado.proyecto.piezas.some((p) => !renglonVacio(p)); }
 function agregarRenglon() {
   const piezas = estado.proyecto.piezas;
   const anterior = piezas[piezas.length - 1];
@@ -147,7 +151,12 @@ $("#b-nuevo").addEventListener("click", () => {
 $("#b-guardar").addEventListener("click", async () => {
   if (!estado.proyecto.codigo) { mensaje("Poné un código de proyecto para guardarlo", true); $("#p-codigo").focus(); return; }
   try {
-    const r = await api("/api/proyectos", { method: "POST", body: entradaCalculo() });
+    let r;
+    try { r = await api("/api/proyectos", { method: "POST", body: entradaCalculo() }); }
+    catch (e) {
+      if (e.status !== 409 || !confirm(`${e.message}. ¿Reemplazarlo?`)) throw e;
+      r = await api("/api/proyectos?sobrescribir=1", { method: "POST", body: entradaCalculo() });
+    }
     mensaje(`Guardado en proyectos/${r.archivo}`);
   } catch (e) { mensaje(e.message, true); }
 });
@@ -160,9 +169,11 @@ $("#b-abrir").addEventListener("click", async () => {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${esc(p.codigo)}</td><td>${esc(p.descripcion)}</td><td>${p.renglones}</td><td>${esc(p.modificado)}</td>`;
     tr.addEventListener("click", async () => {
+      if (hayPiezas() && !confirm(`¿Abrir ${p.codigo}? Reemplaza el proyecto que está cargado (lo que no guardaste se pierde).`)) return;
       const d = await api("/api/proyectos/" + encodeURIComponent(p.archivo));
       estado.proyecto = { codigo: d.proyecto?.codigo || "", descripcion: d.proyecto?.descripcion || "", piezas: d.piezas || [] };
       if (d.preset) $("#preset").value = d.preset;
+      if (d.opciones?.esfuerzo) $("#esfuerzo").value = d.opciones.esfuerzo;
       guardarBorrador();
       dibujarGrilla();
       cerrarVentanas();
@@ -211,8 +222,15 @@ function mostrarImportacion(imp) {
   $("#vi-agregar").disabled = $("#vi-reemplazar").disabled = imp.piezas.length === 0;
 }
 function aceptarImportacion(reemplazar) {
-  const piezas = estado.importado?.piezas || [];
-  if (reemplazar) estado.proyecto.piezas = [];
+  const imp = estado.importado || { piezas: [], columnas: {} };
+  let piezas = imp.piezas;
+  // Los renglones vacíos (como el que hay al empezar) no se dejan.
+  estado.proyecto.piezas = reemplazar ? [] : estado.proyecto.piezas.filter((p) => !renglonVacio(p));
+  if (!reemplazar && !("item" in imp.columnas)) {
+    // Sin columna de ítem, el importador numera desde 1: se sigue la numeración del proyecto.
+    const ultimo = Math.max(0, ...estado.proyecto.piezas.map((p) => parseInt(p.item, 10)).filter((n) => !isNaN(n)));
+    piezas = piezas.map((p, i) => ({ ...p, item: String(ultimo + i + 1) }));
+  }
   estado.proyecto.piezas.push(...piezas.map((p) => ({ rota: null, clase: "", descripcion: "", ...p })));
   guardarBorrador();
   dibujarGrilla();
@@ -290,11 +308,14 @@ async function calcular() {
   try {
     const r = await revisar();
     if (r.errores.length && !confirm("Hay renglones con errores que no se van a calcular (ver la lista). ¿Calcular igual el resto?")) return;
+    if (!r.errores.length && r.avisos.length && !confirm(`Hay ${r.avisos.length} aviso(s) para mirar antes de calcular (ver la lista). ¿Calcular igual?`)) return;
     const c = await api("/api/calcular", { method: "POST", body: entradaCalculo() });
     estado.calculo = c.id;
     $("#proceso").hidden = false;
     $("#c-ayuda").hidden = true;
     $("#b-cancelar").disabled = false;
+    $("#b-cancelar").textContent = "Cancelar (quedarse con lo mejor hasta ahora)";
+    $("#b-calcular").disabled = true;
     irA("calcular");
     sondear();
   } catch (e) { mensaje(e.message, true); }
@@ -314,7 +335,7 @@ async function sondear() {
   clearTimeout(estado.sondeo);
   if (!estado.calculo) return;
   let c;
-  try { c = await api("/api/calculo/" + estado.calculo); } catch (e) { mensaje(e.message, true); return; }
+  try { c = await api("/api/calculo/" + estado.calculo); } catch (e) { mensaje(e.message, true); $("#b-calcular").disabled = false; return; }
   const p = c.progreso || {};
   $("#c-material").textContent = p.material || "—";
   $("#c-tiempo").textContent = hms(c.segundos);
@@ -326,6 +347,7 @@ async function sondear() {
   dibujarTorta(c.avance || 0);
   if (c.estado === "calculando") { estado.sondeo = setTimeout(sondear, 500); return; }
   $("#b-cancelar").disabled = true;
+  $("#b-calcular").disabled = false;
   if (c.estado === "error") { mensaje("El cálculo falló: " + c.error, true); return; }
   estado.resultado = c;
   mostrarResultados();
@@ -333,7 +355,10 @@ async function sondear() {
   mensaje(c.estado === "cancelado" ? "Cálculo cancelado: se muestra lo mejor encontrado" : "Cálculo terminado");
 }
 $("#b-cancelar").addEventListener("click", async () => {
-  if (estado.calculo) await api(`/api/calculo/${estado.calculo}/cancelar`, { method: "POST" });
+  if (!estado.calculo) return;
+  $("#b-cancelar").disabled = true;
+  $("#b-cancelar").textContent = "Cancelando… (termina el paso que está haciendo)";
+  try { await api(`/api/calculo/${estado.calculo}/cancelar`, { method: "POST" }); } catch (e) { mensaje(e.message, true); }
 });
 
 // =================================================================== RESULTADOS
@@ -349,6 +374,10 @@ function mostrarResultados() {
     aviso.hidden = false;
     aviso.className = "revision mal";
     aviso.innerHTML = "<b>El validador encontró un problema en este resultado: no lo uses para cotizar.</b> El detalle está en el informe.";
+  } else if (r.completo === false) {
+    aviso.hidden = false;
+    aviso.className = "revision mal";
+    aviso.innerHTML = "<b>Resultado incompleto: hay piezas que no se calcularon.</b> Las planchas no las incluyen; los errores están en el informe.";
   } else { aviso.hidden = true; }
   $("#r-marco").src = urlInforme("detalle");
 }
@@ -426,9 +455,21 @@ async function abrirMaterial(codigo, sub = "fisicas") {
 }
 function campo(nombre, etiqueta, unidad = "mm", extra = "") {
   const m = estado.material;
-  return `<label>${etiqueta ? etiqueta + " " : ""}<input type="number" data-f="${nombre}" value="${esc(m[nombre])}" ${extra}> ${unidad}
+  return `<label>${etiqueta ? etiqueta + " " : ""}<input type="number" min="0" data-f="${nombre}" value="${esc(m[nombre])}" ${extra}> ${unidad}
     <span class="defecto">(${esc(m.base[nombre])})</span></label>`;
 }
+// Dibujitos como los de la captura 4 de Corte Certo (verde agua = piezas, amarillo = sobrante).
+const ICONOS = {
+  sierra: '<rect x="2" y="4" width="22" height="12" fill="#0bb"/><rect x="28" y="4" width="22" height="12" fill="#0bb"/><rect x="2" y="20" width="48" height="10" fill="#0bb"/><path d="M24 34 L28 34 M24 31 L24 37 M28 31 L28 37" stroke="#000"/>',
+  destaque: '<rect x="2" y="4" width="38" height="28" fill="#0bb" stroke="#000"/><rect x="40" y="4" width="8" height="28" fill="#ff0" stroke="#000"/><path d="M40 1 L48 1" stroke="#000"/>',
+  rotacion: '<rect x="2" y="6" width="10" height="24" fill="#0bb" stroke="#000"/><path d="M13 18 L20 18 M17 15 L20 18 L17 21" stroke="#000" fill="none"/><rect x="22" y="6" width="26" height="24" fill="#ff0" stroke="#000"/><rect x="22" y="6" width="10" height="24" fill="#0bb" stroke="#000"/>',
+  retazo: '<rect x="2" y="4" width="34" height="28" fill="#0bb" stroke="#000"/><rect x="36" y="4" width="12" height="28" fill="#ff0" stroke="#000"/>',
+  constante: '<rect x="2" y="12" width="10" height="10" fill="#0bb" stroke="#000"/><rect x="18" y="8" width="14" height="14" fill="#0bb" stroke="#000"/><rect x="34" y="4" width="16" height="18" fill="#ff0" stroke="#000"/>',
+  espesor: '<path d="M4 24 L36 14 L50 18 L18 28 Z" fill="#0aa" stroke="#000"/><path d="M4 24 L4 27 L18 31 L18 28" fill="#077" stroke="#000"/>',
+  peso: '<rect x="8" y="6" width="36" height="6" fill="#0aa" stroke="#000"/><rect x="10" y="14" width="32" height="18" fill="#ddd" stroke="#000"/><circle cx="26" cy="23" r="6" fill="#fff" stroke="#000"/>',
+  maximo: '<rect x="4" y="6" width="40" height="6" fill="#0aa" stroke="#000"/><rect x="4" y="14" width="40" height="6" fill="#0aa" stroke="#000"/><rect x="4" y="22" width="40" height="6" fill="#0aa" stroke="#000"/>',
+};
+function icono(nombre) { return `<svg class="icono" viewBox="0 0 52 38" width="52" height="38" aria-hidden="true">${ICONOS[nombre]}</svg>`; }
 function radio(nombre, opciones) {
   const m = estado.material;
   return opciones.map(([valor, etiqueta, recomendado]) =>
@@ -447,7 +488,7 @@ function dibujarFicha(sub) {
       <button data-sub="descripcion">Descripción</button><button data-sub="fisicas">Propiedades físicas</button>
       <button data-sub="comerciales">Propiedades comerciales</button><button data-sub="planchas">Planchas</button>
     </div>
-    <div class="franja">Los valores aquí definidos valen para el material ${esc(m.codigo)} (${esc($("#preset").selectedOptions[0].text)})</div>
+    <div class="franja">Los valores aquí definidos valen para el material ${esc(m.codigo)}. La sierra, el destaque y el pulido recto, solo con «${esc($("#preset").selectedOptions[0].text)}»; lo demás, con todos los presets.</div>
     ${avisos}
     <div data-panel="descripcion" class="descripcion-campos">
       <span>Código</span><b>${esc(m.codigo)}</b>
@@ -455,29 +496,30 @@ function dibujarFicha(sub) {
       <span>Color</span><input data-f="color" value="${esc(m.color)}">
       <span>Está en hojas.csv</span><span>${m.en_hojas_csv ? "Sí" : "<b>No</b> (planchas supuestas)"}</span>
     </div>
-    <div data-panel="fisicas" class="grupos">
-      <fieldset><legend>Ancho de la sierra</legend>${campo("separacion_piezas_mm", "")}<span class="ayuda">separación entre piezas</span></fieldset>
-      <fieldset><legend>Ancho mínimo de destaque</legend>${campo("destaque_min_mm", "")}</fieldset>
-      <fieldset><legend>Rotación permitida</legend>${radio("rotacion", [["true", "SI", true], ["false", "NO"]])}</fieldset>
-      <fieldset><legend>Textura</legend>${radio("textura", [["horizontal", "Horizontal"], ["vertical", "Vertical"], ["sin", "Sem (sin textura)"]])}</fieldset>
-      <fieldset><legend>Genera retazo</legend>${radio("genera_retazo", [["true", "SI"], ["false", "NO"]])}
-        ${campo("retazo_ancho_min_mm", "Ancho mínimo para retazo:")}${campo("retazo_largo_min_mm", "Largo mínimo para retazo:")}
+    <div data-panel="fisicas" class="grupos fisicas">
+      <fieldset class="g-sierra"><legend>Ancho de la sierra</legend>${icono("sierra")}${campo("separacion_piezas_mm", "")}<span class="ayuda">separación entre piezas</span></fieldset>
+      <fieldset class="g-destaque"><legend>Ancho mínimo de destaque</legend>${icono("destaque")}${campo("destaque_min_mm", "")}</fieldset>
+      <fieldset class="g-rotacion"><legend>Rotación permitida</legend>${icono("rotacion")}${radio("rotacion", [["true", "SI", true], ["false", "NO"]])}</fieldset>
+      <fieldset class="g-textura"><legend>Textura</legend>${radio("textura", [["horizontal", "Horizontal"], ["vertical", "Vertical"], ["sin", "Sem (sin textura)"]])}</fieldset>
+      <fieldset class="g-retazo"><legend>Genera retazo</legend>${icono("retazo")}
+        <div class="retazo">${radio("genera_retazo", [["true", "SI"], ["false", "NO"]])}
+        <div>${campo("retazo_ancho_min_mm", "Ancho mínimo para retazo:")}${campo("retazo_largo_min_mm", "Largo mínimo para retazo:")}
         <label><input type="checkbox" data-f="usar_area_min" ${m.usar_area_min ? "checked" : ""}> Utilice el área mínima</label>
-        ${campo("retazo_area_min_m2", "", "m2", 'step="0.01"')}</fieldset>
-      <fieldset><legend>Agrega una constante en las dimensiones de los pedazos de este material</legend>
-        ${campo("constante_ancho_mm", "Ancho")}${campo("constante_largo_mm", "Largo")}
+        ${campo("retazo_area_min_m2", "", "m2", 'step="0.01"')}</div></div></fieldset>
+      <fieldset class="g-constante"><legend>Agrega una constante en las dimensiones de los pedazos de este material</legend>
+        ${icono("constante")}${campo("constante_ancho_mm", "Ancho")}${campo("constante_largo_mm", "Largo")}
         <span class="ayuda">(Agrega en la anchura y en la altura tecleada en el orden)</span></fieldset>
-      <fieldset><legend>Espesor</legend>${campo("espesor_mm", "", "mm", 'step="0.1"')}</fieldset>
-      <fieldset><legend>Pese específico</legend>${campo("peso_kg_m2", "", "Kg / m2", 'step="0.1"')}</fieldset>
-      <fieldset><legend>Margen de seguridad para la plancha</legend>
+      <fieldset class="g-espesor"><legend>Espesor</legend>${icono("espesor")}${campo("espesor_mm", "", "mm", 'step="0.1"')}</fieldset>
+      <fieldset class="g-peso"><legend>Pese específico</legend>${icono("peso")}${campo("peso_kg_m2", "", "Kg / m2", 'step="0.1"')}</fieldset>
+      <fieldset class="g-margen"><legend>Margen de seguridad para la plancha</legend>
         <div class="margenes">
           <span></span>${campo("margen_arriba_mm", "", "")}<span></span>
           ${campo("margen_izquierda_mm", "", "")}<div class="plancha-mini"></div>${campo("margen_derecha_mm", "", "")}
           <span></span>${campo("margen_abajo_mm", "", "")}<span></span>
-        </div><span class="ayuda">( -500 ... 500 mm )</span></fieldset>
-      <fieldset><legend>Máximo tamaño cortado (usado en guillotinas)</legend>${radio("corte_max_libre", [["true", "Libre", true], ["false", "Limitado"]])}
+        </div><span class="ayuda">( 0 ... 500 mm )</span></fieldset>
+      <fieldset class="g-maximo"><legend>Máximo tamaño cortado (usado en guillotinas)</legend>${icono("maximo")}${radio("corte_max_libre", [["true", "Libre", true], ["false", "Limitado"]])}
         ${campo("corte_max_mm", "", "mm")}<span class="ayuda">( 10 ... 10000 mm ) — se controla con aviso</span></fieldset>
-      <fieldset><legend>Cristalux: pulido recto</legend>${campo("sobremedida_pulido_mm", "+")}<span class="ayuda">se suma al ancho y al largo de las piezas con clase PR</span></fieldset>
+      <fieldset class="g-pulido"><legend>Cristalux: pulido recto</legend>${campo("sobremedida_pulido_mm", "+")}<span class="ayuda">se suma al ancho y al largo de las piezas con clase PR</span></fieldset>
     </div>
     <div data-panel="comerciales">
       <p class="provisorio">Provisorio: no hay captura de esta pestaña de Corte Certo (pregunta 7). Los precios se guardan pero todavía no se usan en el cálculo.</p>
@@ -491,10 +533,10 @@ function dibujarFicha(sub) {
       <p class="ayuda">Las medidas salen de <code>config/hojas.csv</code> (planilla Medidas_hojas.xlsx). Destildá una medida para no usarla en este material.</p>
     </div>
     <div class="pie-ficha">
-      <button class="principal" id="m-guardar">Ok (guardar en esta PC)</button>
-      <button id="m-restaurar" ${ajustado ? "" : "disabled"}>Volver a los valores de la configuración</button>
+      <span class="ayuda observacion">💡 Observación: las opciones que normalmente ofrecen los resultados más buenos son marcados en <span class="recomendado">rojo</span>, con el símbolo <span class="recomendado">*</span>. El número rojo entre paréntesis es el valor de la configuración.</span>
       <span class="estado-ajuste">${ajustado ? "✎ Este material tiene cambios guardados en esta PC." : ""}</span>
-      <span class="ayuda">💡 Las opciones que normalmente ofrecen los resultados más buenos están marcadas en <span class="recomendado">rojo</span>, con el símbolo <span class="recomendado">*</span>. El número rojo entre paréntesis es el valor de la configuración.</span>
+      <button id="m-restaurar" ${ajustado ? "" : "disabled"}>Volver a los valores de la configuración</button>
+      <button class="principal" id="m-guardar">Ok (guardar en esta PC)</button>
     </div>`;
   const mostrar = (s) => {
     $$("#m-ficha .subpestanas button").forEach((b) => b.classList.toggle("activa", b.dataset.sub === s));
@@ -537,8 +579,9 @@ async function guardarMaterial() {
   for (const el of $$("#m-ficha [data-com]")) if (el.value !== "") com[el.dataset.com] = Number(el.value);
   if (Object.keys(com).length) cambios.comercial = com;
   try {
-    await api(`/api/materiales/${encodeURIComponent(m.codigo)}/locales`, { method: "DELETE" });
-    if (Object.keys(cambios).length) await api(`/api/materiales/${encodeURIComponent(m.codigo)}`, { method: "PUT", body: cambios });
+    // Reemplaza lo guardado para este material (los cambios de la sierra, el destaque y el pulido
+    // de otros presets se conservan).
+    await api(`/api/materiales/${encodeURIComponent(m.codigo)}?preset=${$("#preset").value}`, { method: "PUT", body: cambios });
     estado.materiales = await api("/api/materiales");
     abrirMaterial(m.codigo);
     mensaje(Object.keys(cambios).length ? `Guardado (${Object.keys(cambios).length} cambio(s) en esta PC)` : "Sin cambios: se usan los valores de la configuración");

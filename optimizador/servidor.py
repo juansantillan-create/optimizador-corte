@@ -19,19 +19,21 @@ import webbrowser
 from collections import OrderedDict
 from pathlib import Path
 
-from fastapi import Body, FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__, exportar, importadores, informe
 from .api import armar_stocks, armar_tipos, leer_piezas, optimizar
-from .configuracion import CAMPOS_EDITABLES, CARPETA_CONFIG, Catalogo, RAIZ, todos_los_presets
+from .configuracion import (CAMPOS_EDITABLES, CAMPOS_POR_PRESET, CARPETA_CONFIG, Catalogo, ConfiguracionInvalida, RAIZ,
+                            todos_los_presets)
 
 WEB = Path(__file__).resolve().parent / "web"
 CARPETA_PROYECTOS = RAIZ / "proyectos"
 PUERTO = 8520
 OCUPADOS = {8080, 8090, 8501, 8502}  # ya usados en la PC de la oficina (CLAUDE.md)
 MAX_RESULTADOS = 15
+HOSTS = {"127.0.0.1", "localhost", "[::1]"}  # solo se atiende a esta misma PC
 
 
 # ------------------------------------------------------------------ cálculos en curso
@@ -82,6 +84,7 @@ class Calculo:
                                                        "layouts", "aprovechamiento", "perdida")}
                                 for m in self.resultado["materiales"]]
             datos["verificado"] = self.resultado.get("verificado")
+            datos["completo"] = self.resultado.get("completo")
         return datos
 
 
@@ -101,6 +104,12 @@ def puerto_libre(desde: int = PUERTO, hasta: int = PUERTO + 30) -> int:
 def _nombre_archivo(texto: str) -> str:
     limpio = re.sub(r"[^A-Za-z0-9_.+-]+", "_", texto.strip())[:60].strip("._")
     return limpio or "proyecto"
+
+
+def _archivo_proyecto(nombre: str) -> str:
+    """'11580_A.json' o '11580/A' -> '11580_A.json' (sin salir de la carpeta de proyectos)."""
+    base = nombre[:-5] if nombre.lower().endswith(".json") else nombre
+    return _nombre_archivo(base) + ".json"
 
 
 # ------------------------------------------------------------------------- la app
@@ -130,6 +139,16 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
             raise HTTPException(404, "ese cálculo ya no está (se guardan los últimos 15)")
         return c
 
+    @app.middleware("http")
+    async def solo_esta_pc(request: Request, siguiente):
+        # Una página de internet que se haga pasar por esta PC ("DNS rebinding") llega con otro
+        # nombre en el encabezado Host: no se la atiende.
+        host = (request.headers.get("host") or "").rsplit(":", 1)[0] if "]" not in (request.headers.get("host") or "") \
+            else (request.headers.get("host") or "").split("]")[0] + "]"
+        if host not in HOSTS:
+            return PlainTextResponse("Solo se atiende desde esta PC (127.0.0.1).", status_code=403)
+        return await siguiente(request)
+
     app.mount("/web", StaticFiles(directory=WEB), name="web")
 
     @app.get("/", response_class=HTMLResponse)
@@ -138,7 +157,7 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
 
     @app.get("/api/estado")
     def estado():
-        return {"version": __version__,
+        return {"app": "optimizador-corte", "version": __version__,
                 "presets": {k: {"nombre": v["nombre"], "descripcion": v.get("descripcion", "")}
                             for k, v in todos_los_presets().items()}}
 
@@ -169,18 +188,38 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
         return datos
 
     @app.put("/api/materiales/{codigo}")
-    def guardar_material(codigo: str, cambios: dict = Body(...)):
-        """Guarda ajustes de un material en esta PC (`config/local/materiales.json`)."""
+    def guardar_material(codigo: str, cambios: dict = Body(...), preset: str = "corte_certo"):
+        """Guarda los ajustes de un material en esta PC (`config/local/materiales.json`): reemplaza
+        los que había. La sierra, el destaque y el pulido recto se guardan solo para `preset`
+        (cada preset los pone a su manera); lo demás vale para todos los presets."""
         codigo = codigo.upper()
         permitidos = CAMPOS_EDITABLES | {"planchas_habilitadas", "comercial"}
         desconocidos = set(cambios) - permitidos
         if desconocidos:
             raise HTTPException(400, f"campos desconocidos: {', '.join(sorted(desconocidos))}")
+        if preset not in todos_los_presets():
+            raise HTTPException(400, f"preset desconocido: {preset}")
+        try:  # que se pueda usar antes de guardarlo
+            catalogo.material(codigo, preset, cambios, usar_locales=False)
+        except ConfiguracionInvalida as exc:
+            raise HTTPException(400, str(exc))
         with cerrojo:
             datos = leer_locales()
-            datos[codigo] = {**datos.get(codigo, {}), **cambios}
+            por_preset = dict(datos.get(codigo, {}).get("por_preset", {}))
+            del_preset = {k: v for k, v in cambios.items() if k in CAMPOS_POR_PRESET}
+            if del_preset:
+                por_preset[preset] = del_preset
+            else:
+                por_preset.pop(preset, None)
+            nuevo = {k: v for k, v in cambios.items() if k not in CAMPOS_POR_PRESET}
+            if por_preset:
+                nuevo["por_preset"] = por_preset
+            if nuevo:
+                datos[codigo] = nuevo
+            else:
+                datos.pop(codigo, None)
             guardar_locales(datos)
-        return {"ok": True, "locales": datos[codigo]}
+        return {"ok": True, "locales": datos.get(codigo, {})}
 
     @app.delete("/api/materiales/{codigo}/locales")
     def borrar_ajustes(codigo: str):
@@ -215,8 +254,13 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
         por_material: dict[str, list] = {}
         for pz in piezas:
             por_material.setdefault(pz.material, []).append(pz)
+        ajustes = {str(k).strip().upper(): v for k, v in (entrada.get("materiales") or {}).items()}
         for codigo, lista in por_material.items():
-            mat = catalogo.material(codigo, preset, (entrada.get("materiales") or {}).get(codigo))
+            try:
+                mat = catalogo.material(codigo, preset, ajustes.get(codigo))
+            except ConfiguracionInvalida as exc:
+                errores.append(f"{exc}; no se va a calcular este material")
+                continue
             avisos += mat.avisos
             stocks, err = armar_stocks(mat)
             errores += err
@@ -226,20 +270,15 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
             _, err, av = armar_tipos(mat, lista, stocks)
             errores += err
             avisos += av
-            for pz in lista:
-                if min(pz.ancho, pz.largo) < 50:
-                    avisos.append(f"ítem {pz.item}: medida muy chica ({pz.ancho} × {pz.largo} mm): ¿está en mm?")
-        vistos: dict[str, int] = {}
-        for pz in piezas:
-            vistos[pz.item] = vistos.get(pz.item, 0) + 1
-        repetidos = [i for i, n in vistos.items() if n > 1]
-        if repetidos:
-            avisos.append(f"ítems repetidos: {', '.join(repetidos[:10])}")
         return {"errores": errores, "avisos": avisos, "piezas": sum(p.cantidad for p in piezas),
                 "materiales": list(por_material)}
 
     @app.post("/api/calcular")
     def calcular(entrada: dict = Body(...)):
+        with cerrojo:
+            if any(x.estado == "calculando" for x in calculos.values()):
+                # Dos a la vez se pisan la PC (CPU y memoria): primero que termine o se cancele.
+                raise HTTPException(409, "ya hay un cálculo en curso: esperá que termine o cancelalo")
         c = Calculo(entrada)
         with cerrojo:
             calculos[c.id] = c
@@ -311,18 +350,26 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
 
     @app.get("/api/proyectos/{archivo}")
     def abrir_proyecto(archivo: str):
-        ruta = proyectos / _nombre_archivo(archivo)
+        ruta = proyectos / _archivo_proyecto(archivo)
         if not ruta.exists():
             raise HTTPException(404, "no existe ese proyecto")
         return json.loads(ruta.read_text(encoding="utf-8"))
 
     @app.post("/api/proyectos")
-    def guardar_proyecto(datos: dict = Body(...)):
+    def guardar_proyecto(datos: dict = Body(...), sobrescribir: int = 0):
         codigo = str((datos.get("proyecto") or {}).get("codigo") or "").strip()
         if not codigo:
             raise HTTPException(400, "el proyecto necesita un código para guardarlo")
         proyectos.mkdir(parents=True, exist_ok=True)
-        ruta = proyectos / (_nombre_archivo(codigo) + ".json")
+        ruta = proyectos / _archivo_proyecto(codigo)
+        if ruta.exists() and not sobrescribir:
+            try:
+                otro = str(json.loads(ruta.read_text(encoding="utf-8")).get("proyecto", {}).get("codigo", ""))
+            except (OSError, json.JSONDecodeError):
+                otro = ""
+            if otro != codigo:
+                # "11580/A" y "11580 A" van al mismo archivo: no se pisa sin preguntar.
+                raise HTTPException(409, f"ya hay un proyecto guardado como {ruta.name} (código «{otro}»)")
         tmp = ruta.with_suffix(".tmp")
         tmp.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
         tmp.replace(ruta)
@@ -331,9 +378,27 @@ def crear_app(carpeta_config: Path | None = None, carpeta_proyectos: Path | None
     return app
 
 
+def ya_abierto(puerto: int = PUERTO) -> bool:
+    """¿Ya hay un optimizador andando en ese puerto? (Por ejemplo, si se hizo doble clic dos veces.)"""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{puerto}/api/estado", timeout=1.5) as r:
+            return json.loads(r.read()).get("app") == "optimizador-corte"
+    except Exception:
+        return False
+
+
 def servir(puerto: int | None = None, abrir: bool = True) -> None:
     import uvicorn
 
+    if ya_abierto(puerto or PUERTO):
+        # Otro programa en otro puerto tendría otro borrador (el navegador lo guarda por puerto):
+        # mejor usar el que ya está abierto.
+        url = f"http://127.0.0.1:{puerto or PUERTO}/"
+        print(f"El optimizador ya está abierto en {url} (en otra ventana negra). Se abre el navegador ahí.")
+        if abrir:
+            webbrowser.open(url)
+        return
     puerto = puerto_libre(puerto or PUERTO)
     url = f"http://127.0.0.1:{puerto}/"
     print(f"Optimizador de corte {__version__} andando en {url}")

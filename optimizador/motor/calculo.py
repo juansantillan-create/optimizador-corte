@@ -141,6 +141,16 @@ class ResultadoMaterial:
 
 
 # ------------------------------------------------------------------------ problema
+MAX_ANCHOS_RAPIDO = 40  # anchos de tira que prueba el generador barato en la plancha entera
+MAX_ANCHOS_RAPIDO_MUCHOS = 20  # ídem con más de 400 medidas distintas (si no, tarda minutos)
+MUCHAS_MEDIDAS = 400
+MAX_TIPOS_COMPLETO = 60  # la heurística usa el generador completo solo hasta tantas medidas
+# Tipos de pieza que se consideran adentro de cada tira (los de más valor): solo pesa con
+# muchísimas medidas distintas, para que no tarde minutos ni use demasiada memoria.
+MAX_TIPOS_TIRA_RAPIDO = 60
+MAX_TIPOS_TIRA = 150
+
+
 class Problema:
     def __init__(self, tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: int):
         self.tipos = tipos
@@ -151,12 +161,19 @@ class Problema:
         self.n = len(tipos)
         tipos_gen = [TipoGen(tuple((a + separacion, b + separacion) for a, b in t.orientaciones))
                      for t in tipos]
-        self.generadores = [Generador(st.ancho + separacion, st.largo + separacion, tipos_gen, destaque)
+        self.generadores = [Generador(st.ancho + separacion, st.largo + separacion, tipos_gen, destaque,
+                                      max_tipos_tira=MAX_TIPOS_TIRA)
                             for st in stocks]
         # Generador barato (sin alternancia de cortes y un solo nivel de relleno): lo usa la
         # heurística secuencial, que lo llama muchas veces.
+        # Con muchas medidas distintas prueba solo los anchos de tira de las piezas más grandes
+        # (la heurística las pone primero): si no, cada montaje tarda segundos.
+        muchas = len(tipos) > MUCHAS_MEDIDAS
         self.generadores_rapidos = [Generador(st.ancho + separacion, st.largo + separacion, tipos_gen,
-                                              destaque, max_relleno=1, max_alternancia=0)
+                                              destaque, max_relleno=1, max_alternancia=0,
+                                              max_anchos=MAX_ANCHOS_RAPIDO_MUCHOS if muchas else MAX_ANCHOS_RAPIDO,
+                                              max_tipos_tira=MAX_TIPOS_TIRA_RAPIDO,
+                                              max_anchos_adentro=6 if muchas else 12)
                                     for st in stocks]
         # Área agrandada de cada tipo: es el "valor" natural de una pieza.
         self.area = [float((t.ancho_corte + separacion) * (t.largo_corte + separacion)) for t in tipos]
@@ -349,13 +366,15 @@ def resolver_entera(p: Problema, columnas: list[Columna], nodos: int, segundos: 
         restricciones.append(LinearConstraint(costos[None, :], lb=-np.inf, ub=tope_costo + 1e-6))
     res = milp(costos, constraints=restricciones,
                integrality=np.ones(m), bounds=Bounds(np.zeros(m), tope), options=opciones)
+    if res.status == 1 and "time" in str(res.message).lower():
+        # Se cortó por reloj, no por trabajo: en una PC más lenta puede dar otra cosa.
+        aviso = "la programación entera se cortó por tiempo (el resultado puede variar entre PCs)"
     if res.x is None:
         if costo_conocido is not None and res.status in (0, 2):
             return None, None  # no hay nada mejor con estos montajes
-        return None, None if costo_conocido is not None else \
-            "la programación entera no encontró solución en el límite de trabajo"
-    if res.status == 1 and "time" in str(res.message).lower():
-        aviso = "la programación entera se cortó por tiempo (el resultado puede variar entre PCs)"
+        if costo_conocido is not None:
+            return None, aviso
+        return None, aviso or "la programación entera no encontró solución en el límite de trabajo"
     x = np.round(res.x).astype(int)
     usos = [Uso(columnas[j].stock, columnas[j].nodo, int(x[j]), columnas[j].cuenta)
             for j in range(m) if x[j] > 0]
@@ -538,7 +557,8 @@ def juntar_sobrante(p: Problema, sol: Solucion, max_planchas: int = 4) -> Soluci
         for j in grupo:
             for i, n in enumerate(sol.usos[j].cuenta):
                 resto[i] += n
-        nueva = secuencial(p, 1.5, restante=resto, completo=True)
+        activos = sum(1 for r in resto if r > 0)
+        nueva = secuencial(p, 1.5, restante=resto, completo=activos <= MAX_TIPOS_COMPLETO)
         if nueva is None:
             continue
         usos = []
@@ -612,21 +632,21 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
     # 1) Heurística secuencial con algunas variantes.
     mejor: Solucion | None = None
     columnas: list[Columna] = []
+    avisar(fase="secuencial", variante=1, de=len(lim.variantes_secuencial), parte=0.0, montajes=0)
     for n_var, potencia in enumerate(lim.variantes_secuencial):
         if cancelar is not None and cancelar() and mejor is not None:
             break
         if n_var > 0 and p.trabajo() > 0.3 * lim.trabajo:
             break
         t0 = time.perf_counter()
-        completo = n_var == 0 and sum(p.demanda) <= 400
+        completo = n_var == 0 and sum(p.demanda) <= 400 and p.n <= MAX_TIPOS_COMPLETO
         total_piezas = sum(p.demanda)
 
         def paso(colocadas, montajes, _n=n_var):
             avisar(fase="secuencial", variante=_n + 1, de=len(lim.variantes_secuencial),
                    parte=colocadas / total_piezas, montajes=montajes)
 
-        sol = secuencial(p, potencia, cancelar=cancelar if mejor is not None else None,
-                         completo=completo, progreso=paso)
+        sol = secuencial(p, potencia, cancelar=cancelar, completo=completo, progreso=paso)
         tiempos['secuencial'] = tiempos.get('secuencial', 0) + time.perf_counter() - t0
         if sol is None:
             continue
@@ -637,7 +657,10 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
         avisar(fase="secuencial", variante=n_var + 1, de=len(lim.variantes_secuencial),
                planchas=mejor.planchas(), montajes=len(mejor.usos))
     if mejor is None:
-        errores.append("no se pudo armar ningún montaje")
+        if cancelar is not None and cancelar():
+            errores.append("cálculo cancelado antes de tener un primer resultado: no hay montajes")
+        else:
+            errores.append("no se pudo armar ningún montaje")
         return ResultadoMaterial(tipos, stocks, separacion, None, cota_planchas, cota_m2, None,
                                  avisos, errores, {"generador": p.trabajo()},
                                  time.perf_counter() - inicio)
@@ -646,7 +669,10 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
     cota_lp = None
     iteraciones = 0
     ya_optimo = (len(stocks) == 1 and mejor.planchas() <= cota_planchas)
-    if lim.iteraciones_columnas > 0 and not ya_optimo and not (cancelar and cancelar()):
+    # Si la heurística ya gastó todo el trabajo (muchísimas medidas distintas), no se sigue: la
+    # generación de columnas no haría ninguna vuelta y solo armar sus columnas iniciales tarda.
+    queda_trabajo = p.trabajo() < lim.trabajo
+    if lim.iteraciones_columnas > 0 and not ya_optimo and queda_trabajo and not (cancelar and cancelar()):
         # Columnas "homogéneas": la mayor cantidad posible de cada tipo solo.
         for i in range(p.n):
             valores = [1.0 if j == i else 0.0 for j in range(p.n)]
@@ -696,6 +722,9 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
         if pu < de:
             errores.append(f"ítems {t.etiqueta}: {de - pu} pieza(s) de {t.ancho_corte} × "
                            f"{t.largo_corte} no se pudieron ubicar")
+        elif pu > de:  # no debería pasar: las cantidades tienen que dar exactas
+            errores.append(f"ítems {t.etiqueta}: el cálculo puso {pu - de} pieza(s) de más de "
+                           f"{t.ancho_corte} × {t.largo_corte}")
     # 3) Juntar el sobrante en la última plancha.
     if not (cancelar and cancelar()):
         t0 = time.perf_counter()

@@ -3,6 +3,54 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F5 (entrega) y correcciones de las revisiones de F1, F3 y F4
+
+**Dónde quedó todo, en una línea**: el optimizador anda de punta a punta (pegar o importar piezas →
+calcular → informe y montajes como Corte Certo → imprimir/exportar), todo resultado pasa el
+validador, y la validación contra los casos viejos está lista pero **no se corrió porque los datos
+no llegaron**.
+
+**Hecho en esta etapa**
+- `docs/INSTALACION.md` (paso a paso para la PC de la oficina, también sin internet), `docs/USO.md`
+  (cómo cotizar) y el `README.md`.
+- Correcciones de la revisión de **F4** (validación histórica): el control usa siempre el +3 mm;
+  tolerancia ±0,5; el lector no pierde materiales; la página para git no lleva texto escrito a mano;
+  retomar recalcula si cambiaron las piezas; avisos de la reconstrucción al lado de cada caso.
+- Correcciones de la revisión de **F1** (motor y validador): un valor imposible en un material
+  (sierra o margen negativo, textura desconocida) ya no da piezas encimadas con "Validador OK": el
+  material no se calcula y se avisa; el validador arma de nuevo la configuración desde la entrada;
+  campo `completo` (falta alguna pieza → aviso en rojo y código de salida 2); "1.200" = 1200;
+  aviso si la programación entera se corta por reloj; redondeo "como siempre".
+- Correcciones de la revisión de **F3** (interfaz e importadores): encabezados con otros nombres,
+  con unidades o con un título arriba; aviso si no hay columna de cantidad; la planilla de la
+  Interfaz pegada o en `.xlsx` (DVH = 2 vidrios); Calcular pregunta si hay avisos; un cálculo a la
+  vez; Cancelar corta también al principio; los cambios de sierra/destaque/pulido se guardan por
+  preset; la ficha de Propiedades físicas se parece más a la captura 4; el `.bat` controla la
+  versión de Python, rehace un `.venv` roto y abre igual sin internet; un segundo doble clic usa
+  el programa que ya está abierto; el servidor solo atiende a esta PC.
+- **Rendimiento con muchas medidas distintas**: 200 piezas todas distintas pasaron de 78 s a 11 s;
+  2000 todas distintas, de más de 700 MB a 310 MB (tarda 68 s en la nube: se pasa de la meta de
+  60 s; ver `VALIDACION.md` §2.4).
+- `herramientas/prueba_estres.py`: casos al azar, también de tamaño real, contra el validador.
+- Banco sintético corrido de nuevo: los mismos resultados que antes en los 85 casos.
+
+**Qué falta**
+1. **Correr la validación histórica** cuando lleguen los datos (`docs/CONTRATO_DATOS.md`): ahí se
+   sabe si da lo mismo que Corte Certo y cuál de las hipótesis H0–H2 usaba la oficina.
+2. **Probar en la PC de la oficina**: el `.bat`, los tiempos (`python -m optimizador banco`) y una
+   planilla `.xls` real de la Interfaz (la posición de la cantidad es supuesta, pregunta 13).
+3. **Motor**: el "corte perfecto" (piezas todas distintas que llenan justo k planchas) da el óptimo
+   en el 50 % de los casos hasta 100 piezas; la meta del brief es 95 %. En presupuestos reales
+   (piezas repetidas) queda en la cota de la relajación en 11 de 13 casos. Y el peor caso de 2000
+   piezas todas distintas tarda más de 60 s.
+4. Las preguntas abiertas de `docs/PREGUNTAS_ABIERTAS.md` (las importantes: 1, 3, 13, 24).
+5. No se hizo: exportar al formato de Corte Certo (no se conoce), precios en "Propiedades
+   comerciales" (no hay captura), y que el máximo tamaño cortado lo respete el motor (hoy solo
+   avisa).
+
+**Cómo seguir**: con los datos, el prompt 3 de `PROMPT_INICIAL.md`. Para mejorar el motor, empezar
+por `docs/VALIDACION.md` §2.2 (qué se probó y no sirvió).
+
 ## 25/10/2026: fase F4 lista para correr (validación histórica; sin datos todavía)
 
 **Hecho**
@@ -48,6 +96,15 @@ cobertura; después `--todo --docs`.
 
 **No se pudo probar**: el `.bat` en Windows (la nube es Linux) ni la lectura de un `.xls` real de
 la Interfaz (no hay planilla de ejemplo).
+
+**Revisión del subagente revisor (F3)**: 4 problemas graves (un encabezado de cantidad que no se
+reconocía tomaba 1 pieza sin avisar; la planilla de la Interfaz en `.xlsx` o pegada contaba un solo
+vidrio del DVH; Cancelar no cortaba mientras se armaba el primer montaje y con muchas medidas
+distintas tardaba minutos y pasaba los 700 MB; una sierra negativa daba piezas encimadas con
+"Validador OK"), 8 medios y varios menores. Se corrigieron en la etapa F5 (ver arriba y
+`DECISIONES.md`); quedaron sin hacer: que la ficha de Propiedades físicas sea idéntica a la
+captura 4 (se acercó la grilla y se agregaron dibujitos simples) y que los errores de `xlrd` salgan
+en castellano en todos los casos.
 
 ## 25/10/2026: fase F2 cerrada (informe, montajes SVG, impresión, JSON)
 

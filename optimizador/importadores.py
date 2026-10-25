@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -40,6 +41,11 @@ SINONIMOS = {
     "rota": ["rota", "gira", "rotacion", "girar", "rotar"],
 }
 POSICIONES = ["material", "cantidad", "ancho", "largo", "descripcion"]
+# Encabezados que empiezan así también valen ("Cantidad de piezas", "Cant. pzas", "Descripción del
+# vano"…). Solo para nombres largos: "a" o "l" sueltos tienen que ser exactos.
+PREFIJOS = {"cantidad": ["cant", "qty", "unid"], "material": ["materia", "vidrio", "articul"],
+            "ancho": ["ancho"], "largo": ["largo", "alto"], "descripcion": ["descrip", "detalle", "observ"],
+            "item": ["item"]}
 
 
 def _norm(texto) -> str:
@@ -48,11 +54,12 @@ def _norm(texto) -> str:
 
 
 def numero_mm(valor) -> float | None:
-    """'1200' -> 1200; '1.200' -> 1200 (miles); '1200,5' -> 1200.5; '' -> None."""
+    """'1200' -> 1200; '1.200' -> 1200 (miles); '1200,5' -> 1200.5; '' -> None. 'nan' o 'inf'
+    tampoco son números."""
     if valor is None:
         return None
     if isinstance(valor, (int, float)):
-        return float(valor)
+        return float(valor) if math.isfinite(valor) else None
     t = str(valor).strip().replace(" ", "").replace("mm", "")
     if not t:
         return None
@@ -63,49 +70,94 @@ def numero_mm(valor) -> float | None:
     else:
         t = t.replace(",", ".")
     try:
-        return float(t)
+        x = float(t)
     except ValueError:
         return None
+    return x if math.isfinite(x) else None
+
+
+def _campo_de_encabezado(celda) -> str | None:
+    n = _norm(celda)
+    n = re.sub(r"(enmm|mm)$", "", n) or n  # "Ancho (mm)"
+    if not n:
+        return None
+    for campo, nombres in SINONIMOS.items():
+        if n in nombres:
+            return campo
+    for campo, prefijos in PREFIJOS.items():
+        if any(n.startswith(p) for p in prefijos):
+            return campo
+    return None
 
 
 def _detectar_encabezado(fila: list) -> dict[str, int] | None:
     mapa: dict[str, int] = {}
     for i, celda in enumerate(fila):
-        n = _norm(celda)
-        if not n:
-            continue
-        for campo, nombres in SINONIMOS.items():
-            if campo not in mapa and n in nombres:
-                mapa[campo] = i
-                break
+        campo = _campo_de_encabezado(celda)
+        if campo and campo not in mapa:
+            mapa[campo] = i
     # Es encabezado si trae al menos ancho y largo y otra columna conocida.
     if "ancho" in mapa and "largo" in mapa and len(mapa) >= 3:
         return mapa
     return None
 
 
+def _es_interfaz(fila: list) -> bool:
+    """¿Es el encabezado de la planilla de la Interfaz de Metrix (TIPO, VIDRIO1, CAMARA, VIDRIO2…)?"""
+    nombres = {_norm(c) for c in fila}
+    return "vidrio1" in nombres and ("vidrio2" in nombres or "camara" in nombres)
+
+
+def _vacia(fila: list) -> bool:
+    return not any(str(c).strip() for c in fila if c is not None)
+
+
 def desde_filas(filas: list[list], origen: str = "tabla") -> Importacion:
-    """Filas (listas de celdas) -> piezas, detectando columnas."""
+    """Filas (listas de celdas) -> piezas, detectando columnas. El encabezado se busca en las
+    primeras 5 filas (puede haber un título arriba). Los números de fila de los avisos son los de
+    la planilla (contando las filas vacías)."""
     imp = Importacion()
-    filas = [f for f in filas if any(str(c).strip() for c in f if c is not None)]
-    if not filas:
+    numeradas = [(n, f) for n, f in enumerate(filas, start=1) if not _vacia(f)]
+    if not numeradas:
         imp.avisos.append("no hay datos")
         return imp
-    mapa = _detectar_encabezado(filas[0])
-    primera = 2 if mapa is not None else 1
+    for n, fila in numeradas[:5]:
+        if _es_interfaz(fila):
+            # La planilla de la Interfaz guardada como .xlsx o pegada: un DVH son 2 vidrios.
+            return _interfaz_desde_filas([], origen, desde=numeradas)
+    mapa = None
+    encabezado = None
+    for k, (n, fila) in enumerate(numeradas[:5]):
+        mapa = _detectar_encabezado(fila)
+        if mapa is not None:
+            encabezado = fila
+            if k > 0:
+                imp.avisos.append(f"{origen}: el encabezado está en la fila {n}; lo de arriba no se importa")
+            datos = numeradas[k + 1:]
+            break
     if mapa is not None:
-        datos = filas[1:]
-        imp.columnas = {campo: f"columna {i + 1} ({filas[0][i]})" for campo, i in sorted(mapa.items(), key=lambda x: x[1])}
+        imp.columnas = {campo: f"columna {i + 1} ({encabezado[i]})" for campo, i in sorted(mapa.items(), key=lambda x: x[1])}
+        if "cantidad" not in mapa:
+            imp.avisos.append(f"{origen}: no se encontró la columna de la cantidad: se toma 1 pieza por renglón "
+                              "(revisá que no esté con otro nombre)")
+        ancho_encabezado = max(i for i in range(len(encabezado)) if str(encabezado[i] or "").strip()) + 1
     else:
-        datos = filas
+        datos = numeradas
         mapa = {campo: i for i, campo in enumerate(POSICIONES)}
         imp.columnas = {campo: f"columna {i + 1} (por posición)" for campo, i in mapa.items()}
         imp.avisos.append("no se encontró encabezado: se toman las columnas por posición "
                           "(material, cantidad, ancho, largo, descripción)")
-    for n, fila in enumerate(datos, start=primera):
+        ancho_encabezado = None
+    for n, fila in datos:
         def celda(campo):
             i = mapa.get(campo)
             return fila[i] if i is not None and i < len(fila) else None
+        if ancho_encabezado is not None:
+            usadas = max((i for i in range(len(fila)) if str(fila[i] if fila[i] is not None else "").strip()), default=-1) + 1
+            if usadas > ancho_encabezado:
+                imp.avisos.append(f"{origen} fila {n}: tiene más columnas que el encabezado (¿una coma decimal "
+                                  "usada como separador?); no se importa")
+                continue
         material = str(celda("material") or "").strip().upper()
         cantidad, ancho, largo = numero_mm(celda("cantidad")), numero_mm(celda("ancho")), numero_mm(celda("largo"))
         if cantidad is None and "cantidad" not in mapa:
@@ -137,8 +189,9 @@ def desde_filas(filas: list[list], origen: str = "tabla") -> Importacion:
 
 def desde_texto(texto: str) -> Importacion:
     """Lo que se copia de Excel y se pega: columnas separadas por tabulación (o ';')."""
-    lineas = [l for l in texto.replace("\r\n", "\n").replace("\r", "\n").split("\n") if l.strip()]
-    if not lineas:
+    # Las líneas vacías se dejan: así los números de fila de los avisos son los de Excel.
+    lineas = texto.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if not any(l.strip() for l in lineas):
         return Importacion(avisos=["no hay nada pegado"])
     sep = "\t" if any("\t" in l for l in lineas) else (";" if any(";" in l for l in lineas) else None)
     if sep is None:
@@ -154,7 +207,10 @@ def desde_texto(texto: str) -> Importacion:
 
 
 def desde_csv(datos: bytes) -> Importacion:
-    for codificacion in ("utf-8-sig", "cp1252", "latin-1"):
+    codificaciones = ("utf-8-sig", "cp1252", "latin-1")
+    if datos[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        codificaciones = ("utf-16",)  # Excel "Texto Unicode"
+    for codificacion in codificaciones:
         try:
             texto = datos.decode(codificacion)
             break
@@ -170,11 +226,13 @@ def desde_xlsx(datos: bytes) -> Importacion:
     import openpyxl
 
     libro = openpyxl.load_workbook(io.BytesIO(datos), data_only=True, read_only=True)
-    hoja = libro.worksheets[0]
+    visibles = [h for h in libro.worksheets if getattr(h, "sheet_state", "visible") == "visible"] or libro.worksheets
+    hoja = visibles[0]
     filas = [list(f) for f in hoja.iter_rows(values_only=True)]
     imp = desde_filas(filas, f"XLSX hoja '{hoja.title}'")
     if len(libro.worksheets) > 1:
-        imp.avisos.append(f"el archivo tiene {len(libro.worksheets)} hojas: se leyó solo la primera ({hoja.title})")
+        imp.avisos.append(f"el archivo tiene {len(libro.worksheets)} hojas: se leyó solo la primera visible "
+                          f"({hoja.title})")
     return imp
 
 
@@ -199,30 +257,45 @@ def desde_interfaz(datos: bytes, nombre: str = "") -> Importacion:
     - La clase con "PR" lleva pulido recto (+3 mm al calcular).
     """
     filas = _leer_excel(datos, nombre)
-    imp = Importacion()
     if not filas:
+        return Importacion(avisos=["la planilla está vacía"])
+    return _interfaz_desde_filas(filas, "Interfaz")
+
+
+def _interfaz_desde_filas(filas: list[list], origen: str = "Interfaz",
+                          desde: list[tuple[int, list]] | None = None) -> Importacion:
+    imp = Importacion()
+    numeradas = desde if desde is not None else [(n, f) for n, f in enumerate(filas, start=1) if not _vacia(f)]
+    if not numeradas:
         imp.avisos.append("la planilla está vacía")
         return imp
     mapa = {}
-    for i, celda in enumerate(filas[0]):
-        n = _norm(celda)
-        for campo, nombres in INTERFAZ_SINONIMOS.items():
-            if campo not in mapa and n in nombres:
-                mapa[campo] = i
-    if "ancho" in mapa and "largo" in mapa and ("vidrio1" in mapa or "tipo" in mapa):
-        datos_filas = filas[1:]
-        primera = 2
-        imp.columnas = {c: f"columna {chr(65 + i)} ({filas[0][i]})" for c, i in sorted(mapa.items(), key=lambda x: x[1])}
+    k_encabezado = None
+    for k, (_, fila) in enumerate(numeradas[:5]):
+        prueba = {}
+        for i, celda in enumerate(fila):
+            n = _norm(celda)
+            for campo, nombres in INTERFAZ_SINONIMOS.items():
+                if campo not in prueba and n in nombres:
+                    prueba[campo] = i
+        if "ancho" in prueba and "largo" in prueba and ("vidrio1" in prueba or "tipo" in prueba):
+            mapa, k_encabezado = prueba, k
+            break
+    if k_encabezado is not None:
+        encabezado = numeradas[k_encabezado][1]
+        datos_filas = numeradas[k_encabezado + 1:]
+        imp.columnas = {c: f"columna {chr(65 + i)} ({encabezado[i]})" for c, i in sorted(mapa.items(), key=lambda x: x[1])}
+        if "cantidad" not in mapa:
+            imp.avisos.append(f"{origen}: no se encontró la columna de la cantidad: se toma 1 por renglón")
     else:
         mapa = dict(INTERFAZ_POSICIONES)
-        datos_filas = filas
-        primera = 1
+        datos_filas = numeradas
         imp.columnas = {c: f"columna {chr(65 + i)}" + (" (SUPUESTA)" if c == "cantidad" else "")
                         for c, i in sorted(mapa.items(), key=lambda x: x[1])}
         imp.avisos.append("planilla sin encabezados: se usan las posiciones de la Interfaz; la de la "
                           "CANTIDAD (columna G) es supuesta hasta confirmarla (pregunta 13)")
     herrajes = 0
-    for n, fila in enumerate(datos_filas, start=primera):
+    for n, fila in datos_filas:
         def celda(campo):
             i = mapa.get(campo)
             return fila[i] if i is not None and i < len(fila) else None
@@ -238,9 +311,11 @@ def desde_interfaz(datos: bytes, nombre: str = "") -> Importacion:
             continue
         if cantidad is None:
             cantidad = 1
-            imp.avisos.append(f"Interfaz fila {n}: sin cantidad, se toma 1")
+            imp.avisos.append(f"{origen} fila {n}: sin cantidad, se toma 1")
+        elif cantidad != int(cantidad):
+            imp.avisos.append(f"{origen} fila {n}: cantidad {cantidad:g} no es entera; se toma {round(cantidad)}")
         if not v1 or ancho is None or largo is None:
-            imp.avisos.append(f"Interfaz fila {n}: falta el vidrio o la medida; no se importa")
+            imp.avisos.append(f"{origen} fila {n}: falta el vidrio o la medida; no se importa")
             continue
         clase = str(celda("clase") or "").strip()
         item = str(celda("item") or n)
@@ -250,10 +325,10 @@ def desde_interfaz(datos: bytes, nombre: str = "") -> Importacion:
             if v2:
                 vidrios.append((v2, str(celda("clase_cara2") or "").strip() or clase))
             else:
-                imp.avisos.append(f"Interfaz fila {n}: es DVH pero no tiene VIDRIO2; se importa solo VIDRIO1")
+                imp.avisos.append(f"{origen} fila {n}: es DVH pero no tiene VIDRIO2; se importa solo VIDRIO1")
         for k, (vidrio, cl) in enumerate(vidrios, start=1):
             pieza = {"item": f"{item}" + (f"-{k}" if len(vidrios) > 1 else ""), "material": vidrio,
-                     "cantidad": int(cantidad), "ancho": int(round(ancho)), "largo": int(round(largo)),
+                     "cantidad": int(round(cantidad)), "ancho": int(round(ancho)), "largo": int(round(largo)),
                      "clase": cl, "origen": {"interfaz_fila": n}}
             desc = []
             if es_dvh:
@@ -274,7 +349,10 @@ def _leer_excel(datos: bytes, nombre: str) -> list[list]:
         libro = openpyxl.load_workbook(io.BytesIO(datos), data_only=True, read_only=True)
         return [list(f) for f in libro.worksheets[0].iter_rows(values_only=True)]
     import xlrd
-    libro = xlrd.open_workbook(file_contents=datos)
+    try:
+        libro = xlrd.open_workbook(file_contents=datos)
+    except Exception as exc:
+        raise ValueError(f"no es una planilla de Excel que se pueda leer ({exc})") from None
     hoja = libro.sheet_by_index(0)
     return [hoja.row_values(i) for i in range(hoja.nrows)]
 

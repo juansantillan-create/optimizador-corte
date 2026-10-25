@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from . import arbol
 from .arbol import Nodo
 from .mochila import Cosa, resolver
@@ -49,6 +51,13 @@ def sobrantes_ok(nodo: Nodo, destaque: int) -> bool:
                for h, _, _ in arbol.hojas(nodo) if h.tipo == "sobrante")
 
 
+TIPOS_VECTORIAL = 64
+# Tope del caché (en "casilleros" guardados: un par tipo-cantidad cuenta uno). Al llegar, se vacía
+# entero: así la memoria queda acotada (< 500 MB en el peor caso) y el resultado sigue siendo el
+# mismo en cualquier PC (no depende del reloj ni de la memoria libre).
+TOPE_CACHE = 1_500_000
+
+
 @dataclass
 class _Tira:
     valor: float
@@ -62,7 +71,9 @@ class Generador:
 
     def __init__(self, ancho: int, alto: int, tipos: list[TipoGen], destaque: int = 0,
                  relleno: bool = True, max_por_renglon: int = 4, max_relleno: int = 3,
-                 max_alternancia: int = 2, presupuesto_alternancia: int = 120):
+                 max_alternancia: int = 2, presupuesto_alternancia: int = 120,
+                 max_anchos: int | None = None, max_tipos_tira: int | None = None,
+                 max_anchos_adentro: int = 12):
         self.ancho = ancho
         self.alto = alto
         self.tipos = tipos
@@ -74,15 +85,29 @@ class Generador:
         # Trabajo máximo (tiras calculadas) que se gasta en la alternancia por cada montaje: es
         # una cantidad, no un tiempo, así el resultado es el mismo en cualquier PC.
         self.presupuesto_alternancia = presupuesto_alternancia
+        # Con muchas medidas distintas, cuántos anchos de tira se prueban en la plancha entera (los
+        # de las piezas de más valor). None = todos.
+        self.max_anchos = max_anchos
+        self.max_anchos_adentro = max_anchos_adentro  # ídem adentro de un corte (alternancia, relleno)
+        # Con muchas medidas distintas, cuántos tipos de pieza se consideran adentro de una tira (los
+        # de más valor que entran). Acota el tiempo y la memoria. None = todos.
+        self.max_tipos_tira = max_tipos_tira
         self._limite_alternancia = 0
         self.llamadas = 0  # cantidad de trabajo hecho (para medir esfuerzo, no por reloj)
         self._cache: dict = {}
+        self._tamano_cache = 0
         self._valores_cache: tuple | None = None
-        self._entran: dict = {}
+        self._orden_valor: list[int] | None = None
         # Las dos listas de orientaciones (normal y transpuesta), calculadas una sola vez: el
         # caché las distingue por cuál de las dos es.
         self._normal = tuple(t.orientaciones for t in tipos)
         self._transpuesta = tuple(tuple((b, a) for a, b in t.orientaciones) for t in tipos)
+        # Con muchos tipos, los filtros "qué entra en este rectángulo" se hacen con numpy (da lo
+        # mismo que el código simple, más rápido). Cada tipo: primera y última orientación.
+        self._vectorial = len(tipos) > TIPOS_VECTORIAL
+        self._arreglos: dict[bool, tuple] = {}
+        self._activos_valor = None  # valores > 0 (numpy)
+        self._orden_np = None
 
     # ------------------------------------------------------------------ API
     def generar(self, valores: list[float], cotas: list[int],
@@ -92,6 +117,10 @@ class Generador:
         clave = tuple(valores)
         if clave != self._valores_cache:
             self._cache = {}
+            self._tamano_cache = 0
+            self._orden_valor = None  # los tipos de más valor a menos (se arma al usarlo)
+            self._orden_np = None
+            self._activos_valor = np.asarray(valores, dtype=float) > 0 if self._vectorial else None
             self._valores_cache = clave
         resultados: list[tuple[float, int, Nodo]] = []
         for orden, direccion in enumerate(direcciones):
@@ -142,28 +171,67 @@ class Generador:
         horizontales" (el resto se llena con este mismo método, transpuesto). Así salen montajes
         con más etapas, como cuando una pieza larga cruza por debajo de dos columnas.
         """
-        maximos = []
-        for c, ors in zip(cotas, orients):
-            # Cota segura de cuántas entran (por área): mezclando orientaciones pueden entrar más
-            # que en una grilla de una sola orientación, así que esa no sirve para el caché.
-            entra = max(((A * B) // (a * b) for a, b in ors if a <= A and b <= B), default=0)
-            maximos.append(min(c, entra))
-        clave = ("plancha", orients is self._transpuesta, A, B, prof, tuple(maximos))
-        guardado = self._cache.get(clave)
+        # Cota segura de cuántas entran de cada tipo (por área): mezclando orientaciones pueden
+        # entrar más que en una grilla de una sola orientación, así que esa no sirve para el caché.
+        if self._vectorial:
+            a1, b1, a2, b2 = self._arreglo(orients)
+            m1 = np.where((a1 <= A) & (b1 <= B), (A * B) // (a1 * b1), 0)
+            m2 = np.where((a2 <= A) & (b2 <= B), (A * B) // (a2 * b2), 0)
+            maximo = np.minimum(np.asarray(cotas, dtype=np.int64), np.maximum(m1, m2))
+            indices = np.nonzero(maximo > 0)[0]
+            estado = tuple(zip(indices.tolist(), maximo[indices].tolist()))
+        else:
+            maximos = []
+            for c, ors in zip(cotas, orients):
+                entra = max(((A * B) // (a * b) for a, b in ors if a <= A and b <= B), default=0)
+                maximos.append(min(c, entra))
+            estado = tuple((i, m) for i, m in enumerate(maximos) if m > 0)
+        clave = ("plancha", orients is self._transpuesta, A, B, prof)
+        guardado = self._reusar(clave, estado, cotas)
         if guardado is None:
             prueba = list(cotas)
             nodo = self._plancha_calcular(A, B, orients, valores, prueba, prof)
             consumo = {i: c - q for i, (c, q) in enumerate(zip(cotas, prueba)) if c != q}
             guardado = (nodo, consumo)
-            self._cache[clave] = guardado
+            self._guardar(clave, estado, guardado)
         nodo, consumo = guardado
         for i, n in consumo.items():
             cotas[i] -= n
         return nodo
 
+    def _reusar(self, clave, estado: tuple, cotas: list[int]):
+        """Lo guardado para `clave` que sirva con estas cotas, o None.
+
+        Con los mismos valores, lo que se armó con más piezas disponibles sigue sirviendo con
+        menos, mientras alcancen las piezas que usa: con menos piezas no se puede armar nada
+        mejor que eso con este mismo método. Así la heurística secuencial, que va gastando
+        piezas, no recalcula todo en cada plancha."""
+        for guardado_estado, guardado in self._cache.get(clave, ()):
+            if guardado_estado == estado:
+                return guardado
+            antes = dict(guardado_estado)
+            if all(m <= antes.get(i, 0) for i, m in estado):
+                nodo, consumo = guardado
+                if nodo is None or all(cotas[i] >= n for i, n in consumo.items()):
+                    return guardado
+        return None
+
+    def _guardar(self, clave, estado: tuple, guardado) -> None:
+        self._contar_cache(len(estado) + 8)
+        lista = self._cache.setdefault(clave, [])
+        lista.insert(0, (estado, guardado))
+        del lista[3:]
+
+    def _contar_cache(self, tamano: int) -> None:
+        self._tamano_cache += tamano
+        if self._tamano_cache > TOPE_CACHE:
+            self._cache.clear()
+            self._tamano_cache = tamano
+
     def _plancha_calcular(self, A: int, B: int, orients, valores, cotas: list[int], prof: int) -> Nodo | None:
         inicial = list(cotas)
-        puestas = self._solo_tiras(A, B, orients, valores, cotas, None if prof == 0 else 12)
+        puestas = self._solo_tiras(A, B, orients, valores, cotas,
+                                   self.max_anchos if prof == 0 else self.max_anchos_adentro)
         mejor_nodo = arbol.fila_x(puestas, A, B) if puestas else None
         mejor_valor = self._valor(mejor_nodo, valores) if mejor_nodo is not None else 0.0
         mejor_cotas = list(cotas)
@@ -202,11 +270,16 @@ class Generador:
         """Tiras verticales de lado a lado. Modifica `cotas`. Devuelve las tiras puestas.
         Con `max_anchos`, solo se prueban los anchos de las piezas de más valor."""
         d = self.destaque
-        anchos = sorted({a for t, ors in enumerate(orients) if cotas[t] > 0 and valores[t] > 0
-                         for a, b in ors if a <= A and b <= B})
-        if not anchos:
-            return None
-        if max_anchos is not None and len(anchos) > max_anchos:
+        if self._vectorial:
+            anchos = self._anchos_vectorial(A, B, orients, valores, cotas, max_anchos)
+            if not anchos:
+                return None
+        else:
+            anchos = sorted({a for t, ors in enumerate(orients) if cotas[t] > 0 and valores[t] > 0
+                             for a, b in ors if a <= A and b <= B})
+            if not anchos:
+                return None
+        if not self._vectorial and max_anchos is not None and len(anchos) > max_anchos:
             valor_ancho: dict[int, float] = {}
             for t, ors in enumerate(orients):
                 if cotas[t] > 0 and valores[t] > 0:
@@ -290,24 +363,98 @@ class Generador:
     def _tira(self, l: int, B: int, orients, valores, cotas: list[int]) -> _Tira | None:
         """La mejor tira vertical de ancho l y alto B: renglones apilados."""
         # Caché: el resultado depende de las cotas solo hasta lo máximo que entra en la tira.
-        clave_entran = (orients is self._transpuesta, l, B)
-        entran = self._entran.get(clave_entran)
-        if entran is None:
-            entran = []
-            for t, ors in enumerate(orients):
-                # Cota segura (por área), igual que en `_plancha`.
-                maximo = max(((l * B) // (a * b) for a, b in ors if a <= l and b <= B), default=0)
-                if maximo > 0:
-                    entran.append((t, maximo))
-            self._entran[clave_entran] = entran
-        clave = (clave_entran, tuple(min(cotas[t], m) for t, m in entran))
-        if clave in self._cache:
-            return self._cache[clave]
-        resultado = self._tira_calcular(l, B, orients, valores, cotas)
-        self._cache[clave] = resultado
+        candidatos = self._candidatos(l, B, orients, valores, cotas)
+        estado = tuple((t, min(cotas[t], m)) for t, m in candidatos)
+        clave = ("tira", orients is self._transpuesta, l, B)
+        guardado = self._reusar_tira(clave, estado, cotas)
+        if guardado is not None:
+            return guardado[0]
+        resultado = self._tira_calcular(l, B, orients, valores, cotas, [t for t, _ in candidatos])
+        self._guardar(clave, estado, (resultado, resultado.usadas if resultado is not None else {}))
         return resultado
 
-    def _tira_calcular(self, l: int, B: int, orients, valores, cotas: list[int]) -> _Tira | None:
+    def _candidatos(self, l: int, B: int, orients, valores, cotas: list[int]) -> list[tuple[int, int]]:
+        """Los tipos que quedan y entran en una tira l × B, de más valor a menos, con cuántos
+        entran como mucho (cota segura por área, igual que en `_plancha`). Con `max_tipos_tira`,
+        solo los primeros."""
+        if self._orden_valor is None:
+            self._orden_valor = sorted(range(len(valores)), key=lambda t: (-valores[t], t))
+        salida = []
+        if self._vectorial:
+            if self._orden_np is None:
+                self._orden_np = np.asarray(self._orden_valor, dtype=np.int64)
+            a1, b1, a2, b2 = self._arreglo(orients)
+            entra = (((a1 <= l) & (b1 <= B)) | ((a2 <= l) & (b2 <= B))) & self._activos_valor & \
+                (np.asarray(cotas, dtype=np.int64) > 0)
+            elegidos = self._orden_np[entra[self._orden_np]]
+            if self.max_tipos_tira is not None:
+                elegidos = elegidos[:self.max_tipos_tira]
+            for t in elegidos.tolist():
+                salida.append((t, max((l * B) // (a * b) for a, b in orients[t] if a <= l and b <= B)))
+            return salida
+        for t in self._orden_valor:
+            if cotas[t] <= 0 or valores[t] <= 0:
+                continue
+            maximo = max(((l * B) // (a * b) for a, b in orients[t] if a <= l and b <= B), default=0)
+            if maximo > 0:
+                salida.append((t, maximo))
+                if self.max_tipos_tira is not None and len(salida) >= self.max_tipos_tira:
+                    break
+        return salida
+
+    def _arreglo(self, orients) -> tuple:
+        """Las medidas de cada tipo en numpy: (ancho y alto de la primera orientación, de la última)."""
+        clave = orients is self._transpuesta
+        arreglo = self._arreglos.get(clave)
+        if arreglo is None:
+            arreglo = tuple(np.asarray([f(ors) for ors in orients], dtype=np.int64)
+                            for f in (lambda o: o[0][0], lambda o: o[0][1], lambda o: o[-1][0], lambda o: o[-1][1]))
+            self._arreglos[clave] = arreglo
+        return arreglo
+
+    def _anchos_vectorial(self, A: int, B: int, orients, valores, cotas: list[int],
+                          max_anchos: int | None) -> list[int]:
+        """Lo mismo que el código simple de `_solo_tiras`: los anchos de tira posibles y, con
+        `max_anchos`, los de las piezas de más valor (a igual valor, el más angosto)."""
+        a1, b1, a2, b2 = self._arreglo(orients)
+        activos = self._activos_valor & (np.asarray(cotas, dtype=np.int64) > 0)
+        f1 = activos & (a1 <= A) & (b1 <= B)
+        f2 = activos & (a2 <= A) & (b2 <= B)
+        anchos = np.concatenate([a1[f1], a2[f2]])
+        if anchos.size == 0:
+            return []
+        distintos = np.unique(anchos)
+        if max_anchos is None or distintos.size <= max_anchos:
+            return distintos.tolist()
+        v = np.asarray(valores, dtype=float)
+        vals = np.concatenate([v[f1], v[f2]])
+        orden = np.lexsort((anchos, -vals))
+        vistos: set[int] = set()
+        primeros: list[int] = []
+        for w in anchos[orden].tolist():
+            if w not in vistos:
+                vistos.add(w)
+                primeros.append(w)
+                if len(primeros) >= max_anchos:
+                    break
+        return sorted(primeros)
+
+    def _reusar_tira(self, clave, estado: tuple, cotas: list[int]):
+        """Como `_reusar`, para una tira: sirve lo guardado con los mismos tipos candidatos y, de
+        cada uno, la misma cantidad o más (si alcanzan las piezas que usa)."""
+        tipos = [t for t, _ in estado]
+        for guardado_estado, guardado in self._cache.get(clave, ()):
+            if guardado_estado == estado:
+                return guardado
+            if len(guardado_estado) == len(estado) and [t for t, _ in guardado_estado] == tipos and \
+                    all(c <= g for (_, c), (_, g) in zip(estado, guardado_estado)):
+                nodo, consumo = guardado
+                if nodo is None or all(cotas[i] >= n for i, n in consumo.items()):
+                    return guardado
+        return None
+
+    def _tira_calcular(self, l: int, B: int, orients, valores, cotas: list[int],
+                       candidatos: list[int]) -> _Tira | None:
         self.llamadas += 1
         d = self.destaque
         # Cada renglón: (piezas [(tipo, a, b)], alto). Pueden ser k piezas iguales una al lado de
@@ -315,9 +462,8 @@ class Generador:
         renglones: list[tuple[tuple[tuple[int, int, int], ...], int]] = []
         cosas: list[Cosa] = []
         por_alto: dict[int, list[tuple[int, int]]] = {}
-        for t, ors in enumerate(orients):
-            if cotas[t] <= 0 or valores[t] <= 0:
-                continue
+        for t in sorted(candidatos):
+            ors = orients[t]
             for a, b in ors:
                 if a > l or b > B:
                     continue
@@ -341,6 +487,7 @@ class Generador:
             if guardado is None:
                 valor, cant = resolver(l, [Cosa(a, valores[t], min(cotas[t], l // a)) for t, a in lista], d)
                 guardado = (valor, tuple(pz for (t, a), n in zip(lista, cant) for pz in [(t, a, b)] * n))
+                self._contar_cache(len(lista) + 8)
                 self._cache[clave] = guardado
             valor, piezas = guardado
             if valor <= 0 or len({pz[0] for pz in piezas}) < 2:
@@ -396,15 +543,16 @@ class Generador:
                 return nodo
             mejor: Nodo | None = None
             mejor_valor = 0.0
+            # Al rellenar no se alterna más (ya se está adentro de un corte) y se prueban pocos
+            # anchos de tira: profundidad al menos 1.
+            prof = max(self.max_alternancia, 1)
             for transponer in (False, True):
                 prueba = list(cotas)
                 if transponer:
-                    sub = self._plancha(nodo.alto, nodo.ancho, self._otra(orients), valores, prueba,
-                                        self.max_alternancia)
+                    sub = self._plancha(nodo.alto, nodo.ancho, self._otra(orients), valores, prueba, prof)
                     sub = sub.transpuesto() if sub is not None else None
                 else:
-                    sub = self._plancha(nodo.ancho, nodo.alto, orients, valores, prueba,
-                                        self.max_alternancia)
+                    sub = self._plancha(nodo.ancho, nodo.alto, orients, valores, prueba, prof)
                 if sub is None or not sobrantes_ok(sub, self.destaque):
                     continue
                 v = self._valor(sub, valores)

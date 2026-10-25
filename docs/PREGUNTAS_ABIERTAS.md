@@ -140,6 +140,20 @@ tabla que los relacione con los códigos de Metrix?**
   de los números.
 - Respuesta:
 
+**26. Si se usan a la vez "ancho de la sierra" y "destaque mínimo", ¿el destaque se mide con la sierra
+incluida o sin?**
+- Ejemplo: sierra 20 y destaque 20. Entre una pieza y el borde quedan 21 mm: después de cortar
+  quedan 21 − 20 = 1 mm de vidrio. ¿Vale (21 ≥ 20) o no (1 < 20)?
+- **Por qué importa**: solo cambia algo si se cargan las dos cosas en un material (ningún preset lo
+  hace hoy).
+- **Por defecto**: se mide con la sierra incluida (vale en el ejemplo).
+- Respuesta:
+
+**27. Corte Certo deja poner márgenes negativos (de −500 a 500 mm). ¿Para qué se usaban?**
+- Un margen negativo haría la plancha útil más grande que la hoja, y eso no se puede cortar.
+- **Por defecto**: el optimizador no acepta márgenes negativos (avisa y no calcula ese material).
+- Respuesta:
+
 **18. Con textura (veta), ¿qué lado de la pieza va con la veta?**
 - En Metrix, LARGO y ANCHO de una pieza no dicen la orientación. Con rotación permitida da igual;
   con veta, no.
