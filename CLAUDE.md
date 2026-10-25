@@ -110,4 +110,6 @@ Para Juan (oficina comercial; técnico, no programador de tiempo completo) y sus
 
 ## Para probar en la PC de Juan
 
-Se completa cuando exista la interfaz. La idea: doble clic en `Abrir_Optimizador.bat`.
+Doble clic en `Abrir_Optimizador.bat` (la primera vez instala lo necesario; ver
+`docs/INSTALACION.md`). Se abre el navegador en `http://127.0.0.1:8520`. Cerrar la ventana negra
+apaga el programa.

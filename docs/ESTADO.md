@@ -3,6 +3,33 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F3 cerrada (interfaz local, .bat, importadores, presets)
+
+**Hecho**
+- `Abrir_Optimizador.bat`: doble clic → crea `.venv` la primera vez (con `py -3` o `python`),
+  instala `requirements.txt` (o desde una carpeta `paquetes\` sin internet), levanta el servidor y
+  abre el navegador. Reinstala solo si cambió `requirements.txt`. Cerrar la ventana lo apaga.
+- `optimizador/servidor.py` (FastAPI) en 127.0.0.1:**8520** o el siguiente libre (saltea 8080,
+  8090, 8501, 8502). Nada de internet: la página (`optimizador/web/`) es HTML/JS/CSS sin compilar.
+- Pantallas: **Materiales** (lista + Descripción / Propiedades físicas como la captura 4 /
+  Propiedades comerciales provisoria / Planchas, con el valor de la configuración en rojo entre
+  paréntesis; los cambios se guardan en `config/local/materiales.json`, que no va a git),
+  **Proyecto** (grilla editable, pegar desde Excel con vista previa, importar CSV/XLSX/.xls de la
+  Interfaz, guardar/abrir en `proyectos/`, revisar antes de calcular), **Calcular** (como la
+  captura 3, con cancelar), **Resultados** (informe + montajes, imprimir en 3 modos, exportar Excel,
+  CSV y JSON) y **Comparar** (cargar a mano lo que dio Corte Certo).
+- Presets en la barra de arriba: "Como Corte Certo hoy" / "Reglas de corte (Lucas)"; esfuerzo
+  rápido/normal/máximo; punto o coma decimal.
+- Importadores (`optimizador/importadores.py`): columnas por encabezado (con sinónimos) o por
+  posición; números con punto de miles o coma decimal; DVH = 2 vidrios; herrajes ignorados con
+  aviso. La posición de la CANTIDAD en la planilla de la Interfaz es **supuesta** (pregunta 13).
+- Se probó de punta a punta con un navegador (Playwright): pegar, revisar, calcular, ver
+  resultados, comparar y guardar un material, sin errores de JavaScript.
+- Tests nuevos: importadores y servidor (levantado de verdad en un puerto libre).
+
+**No se pudo probar**: el `.bat` en Windows (la nube es Linux) ni la lectura de un `.xls` real de
+la Interfaz (no hay planilla de ejemplo).
+
 ## 25/10/2026: fase F2 cerrada (informe, montajes SVG, impresión, JSON)
 
 **Hecho**
