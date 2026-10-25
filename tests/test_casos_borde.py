@@ -345,3 +345,14 @@ def test_hipotesis_de_la_validacion_con_la_misma_plancha():
     utiles = {h: [(p.ancho - p.corte_banda, p.largo) for p in cat.material("LX5+5IN", h, usar_locales=False).planchas]
               for h in ("H0", "H1", "H2")}
     assert utiles["H0"] == utiles["H1"] == utiles["H2"]
+
+
+def test_medidas_extra_y_plancha_por_defecto():
+    # Juan, preguntas 29 y 30: medidas del stock y de los casos (hojas_extra.csv); 3700 × 2500 solo en 10 mm.
+    from optimizador.configuracion import Catalogo
+
+    cat = Catalogo(usar_locales=False)
+    assert "3300x2440" in {p.clave() for p in cat.materiales["LX3+3LOWE"].planchas}
+    fl10 = cat.materiales["FL10IN"]
+    assert [p.clave() for p in fl10.planchas if p.habilitada] == ["3700x2500"]
+    assert "CK8K1" in cat.materiales and cat.materiales["CK8K1"].avisos  # no está en la planilla: con aviso

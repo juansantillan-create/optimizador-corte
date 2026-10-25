@@ -3,6 +3,19 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026 (noche): respuestas 28–31, medidas del stock e informe
+
+- Respuestas aplicadas: se cotiza con banda 20 (28); medidas de hoja del stock y de los casos en
+  `config/hojas_extra.csv` (29, 69 medidas); la de 3700 × 2500 se prefiere solo en 10 mm (30); el
+  destaque ya cubría la "distancia entre hojas" de Optima (31, probado con el ejemplo de Juan).
+- Validación de nuevo con las medidas nuevas: 1089 casos, 80,0 % iguales, 16,5 % menos, 3,5 % más;
+  Optima igual que antes (+0,9 % normal, −0,5 % máximo).
+- Juan: no hace falta perseguir el 90 % del brief si ya da igual o mejor que Corte Certo.
+- `docs/INFORME.md`: resultados, cómo se usa y cómo seguir (en segundo plano con el orquestador, y
+  hacia reemplazar Optima con aprobación del jefe de planta).
+- Queda abierta solo la pregunta 16. Lo próximo, si se sigue: stock y retazos en el motor (ver el
+  informe, §4).
+
 ## 25/10/2026 (tarde): respuestas de Juan y validación con los casos reales
 
 **Dónde quedó todo, en una línea**: se aplicaron las respuestas de Juan (preguntas 1 a 27) y se

@@ -134,8 +134,42 @@ class Catalogo:
                 corte_banda=int(fila["corte_banda_mm"]),
                 origen=f"{fila['hoja_excel']} fila {fila['fila_excel']}",
             ))
+        self._leer_hojas_extra(self.carpeta / "hojas_extra.csv")
         for mat in self.materiales.values():
             elegir_plancha_por_defecto(mat)
+
+    def _leer_hojas_extra(self, ruta: Path) -> None:
+        """Medidas de hoja que no están en `Medidas_hojas.xlsx` pero se usan (stock y casos de Corte
+        Certo; Juan, 25/10/2026, pregunta 29). La banda es la del material; si el material no está
+        en hojas.csv, la de su espesor, y la descripción y el peso quedan supuestos (con aviso)."""
+        if not ruta.exists():
+            return
+        for fila in _leer_csv(ruta):
+            codigo = fila["codigo"].strip().upper()
+            ancho, largo = int(fila["hoja_ancho_mm"]), int(fila["hoja_largo_mm"])
+            mat = self.materiales.get(codigo)
+            if mat is None:
+                supuesto, separacion = self._material_supuesto(codigo)
+                aviso = (f"{codigo} no está en Medidas_hojas.xlsx: medidas de hoja de {fila['origen']}; "
+                         "descripción y peso supuestos")
+                if supuesto.planchas:
+                    banda = supuesto.planchas[0].corte_banda
+                else:
+                    banda = 0  # no hay regla para ese espesor
+                    aviso += "; no hay regla de corte para su espesor: corte banda y separación en 0"
+                mat = Material(codigo=codigo, descripcion=f"{codigo} (no está en Medidas_hojas.xlsx)",
+                               espesor_mm=supuesto.espesor_mm or composicion_de_codigo(codigo)[1],
+                               peso_kg_m2=supuesto.peso_kg_m2 or composicion_de_codigo(codigo)[1] * 2.5,
+                               avisos=[aviso])
+                self.materiales[codigo] = mat
+                self.composicion[codigo] = composicion_de_codigo(codigo)[0] or ""
+                self.separacion_regla[codigo] = separacion
+                self.fuente_separacion[codigo] = "supuesto por espesor (no está en Medidas_hojas.xlsx)"
+            else:
+                banda = mat.planchas[0].corte_banda
+            if all((pl.ancho, pl.largo) != (ancho, largo) for pl in mat.planchas):
+                mat.planchas.append(Plancha(ancho=ancho, largo=largo, corte_banda=banda,
+                                            origen=f"hojas_extra.csv ({fila['origen']})"))
 
     def ajustes_locales(self) -> dict:
         if not self.usar_locales:
@@ -206,14 +240,17 @@ class Catalogo:
         return [self.materiales[c] for c in sorted(self.materiales)]
 
 
-# Juan, 25/10/2026 (pregunta 3): "si está la opción de 3600 × 2500, usar siempre esa por defecto;
-# si no, la de 3700 × 2500". Las demás medidas quedan, deshabilitadas, para habilitarlas a mano.
+# Juan, 25/10/2026 (preguntas 3 y 30): "si está la opción de 3600 × 2500, usar siempre esa por
+# defecto"; la de 3700 × 2500 solo en el de 10 mm. Si no, todas las medidas del material (las de
+# Medidas_hojas.xlsx y las de hojas_extra.csv). Las demás quedan deshabilitadas, para habilitarlas.
 PLANCHAS_PREFERIDAS = ((3600, 2500), (3700, 2500))
 
 
 def elegir_plancha_por_defecto(mat: Material) -> None:
     """Deja habilitada solo la medida preferida si el material la tiene; si no, todas."""
     for medida in PLANCHAS_PREFERIDAS:
+        if medida == (3700, 2500) and mat.espesor_mm != 10:
+            continue
         if any((p.ancho, p.largo) == medida for p in mat.planchas):
             for p in mat.planchas:
                 p.habilitada = (p.ancho, p.largo) == medida
