@@ -30,7 +30,7 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
   la hoja entera, se cambia la banda de "Como Corte Certo hoy" (`BANDA_CORTE_CERTO_MM` en
   `optimizador/configuracion.py`) y hay que revisar las variantes que usa la validación
   (`VARIANTES` en `optimizador/historico/exportados.py`), que salen de ese mismo número.
-- Respuesta:
+- Respuesta: se sigue cotizando con banda 20
 
 **29. Medidas de hoja que Corte Certo usó y no están en `Medidas_hojas.xlsx`**
 - En muchos casos viejos el % de Corte Certo solo cierra con una medida de hoja que la planilla
@@ -43,7 +43,7 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
   supuesta de 3600 × 2500), que puede no ser la real.
 - **Por defecto**: no se cambió la planilla. Si me confirmás las medidas (o actualizás
   `Medidas_hojas.xlsx`), se cargan con `herramientas/importar_medidas_hojas.py`.
-- Respuesta:
+- Respuesta: carga esas medidas, si estan anotadas es xq se utilizan.
 
 **30. Plancha por defecto cuando no hay 3600 × 2500**
 - Contestaste (pregunta 3): "si está la opción de 3600 × 2500, usar siempre esa; si no, en el caso
@@ -52,7 +52,7 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 - **Por defecto**: si el material tiene 3600 × 2500, solo esa; si no, 3700 × 2500; si no tiene
   ninguna de las dos (Cool Lite 3210 × 2540, Eclipse 3300 × 2440…), todas las suyas y el programa
   elige la combinación de menos m².
-- Respuesta:
+- Respuesta:perdon, era en el caso de 10mm, no significa que si una hoja n otiene medida 3600x2500 salte directamente a la de 3700x2500, dale bola mas que nada a la hoja de medidas originales y las que hayan aparecido en esta nueva sesion ya sea por mi respuesta anterior o por los excell que te paso
 
 **31. Optima: ¿qué es "la distancia mínima entre hojas"?**
 - Dijiste que los lotes de Optima "llevan la configuración de la distancia mínima para destaque y
@@ -61,7 +61,7 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 - **Por qué importa**: si es otra cosa (por ejemplo, una distancia al borde de la hoja además del
   corte banda), la comparación con Optima tiene que usarla.
 - **Por defecto**: corte banda y destaque de la regla de Lucas, nada más.
-- Respuesta:
+- Respuesta: una hoja en princpio puede apoyarse directamente sobre el canto, pero digamos tenemos una hoja de 10 mm 3550x2500 y tenemos que posicionar 4 vidrios de 875x2500, entrarian bien xq al final de la hoja quedan 50mm para el destaque, si fueran de 880 si bien entrarian, no daria la distancia final necesaria para quitar ese sobrante. esa misma medida de 50mm es la que se usa de "distancia entre hojas", si x optimizacion por alguna razon da dos hojas separadas entre si, la distancia no puede ser menor que la del destaque.
 
 **16. ¿Las mesas u Optima limitan las etapas de corte (X, Y, Z)?**
 - Para cotizar no cambia tanto, pero sirve para que el montaje sea cortable de verdad.
