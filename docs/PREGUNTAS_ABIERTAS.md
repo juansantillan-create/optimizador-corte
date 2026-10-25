@@ -29,11 +29,13 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
   deshabilitar una medida por material.
 - Respuesta:
 
-**4. Pulido recto "+3 mm": ¿en las dos medidas (ancho y largo)?**
-- ¿Se cargaba así en Corte Certo?
-- ¿El pulido de aristas (MF) suma algo?
-- **Por defecto**: no se suma en "Como Corte Certo hoy"; en "Reglas de corte", +3 en ancho y en
-  largo para las clases con PR.
+**4. (Sigue de la 4 respondida) Pulido: ¿el pulido de aristas (MF) suma algo? ¿Y el +3 mm del
+pulido recto se cargaba en las medidas de las piezas en Corte Certo?**
+- Lo segundo importa para los números: si se cargaba en las medidas, Corte Certo cuenta los m² de
+  piezas (y el aprovechamiento) con las medidas +3.
+- **Por defecto**: el MF no suma; el +3 del pulido recto **sí** cuenta en los m² de piezas del
+  informe (como si se hubiera cargado así en Corte Certo). El informe muestra además los m² con
+  las medidas del presupuesto (sin el +3).
 - Respuesta:
 
 **5. En los montajes de Corte Certo, ¿qué quieren decir los colores bordó, verde y oliva?**
@@ -60,10 +62,14 @@ material en Corte Certo?**
 - **Por defecto**: campos provisorios (código, descripción, color, espesor; precio por m²).
 - Respuesta:
 
-**8. ¿Dónde se anotó lo que dio Corte Certo en los presupuestos viejos?**
-- ¿Siempre en el mismo campo? ¿Con un formato fijo?
-- Pasá 3 o 4 ejemplos, aunque sea a mano.
-- **Por defecto**: buscar en `PRESUP.TV_DESCRIP`.
+**8. (Sigue de la 8 respondida) La leyenda en "Situación de Presupuesto → Observaciones":
+¿en qué columna de `PRESUP` queda guardada?**
+- Juan cree que es `NOTAS_CAUSA` (en el diccionario figura como "motivo del rechazo", así que hay
+  que confirmarlo mirando un presupuesto que tenga la leyenda).
+- ¿Siempre con el formato "MATERIAL: NN HOJAS - NN%"? ¿Hay leyendas viejas con otro formato?
+- **Por defecto**: el zip trae todas las columnas de texto de `PRESUP` (`NOTAS_CAUSA`,
+  `TV_DESCRIP` y cualquier otra de observaciones) y el lector busca la leyenda en todas
+  (`docs/CONTRATO_DATOS.md`, versión 2).
 - Respuesta:
 
 **9. Para cotizar, ¿el aprovechamiento va sobre la plancha útil o sobre la hoja entera?**
@@ -151,4 +157,24 @@ programa elija la combinación de menos m²?**
 
 ## Respondidas
 
-(todavía ninguna)
+**4. Pulido recto "+3 mm": ¿en las dos medidas (ancho y largo)? ¿Se cargaba así en Corte Certo?**
+- Respuesta de Juan (25/10): **confirmado**, las piezas con pulido recto se optimizaron con +3 mm
+  en el ancho **y** en el largo.
+- Qué se hizo: el +3 pasó a ser parte de "Como Corte Certo hoy" (y de "Reglas de corte"); la
+  hipótesis H3 de la validación dejó de ser hipótesis (`DECISIONES.md`, 25/10). Lo que falta
+  (pulido MF y si cuenta en los m²) sigue en la pregunta 4 de arriba.
+
+**8. ¿Dónde se anotó lo que dio Corte Certo en los presupuestos viejos?**
+- Respuesta de Juan (25/10): **no** está en `TV_DESCRIP`. Está en la ventana "Situación de
+  Presupuesto → Observaciones" de Metrix (columna de `PRESUP` a confirmar; probablemente
+  `NOTAS_CAUSA`). Formato real, una línea por material:
+  ```
+  LISTA 1
+  4+4 NLIGHT: 88 HOJAS - 91% ******* L.DIST -10%
+  3+3 LOWE: 105 HOJAS - 72% ******* L.DIST -10%
+  4+4 LOWE_ 22 HOJAS - 64%******* L.DIST -10%
+  ```
+  = material abreviado (hay que relacionarlo con el código de Metrix por las piezas del
+  presupuesto), hojas, aprovechamiento en %, y cómo se cotizó (lista y descuento).
+- Qué se hizo: `CONTRATO_DATOS.md` pasó a la versión 2; el formato quedó en
+  `docs/FORMATO_LEYENDAS.md`. Lo que falta confirmar (la columna) sigue en la pregunta 8 de arriba.

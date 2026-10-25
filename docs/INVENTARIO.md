@@ -41,7 +41,8 @@ la historia de git; ver `DECISIONES.md`).
 | `img/corte_certo_2_montajes.png` | Captura: Visualizar e imprimir montajes | Miniaturas, pilas, colores, Datos generales |
 | `img/corte_certo_3_calculo_en_proceso.png` | Captura: Cálculo en proceso | Pantalla de progreso |
 | `img/corte_certo_4_propiedades_fisicas.png` | Captura: Material → Propiedades físicas | Campos de configuración por material |
-| `CONTRATO_DATOS.md` | Qué trae el zip de casos históricos | Fase F4 |
+| `CONTRATO_DATOS.md` | Qué trae el zip de casos históricos (versión 2: la leyenda está en "Situación de Presupuesto → Observaciones") | Fase F4 |
+| `FORMATO_LEYENDAS.md` | Los formatos de la leyenda de Corte Certo y cómo se leen | Fase F4 |
 | `ESTADO.md` | Dónde quedó el trabajo | Para retomar sin leer la conversación |
 | `DECISIONES.md` | Qué se decidió, cuándo y por qué | Registro |
 | `PREGUNTAS_ABIERTAS.md` | Lo que tiene que contestar Juan, con la opción por defecto | Juan contesta abajo de cada una |

@@ -146,7 +146,8 @@ producción. Juan pidió que el programa pueda trabajar **"con esa configuració
 Por eso:
 
 - **Preset "Como Corte Certo hoy"** (por defecto): corte banda del Excel, separación 0,
-  destaque 0, rotación sí, textura sin.
+  destaque 0, rotación sí, textura sin, **+3 mm en ancho y largo de las piezas con pulido recto**
+  (confirmado por Juan el 25/10).
 - **Preset "Reglas de corte (Lucas)"**: corte banda + separación de `reglas_corte.csv`.
 - **Cada material se puede editar** campo por campo, como en Corte Certo. Los cambios locales no
   se pierden al actualizar el programa.
@@ -160,13 +161,13 @@ por grupo de material:
 
 | | Hipótesis |
 |---|---|
-| H0 | Solo corte banda (lo que muestra la captura) |
-| H1 | Corte banda + separación como "ancho de la sierra" (todas las piezas separadas) |
-| H2 | Corte banda + separación como "destaque mínimo" (las piezas pueden compartir corte, pero un sobrante entre dos piezas tiene que medir 0 o al menos X) |
-| H3 | Las anteriores + **3 mm** en las piezas con pulido recto |
+| H0 | Solo corte banda (lo que muestra la captura) + 3 mm en pulido recto |
+| H1 | H0 + separación como "ancho de la sierra" (todas las piezas separadas) |
+| H2 | H0 + separación como "destaque mínimo" (las piezas pueden compartir corte, pero un sobrante entre dos piezas tiene que medir 0 o al menos X) |
 
-Sobre H3: según Juan, *"las medidas de la planilla son las de corte, salvo pulido recto, que
-suma 3 mm"*. Falta confirmar si es en las dos medidas y si se cargaba así en Corte Certo.
+**Pulido recto (confirmado por Juan el 25/10)**: las piezas con pulido recto se optimizaron con
+**+3 mm en el ancho y en el largo**. Ya no es una hipótesis (era H3): es parte de la configuración
+"Como Corte Certo hoy" y de todas las hipótesis.
 
 ## 6. El motor
 
@@ -417,7 +418,7 @@ orquestador la pueda importar.
   - Un **DVH** son 2 vidrios: una pieza de VIDRIO1 y otra de VIDRIO2.
   - Los **herrajes** se cargan con TIPO = DIST, LARGO = 1 y el código del herraje en VIDRIO1: se
     ignoran, con aviso.
-  - Clase con "PR": sobremedida de pulido según la configuración (H3).
+  - Clase con "PR": +3 mm en ancho y largo (pulido recto, confirmado el 25/10).
 - **Casos históricos** (`datos/casos/`), para el banco y para la pantalla Comparar.
 - Siempre: los materiales que no están en la configuración y las medidas raras se muestran como
   aviso **antes** de calcular.
@@ -425,9 +426,11 @@ orquestador la pueda importar.
 ## 10. Validación contra la historia (el corazón)
 
 Detalle de los datos en `docs/CONTRATO_DATOS.md`. Resumen: casos de Metrix con las piezas de
-cada presupuesto y, en las notas, la "leyenda" con lo que dio Corte Certo. Lo más probable es que
-esté en `PRESUP.TV_DESCRIP` (ver `contexto/fabrica/DATA_DICTIONARY.md`), pero hay que
-verificarlo. **Son muchos casos**: es la mejor herramienta que tenemos para que el programa sea
+cada presupuesto y la "leyenda" con lo que dio Corte Certo. **Está en "Situación de Presupuesto →
+Observaciones"** (Juan, 25/10; la columna de `PRESUP` se confirma al exportar, probablemente
+`NOTAS_CAUSA`), una línea por material: `4+4 NLIGHT: 88 HOJAS - 91% ******* L.DIST -10%`
+(material abreviado, hojas, aprovechamiento, cómo se cotizó). Formatos en
+`docs/FORMATO_LEYENDAS.md`. **Son muchos casos**: es la mejor herramienta que tenemos para que el programa sea
 confiable.
 
 **Si `datos/casos/` está vacío**:
@@ -455,10 +458,13 @@ formato. Si un formato es ambiguo, a `PREGUNTAS_ABIERTAS.md` con 3 ejemplos.
   segundo vidrio puede medir distinto (casi nunca).
 - **No se optimizan**: herrajes, fletes, perforaciones, consumibles ni cámaras.
 - **Material** = código de Metrix → `config/hojas.csv`.
-- **Control de que la entrada está bien**: si la leyenda trae los m² de piezas (Corte Certo los
-  da con 6 decimales), compararlos con los reconstruidos:
-  - si coinciden exacto, la entrada está bien;
-  - si no, dicen si se cargó con sobremedida (+3 mm) o si el presupuesto cambió después.
+- **Material de la leyenda**: viene abreviado ("4+4 NLIGHT", "3+3 LOWE"); se relaciona con el
+  código de Metrix de las piezas del presupuesto (composición + palabras clave). Si no se puede
+  relacionar sin dudas, el caso va aparte.
+- **Control de que la entrada está bien**: la leyenda trae hojas y % (no m²). Los m² de piezas
+  reconstruidos ÷ (hojas × plancha útil) tienen que dar el % de la leyenda (±0,5 por el redondeo):
+  - si cierra, la entrada está bien;
+  - si no, el presupuesto cambió después o la plancha era otra.
   
   Los casos que no cierran se informan aparte, no se mezclan con los buenos.
 
@@ -467,7 +473,7 @@ formato. Si un formato es ambiguo, a `PREGUNTAS_ABIERTAS.md` con 3 ejemplos.
 - Por caso y material: planchas nuestras contra planchas de Corte Certo, aprovechamiento,
   montajes y mínimo teórico.
 - **Calibración**:
-  - correr H0–H3 sobre una parte de los casos (70 %);
+  - correr H0–H2 sobre una parte de los casos (70 %);
   - elegir por grupo de material la que mejor reproduce a Corte Certo;
   - **informar sobre el 30 % restante**, para no hacerse trampa.
 - **Resumen para Juan** en `docs/VALIDACION.md`, en palabras simples:

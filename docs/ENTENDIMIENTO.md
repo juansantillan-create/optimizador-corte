@@ -39,7 +39,7 @@ consumo de hojas). No manda nada a las mesas de corte: eso sigue siendo Optima.
 - **"Como Corte Certo hoy"** (por defecto): plancha útil = plancha − corte banda; sin separación.
 - **"Reglas de corte (Lucas)"**: además, 20/30/50 mm entre piezas.
 - Todo editable por material. La validación histórica (F4) dice cuál reproduce a Corte Certo
-  (hipótesis H0 a H3).
+  (hipótesis H0 a H2; el +3 mm del pulido recto ya está confirmado).
 
 ## Lo que me hizo dudar (y qué hago mientras tanto)
 
@@ -90,7 +90,7 @@ consumo de hojas). No manda nada a las mesas de corte: eso sigue siendo Optima.
 | F1 | Motor + validador + banco sintético ("corte perfecto" y realistas) + CLI; tiempos medidos; `VALIDACION.md` |
 | F2 | Informe de cálculo y montajes en SVG (como las capturas 1 y 2), impresión A4, JSON y `API.md` |
 | F3 | Interfaz en el navegador (FastAPI + HTML/JS sin compilar), `Abrir_Optimizador.bat`, importadores (pegar de Excel, CSV/XLSX, Interfaz de Metrix), presets |
-| F4 | Lector de leyendas, reconstrucción de piezas, calibración H0–H3 (70/30), página de revisión. Sin datos: de punta a punta con un caso de juguete claramente inventado |
+| F4 | Lector de leyendas, reconstrucción de piezas, calibración H0–H2 (70/30), página de revisión. Sin datos: de punta a punta con un caso de juguete claramente inventado |
 | F5 | `INSTALACION.md`, `USO.md`, `ESTADO.md` final, PR |
 
 ## Riesgos
