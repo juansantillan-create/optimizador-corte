@@ -1,0 +1,52 @@
+CORTES REALES CON OPTIMA (muestras para el optimizador de corte)
+Generado: 2026-10-25
+Fuente: planilla de lotes de OPTIMA (vidrio, hojas usadas, desperdicio real) + piezas de
+Metrix (tabla CAJAS, una fila por pieza fisica, SQL Server solo lectura).
+
+QUE ES CADA LOTE
+Una corrida real de OPTIMA: varios pedidos del mismo vidrio optimizados juntos y cortados en
+planta. Sirve para correr el optimizador con esas mismas piezas y hojas y ver si da igual,
+mejor o peor que OPTIMA. A diferencia de los casos de Corte Certo (casos_historicos_*.zip),
+aca los numeros son de PEDIDO, no de presupuesto, y se sabe exactamente que hojas se usaron.
+
+CONTROL
+Para cada pedido, la cantidad de piezas y los m2 del vidrio del lote en CAJAS coinciden
+exactamente con la planilla de OPTIMA (m2 netos, sin sobremedida), y el total de piezas de
+cada lote tambien: 54, 75, 38, 29 y 33.
+Quedo afuera el pedido 12010 (1 pieza de 8 mm): estaba anotado junto al lote 172802, pero en
+CAJAS su pieza figura en otra optimizacion (5849) y sin el, el lote da justo las 29 piezas
+del total. No hay datos de hoja de esa optimizacion.
+
+ARCHIVOS (separador ;, UTF-8, punto decimal, medidas en mm)
+
+lotes_optima.csv - un renglon por lote
+  lote                         numero de la corrida de OPTIMA
+  v_codart, descripcion, espesor_mm   el vidrio (articulo de Metrix)
+  hojas                        hojas enteras usadas: cantidad x largo x ancho (ej. 8x3700x2500;1x3700x2200)
+  retazos                      pedazos/sobrantes usados como hoja (lote 172905: 2x3580x1010)
+  m2_hojas                     m2 de hojas + retazos
+  pedidos, piezas              cantidad de pedidos y de piezas del lote
+  m2_piezas                    m2 de las piezas con la sobremedida de pulido recto
+  m2_piezas_sin_sobremedida    m2 netos (los de la planilla de OPTIMA)
+  aprovechamiento_bruto_pct    m2_piezas / m2_hojas
+  desperdicio_real_optima_pct  el "Desp real" que informo OPTIMA
+
+  OJO: aprovechamiento_bruto_pct y desperdicio_real_optima_pct no suman 100 (ej. lote 164601:
+  77 % bruto vs 8 % de desperdicio real). Lo mas probable es que OPTIMA no cuente como
+  desperdicio los sobrantes que vuelven a stock. Para comparar, lo mas seguro es usar las
+  mismas hojas y comparar m2 usados / sobrantes, o calcular el desperdicio igual que OPTIMA.
+
+piezas.csv - piezas de cada lote (iguales agrupadas)
+  lote, pedido, v_codart
+  cantidad       unidades
+  largo, ancho   MEDIDA A OPTIMIZAR: las piezas con PULIDO RECTO ya tienen +3 mm en largo y en
+                 ancho (mismo criterio que en Corte Certo)
+  pulido_recto   1 si la pieza lleva pulido recto (CAJAS.BD distinto de '*')
+  mecanizado     1 si lleva perforaciones/entalles (CAJAS.MEC distinto de '*'); son los pedidos
+                 "C/PERF" de la planilla. Para el corte se tratan como rectangulos.
+  largo_original, ancho_original   medida tal cual esta en Metrix, sin los +3 mm
+
+A TENER EN CUENTA
+- Las piezas de DVH (lote 165903 de 5 mm y parte del 172905 de 6 mm) son el vidrio de un lado
+  del DVH; el otro vidrio de esos DVH va en otros lotes.
+- Ningun dato de clientes, obras ni usuarios: solo numero de pedido, vidrio y medidas.
