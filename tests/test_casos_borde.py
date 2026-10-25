@@ -54,7 +54,10 @@ def test_material_desconocido_con_espesor():
     m = material(res, "FL8BR")
     assert any("SUPUESTA" in a for a in m["avisos"])
     assert m["planchas_usadas"][0]["supuesta"] is True
-    assert m["planchas_usadas"][0]["ancho"] == 3570  # 3600 − banda de 8 mm (30)
+    assert m["planchas_usadas"][0]["ancho"] == 3580  # como Corte Certo: banda 20 en todos los vidrios
+    m = material(calcular([{"item": "1", "material": "FL8BR", "cantidad": 2, "ancho": 1000, "largo": 1000}],
+                          preset="lucas"), "FL8BR")
+    assert m["planchas_usadas"][0]["ancho"] == 3570  # regla de Lucas: banda de 8 mm (30)
 
 
 def test_material_sin_planchas_no_frena_a_los_demas():
@@ -82,7 +85,7 @@ def test_muchas_piezas_iguales():
 def test_separacion_que_llena_justo():
     # 3 piezas de 1180 con 20 de separación: 3·1180 + 2·20 = 3580 (justo). Alto: 2500.
     res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 3, "ancho": 1180, "largo": 2500}],
-                   preset="lucas")
+                   materiales={"FL5IN": {"separacion_piezas_mm": 20}})
     m = material(res, "FL5IN")
     assert m["configuracion"]["separacion_piezas_mm"] == 20
     assert m["planchas"] == 1
@@ -91,8 +94,16 @@ def test_separacion_que_llena_justo():
 def test_separacion_que_no_entra():
     # Con 1181 ya no entran 3 en una plancha.
     res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 3, "ancho": 1181, "largo": 2500}],
-                   preset="lucas")
+                   materiales={"FL5IN": {"separacion_piezas_mm": 20}})
     assert material(res, "FL5IN")["planchas"] == 2
+
+
+def test_preset_de_lucas_usa_destaque_y_no_separacion():
+    # Juan, 25/10/2026 (pregunta 2): la distancia de la regla es el destaque mínimo, no una separación.
+    res = calcular([{"item": "1", "material": "FL5IN", "cantidad": 3, "ancho": 1180, "largo": 2500}],
+                   preset="lucas")
+    conf = material(res, "FL5IN")["configuracion"]
+    assert conf["separacion_piezas_mm"] == 0 and conf["destaque_min_mm"] == 20
 
 
 def test_piezas_mas_chicas_que_el_destaque():
@@ -105,10 +116,14 @@ def test_piezas_mas_chicas_que_el_destaque():
 
 
 def test_varias_medidas_de_plancha():
-    # FL4IN tiene 3600×2500, 3600×2200 y 3300×2440. Una pieza de 3500 × 2100 entra en las
-    # dos primeras; tiene que elegir la de menos m² (3580 × 2200).
-    res = calcular([{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": 3500, "largo": 2100}])
-    m = material(res, "FL4IN")
+    # FL4IN tiene 3600×2500, 3600×2200 y 3300×2440. Por defecto se cotiza solo con la de 3600 × 2500
+    # (Juan, 25/10/2026). Con las otras habilitadas, una pieza de 3500 × 2100 entra en las dos
+    # primeras y tiene que elegir la de menos m² (3580 × 2200).
+    pieza = [{"item": "1", "material": "FL4IN", "cantidad": 2, "ancho": 3500, "largo": 2100}]
+    m = material(calcular(pieza), "FL4IN")
+    assert {(p["ancho"], p["largo"]) for p in m["planchas_usadas"]} == {(3580, 2500)}
+    todas = {"FL4IN": {"planchas_habilitadas": {"3600x2200": True, "3300x2440": True}}}
+    m = material(calcular(pieza, materiales=todas), "FL4IN")
     assert m["planchas"] == 2
     assert {(p["ancho"], p["largo"]) for p in m["planchas_usadas"]} == {(3580, 2200)}
 
@@ -320,3 +335,13 @@ def test_muchisimas_medidas_en_maximo_no_hace_columnas():
     m = material(res, "FL5IN")
     assert res["verificado"] and res["completo"]
     assert any("solo la heurística" in a for a in m["avisos"])
+
+
+def test_hipotesis_de_la_validacion_con_la_misma_plancha():
+    # H0, H1 y H2 cambian solo la separación: la plancha útil es la misma (la de Corte Certo).
+    from optimizador.configuracion import Catalogo
+
+    cat = Catalogo(usar_locales=False)
+    utiles = {h: [(p.ancho - p.corte_banda, p.largo) for p in cat.material("LX5+5IN", h, usar_locales=False).planchas]
+              for h in ("H0", "H1", "H2")}
+    assert utiles["H0"] == utiles["H1"] == utiles["H2"]

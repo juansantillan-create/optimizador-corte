@@ -60,16 +60,25 @@ def test_xlsx():
 
 
 def test_interfaz_dvh_y_herrajes_por_posicion():
-    # A TIPO, B VIDRIO1, C CAMARA, D VIDRIO2, E ANCHO, F LARGO, G CANTIDAD (supuesta) ... M CLASE
-    fila_dvh = ["DVH", "FL4IN", "CAM12", "FL5IN", 1000, 1200, 2, "", "", "", "", "", "DVH PR", "", "", "OC-1"]
-    fila_vs = ["TEMPLUX", "FL10IN", "", "", 800, 900, 1, "", "", "", "", "", "FLOAT PR TEMP", "", "", ""]
-    herraje = ["DIST", "HERR01", "", "", 0, 1, 4, "", "", "", "", "", "", "", "", ""]
-    r = imp.desde_interfaz(_xlsx([fila_dvh, fila_vs, herraje]), "planilla.xlsx")
-    materiales = [p["material"] for p in r.piezas]
-    assert materiales == ["FL4IN", "FL5IN", "FL10IN"]  # el DVH son 2 vidrios
-    assert all(p["cantidad"] == 2 for p in r.piezas[:2])
-    assert any("herrajes" in a for a in r.avisos)
-    assert any("SUPUESTA" in v for v in r.columnas.values())
+    # Columnas de Juan (pregunta 13): A TIPO, B VIDRIO1, C CAMARA, D VIDRIO2, E ANCHO, F LARGO,
+    # G ANCHO2, H LARGO2, I CANTIDAD, J TIPOLOGIA, K OBS, L NTAS, M CLASE, N/O CLASE CARA1/2.
+    fila_dvh = ["DVH", "FL4IN", "CAM12", "FL5IN", 1000, 1200, "", "", 2, "", "", "", "DVH PR", "", ""]
+    fila_esc = ["DVH", "FL4IN", "CAM12", "FL5IN", 1000, 1200, 960, 1160, 1, "", "", "", "", "", ""]
+    fila_vs = ["TEMPLUX", "FL10IN", "", "", 800, 900, "", "", 3, "", "", "", "FLOAT PR TEMP", "", ""]
+    herraje = ["DIST", "HERR01", "", "", 0, 1, "", "", 4, "", "", "", "", "", ""]
+    r = imp.desde_interfaz(_xlsx([fila_dvh, fila_esc, fila_vs, herraje]), "planilla.xlsx")
+    assert [(p["material"], p["cantidad"], p["ancho"], p["largo"]) for p in r.piezas] == [
+        ("FL4IN", 2, 1000, 1200), ("FL5IN", 2, 1000, 1200),  # el DVH son 2 vidrios
+        ("FL4IN", 1, 1000, 1200), ("FL5IN", 1, 960, 1160),  # escalonado: el vidrio 2 con ANCHO2/LARGO2
+        ("FL10IN", 3, 800, 900)]
+    assert any("herrajes" in a for a in r.avisos) and any("escalonado" in a for a in r.avisos)
+
+
+def test_interfaz_ancho2_sin_largo2_avisa():
+    fila = ["DVH", "FL4IN", "CAM12", "FL5IN", 1000, 1200, 960, "", 1, "", "", "", "", "", ""]
+    r = imp.desde_interfaz(_xlsx([fila]), "planilla.xlsx")
+    assert [(p["material"], p["ancho"], p["largo"]) for p in r.piezas] == [("FL4IN", 1000, 1200), ("FL5IN", 1000, 1200)]
+    assert any("ANCHO2 o LARGO2 pero no los dos" in a for a in r.avisos)
 
 
 def test_interfaz_con_encabezados():

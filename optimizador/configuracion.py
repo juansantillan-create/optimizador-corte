@@ -4,8 +4,9 @@ Presets (brief §5.3 y §5.4):
 - `corte_certo` — "Como Corte Certo hoy" (por defecto): corte banda del Excel, sin separación,
   sin destaque, rotación sí, textura sin, y +3 mm en ancho y largo de las piezas con pulido
   recto (confirmado por Juan el 25/10/2026).
-- `lucas` — "Reglas de corte (Lucas)": lo mismo más la separación entre piezas de
-  `reglas_corte.csv` como "ancho de la sierra".
+- `lucas` — "Reglas de corte (Lucas, como Optima)": lo mismo más la distancia de
+  `reglas_corte.csv` como **destaque mínimo** (Juan, 25/10: las piezas pueden compartir el corte,
+  pero si entre dos queda una tira de sobrante, tiene que medir al menos 20/30/50 mm).
 - `H0` a `H2`: las hipótesis de la validación histórica (ver `HIPOTESIS`).
 
 Encima del preset se aplican, en este orden: los ajustes locales de la PC
@@ -30,21 +31,31 @@ CARPETA_CONFIG = Path(os.environ.get("OPTIMIZADOR_CONFIG", RAIZ / "config"))
 
 PULIDO_RECTO_MM = 3  # Juan, 25/10/2026: "+3 mm en ancho Y en largo"
 
+# Corte banda con que se cotiza en "Como Corte Certo hoy": 20 mm en todos los vidrios (la plancha de
+# 3600 queda en 3580), como dijo Juan ("solo se carga la plancha ya achicada"). OJO: los casos
+# históricos dicen otra cosa: con el % redondeado, hasta septiembre de 2026 Corte Certo cortaba
+# sobre la hoja entera (3600, sin banda); ver docs/VALIDACION.md §1 y la pregunta 28. Con la
+# regla de Lucas (30/50) casi nunca cierra.
+BANDA_CORTE_CERTO_MM = 20
+
 PRESETS = {
     "corte_certo": {
         "nombre": "Como Corte Certo hoy",
-        "descripcion": "Corte banda del Excel; sin separación entre piezas ni destaque; +3 mm en "
-                       "ancho y largo de las piezas con pulido recto.",
+        "descripcion": "Corte banda de 20 mm en todos los vidrios (la plancha de 3600 queda en 3580; "
+                       "pregunta 28); sin separación entre piezas ni destaque; +3 mm en ancho y largo de "
+                       "las piezas con pulido recto.",
         "separacion": "cero",  # cero | regla
         "como": "sierra",
         "pulido_mm": PULIDO_RECTO_MM,
+        "banda_mm": BANDA_CORTE_CERTO_MM,  # None = la de hojas.csv
     },
     "lucas": {
-        "nombre": "Reglas de corte (Lucas)",
-        "descripcion": "Corte banda + separación entre piezas de la regla de Lucas (20/30/50 mm) "
-                       "+ 3 mm en las piezas con pulido recto.",
+        "nombre": "Reglas de corte (Lucas, como Optima)",
+        "descripcion": "Corte banda + destaque mínimo de la regla de Lucas (20/30/50 mm: las piezas "
+                       "pueden compartir el corte, pero una tira de sobrante entre piezas tiene que "
+                       "medir al menos eso) + 3 mm en las piezas con pulido recto.",
         "separacion": "regla",
-        "como": "sierra",
+        "como": "destaque",
         "pulido_mm": PULIDO_RECTO_MM,
     },
 }
@@ -52,12 +63,13 @@ PRESETS = {
 # Hipótesis de la validación histórica (brief §5.4). El +3 mm del pulido recto ya no es
 # hipótesis (era H3): está en todas.
 HIPOTESIS = {
-    "H0": {"nombre": "H0: solo corte banda", "separacion": "cero", "como": "sierra",
-           "pulido_mm": PULIDO_RECTO_MM},
+    "H0": {"nombre": "H0: solo corte banda (20 mm, como Corte Certo)", "separacion": "cero",
+           "como": "sierra", "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
+    # Las tres con la misma plancha útil (la de Corte Certo): solo cambia la separación.
     "H1": {"nombre": "H1: banda + separación como sierra", "separacion": "regla", "como": "sierra",
-           "pulido_mm": PULIDO_RECTO_MM},
+           "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
     "H2": {"nombre": "H2: banda + separación como destaque", "separacion": "regla",
-           "como": "destaque", "pulido_mm": PULIDO_RECTO_MM},
+           "como": "destaque", "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
 }
 
 CAMPOS_EDITABLES = {f.name for f in fields(Material)} - {"codigo", "planchas", "avisos"}
@@ -122,6 +134,8 @@ class Catalogo:
                 corte_banda=int(fila["corte_banda_mm"]),
                 origen=f"{fila['hoja_excel']} fila {fila['fila_excel']}",
             ))
+        for mat in self.materiales.values():
+            elegir_plancha_por_defecto(mat)
 
     def ajustes_locales(self) -> dict:
         if not self.usar_locales:
@@ -148,9 +162,13 @@ class Catalogo:
             separacion = self.separacion_regla.get(codigo, 0)
             fuente = self.fuente_separacion.get(codigo, "")
             if conf["separacion"] == "regla" and fuente.startswith("supuesto"):
-                mat.avisos.append(f"separación entre piezas de {codigo} supuesta ({fuente})")
+                que = "separación entre piezas" if conf["como"] == "sierra" else "destaque mínimo"
+                mat.avisos.append(f"{que} de {codigo} supuesto ({fuente})")
         else:
             mat, separacion = self._material_supuesto(codigo)
+        if conf.get("banda_mm") is not None:
+            for p in mat.planchas:
+                p.corte_banda = conf["banda_mm"]
         if conf["separacion"] == "regla":
             if conf["como"] == "sierra":
                 mat.separacion_piezas_mm = separacion
@@ -186,6 +204,20 @@ class Catalogo:
 
     def lista(self) -> list[Material]:
         return [self.materiales[c] for c in sorted(self.materiales)]
+
+
+# Juan, 25/10/2026 (pregunta 3): "si está la opción de 3600 × 2500, usar siempre esa por defecto;
+# si no, la de 3700 × 2500". Las demás medidas quedan, deshabilitadas, para habilitarlas a mano.
+PLANCHAS_PREFERIDAS = ((3600, 2500), (3700, 2500))
+
+
+def elegir_plancha_por_defecto(mat: Material) -> None:
+    """Deja habilitada solo la medida preferida si el material la tiene; si no, todas."""
+    for medida in PLANCHAS_PREFERIDAS:
+        if any((p.ancho, p.largo) == medida for p in mat.planchas):
+            for p in mat.planchas:
+                p.habilitada = (p.ancho, p.largo) == medida
+            return
 
 
 def _numero(mat: Material, campo: str, valor, origen: str, entero: bool, minimo: float = 0) -> float | int:

@@ -3,7 +3,12 @@
   "codigo": "CP3-1022",
   "descripcion": "corte perfecto (3 etapas): 3 planchas"
  },
- "preset": "lucas",
+ "preset": "corte_certo",
+ "materiales": {
+  "FL5IN": {
+   "separacion_piezas_mm": 20
+  }
+ },
  "piezas": [
   {
    "item": "1",

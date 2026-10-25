@@ -3,7 +3,12 @@
   "codigo": "CP3-1020",
   "descripcion": "corte perfecto (3 etapas): 1 planchas"
  },
- "preset": "lucas",
+ "preset": "corte_certo",
+ "materiales": {
+  "FL5IN": {
+   "separacion_piezas_mm": 20
+  }
+ },
  "piezas": [
   {
    "item": "1",
