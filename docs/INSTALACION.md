@@ -80,11 +80,9 @@ Cuando haya una versión nueva:
 
 ## Sin internet
 
-En una PC **con** internet y el mismo Python (por ejemplo 3.12), en una ventana negra:
-
-```text
-py -3.12 -m pip download -r requirements.txt --only-binary=:all: --platform win_amd64 --python-version 3.12 -d paquetes
-```
+En una PC **con** internet y el mismo Python (por ejemplo 3.12): doble clic en
+`herramientas\Bajar_paquetes.bat` (o, en una ventana negra en la carpeta del programa,
+`py -3.12 -m pip download -r requirements.txt --only-binary=:all: --platform win_amd64 --python-version 3.12 -d paquetes`).
 
 Eso crea una carpeta `paquetes` (unos 60 MB). Copiala adentro de la carpeta del programa en la PC
 sin internet: `Abrir_Optimizador.bat` la usa sola (instala desde ahí, sin conectarse). El instalador

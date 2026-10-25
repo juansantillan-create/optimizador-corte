@@ -105,6 +105,7 @@ class Limites:
     variantes_secuencial: tuple[float, ...]
     iteraciones_columnas: int
     trabajo: int  # tiras calculadas por el generador (heurística + columnas)
+    trabajo_extendido: int  # hasta acá, solo si la relajación dice que se puede bajar una plancha
     nodos_entera: int
     segundos_seguridad: float
     buceo: bool = False
@@ -115,10 +116,12 @@ class Limites:
 # 1,5 dio en promedio lo mejor y 1,0 (área pura) lo peor.
 # El trabajo se mide en tiras calculadas por el generador (no en segundos), así el mismo caso da
 # lo mismo en cualquier PC. Las variantes después de la primera solo corren si queda trabajo.
+# En "normal" no se extiende el trabajo ni se bucea: se probó (25/10) y en el banco casi no
+# mejoraba y duplicaba el tiempo. "Máximo" hace las dos cosas.
 ESFUERZOS = {
-    "rapido": Limites((1.5,), 0, 0, 0, 30),
-    "normal": Limites((1.5, 1.2, 2.0), 80, 9000, 1000, 60),
-    "maximo": Limites((1.5, 1.2, 2.0, 1.0, 1.35, 1.75), 300, 120000, 20000, 300, buceo=True),
+    "rapido": Limites((1.5,), 0, 0, 0, 0, 30),
+    "normal": Limites((1.5, 1.2, 2.0), 80, 9000, 9000, 1000, 60),
+    "maximo": Limites((1.5, 1.2, 2.0, 1.0, 1.35, 1.75), 400, 120000, 200000, 20000, 300, buceo=True),
 }
 
 
@@ -244,7 +247,8 @@ def _resolver_lp(p: Problema, columnas: list[Columna]):
 def generar_columnas(p: Problema, columnas: list[Columna], iteraciones: int, progreso=None,
                      cancelar=None, reloj_limite: float | None = None,
                      planchas_conocidas: int | None = None,
-                     trabajo_max: int | None = None) -> tuple[float | None, int]:
+                     trabajo_max: int | None = None,
+                     trabajo_extendido: int | None = None) -> tuple[float | None, int]:
     """Agrega montajes a `columnas` mientras mejoren la relajación lineal. Devuelve (valor de la
     relajación, iteraciones hechas).
 
@@ -261,7 +265,12 @@ def generar_columnas(p: Problema, columnas: list[Columna], iteraciones: int, pro
         if reloj_limite is not None and time.perf_counter() > reloj_limite:
             break
         if trabajo_max is not None and p.trabajo() >= trabajo_max:
-            break
+            # Se sigue (hasta `trabajo_extendido`) solo si la relajación todavía muestra que se
+            # podría bajar al menos una plancha.
+            puede_bajar = (valor is not None and planchas_conocidas is not None and len(p.stocks) == 1
+                           and valor / p.stocks[0].costo < planchas_conocidas - 0.5)
+            if not puede_bajar or trabajo_extendido is None or p.trabajo() >= trabajo_extendido:
+                break
         valor, duales = _resolver_lp(p, columnas)
         if duales is None:
             break
@@ -649,7 +658,8 @@ def calcular(tipos: list[Tipo], stocks: list[Stock], separacion: int, destaque: 
         columnas = _sin_repetir(columnas)
         t0 = time.perf_counter()
         cota_lp, iteraciones = generar_columnas(p, columnas, lim.iteraciones_columnas, avisar,
-                                                cancelar, reloj_limite, mejor.planchas(), lim.trabajo)
+                                                cancelar, reloj_limite, mejor.planchas(), lim.trabajo,
+                                                lim.trabajo_extendido)
         if not (cancelar and cancelar()):
             avisar(fase="entera")
             restante = max(1.0, reloj_limite - time.perf_counter())
