@@ -31,18 +31,19 @@ CARPETA_CONFIG = Path(os.environ.get("OPTIMIZADOR_CONFIG", RAIZ / "config"))
 
 PULIDO_RECTO_MM = 3  # Juan, 25/10/2026: "+3 mm en ancho Y en largo"
 
-# Corte banda con que estaba cargado Corte Certo en la oficina: 20 mm en todos los vidrios (la
-# plancha de 3600 queda en 3580). Lo muestran los casos históricos (25/10/2026): en los laminados
-# 4+4, 5+5 y 6+6 y en el float de 8 el % de Corte Certo cierra con banda 20 y casi nunca con la
-# de la regla de Lucas (30/50, que es la de producción). Pregunta 28.
+# Corte banda con que se cotiza en "Como Corte Certo hoy": 20 mm en todos los vidrios (la plancha de
+# 3600 queda en 3580), como dijo Juan ("solo se carga la plancha ya achicada"). OJO: los casos
+# históricos dicen otra cosa: con el % redondeado, hasta septiembre de 2026 Corte Certo cortaba
+# sobre la hoja entera (3600, sin banda); ver docs/VALIDACION.md §1 y la pregunta 28. Con la
+# regla de Lucas (30/50) casi nunca cierra.
 BANDA_CORTE_CERTO_MM = 20
 
 PRESETS = {
     "corte_certo": {
         "nombre": "Como Corte Certo hoy",
-        "descripcion": "Corte banda de 20 mm en todos los vidrios (la plancha de 3600 queda en 3580, "
-                       "como estaba cargado Corte Certo); sin separación entre piezas ni destaque; "
-                       "+3 mm en ancho y largo de las piezas con pulido recto.",
+        "descripcion": "Corte banda de 20 mm en todos los vidrios (la plancha de 3600 queda en 3580; "
+                       "pregunta 28); sin separación entre piezas ni destaque; +3 mm en ancho y largo de "
+                       "las piezas con pulido recto.",
         "separacion": "cero",  # cero | regla
         "como": "sierra",
         "pulido_mm": PULIDO_RECTO_MM,
@@ -64,10 +65,11 @@ PRESETS = {
 HIPOTESIS = {
     "H0": {"nombre": "H0: solo corte banda (20 mm, como Corte Certo)", "separacion": "cero",
            "como": "sierra", "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
+    # Las tres con la misma plancha útil (la de Corte Certo): solo cambia la separación.
     "H1": {"nombre": "H1: banda + separación como sierra", "separacion": "regla", "como": "sierra",
-           "pulido_mm": PULIDO_RECTO_MM},
+           "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
     "H2": {"nombre": "H2: banda + separación como destaque", "separacion": "regla",
-           "como": "destaque", "pulido_mm": PULIDO_RECTO_MM},
+           "como": "destaque", "pulido_mm": PULIDO_RECTO_MM, "banda_mm": BANDA_CORTE_CERTO_MM},
 }
 
 CAMPOS_EDITABLES = {f.name for f in fields(Material)} - {"codigo", "planchas", "avisos"}

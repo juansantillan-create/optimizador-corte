@@ -10,13 +10,14 @@ reconstruidas por vidrio (ver el `LEEME.txt` de la carpeta):
 
 Qué se hace con cada caso:
 1. Se dejan aparte los que no se pueden comparar (sin hojas, con bandas, con el control de área
-   del exportador en NO) y se cuentan.
-2. **Control de la entrada**: m² de piezas ÷ (hojas × plancha útil) tiene que dar el % de Corte
-   Certo (redondeado o truncado, `comparar.cierra`). Se prueban las medidas de plancha del
-   material (o las anotadas en `detalle_hojas`), con el +3 y, si no cierra, sin el +3
-   (pregunta 25). Así se sabe con qué hoja se calculó.
+   del exportador en NO, con varias medidas de hoja anotadas) y se cuentan.
+2. **Control de la entrada** (`control`): m² de piezas ÷ (hojas × plancha útil) tiene que dar el %
+   de Corte Certo (redondeado o truncado, `comparar.cierra`). Se prueban las medidas de plancha del
+   material (o las anotadas en `detalle_hojas`), con banda 20 y con la hoja entera, con el +3 y, si
+   no cierra, sin el +3 (pregunta 25). Gana la que da el % redondeando (pregunta 24).
 3. Se calcula con H0 (solo el corte banda: Corte Certo se usaba sin separación ni destaque, Juan
-   25/10) y esa misma plancha.
+   25/10) y esa misma plancha; si con la misma medida cierra también la otra variante (banda 20 ↔
+   hoja entera), se calcula también (pregunta 28).
 """
 
 from __future__ import annotations
@@ -227,87 +228,125 @@ def minimo_planchas(piezas: list[dict], w: int, h: int) -> int:
 
 
 VARIANTES = (("banda 20", BANDA_CORTE_CERTO_MM), ("hoja entera", 0))
+ANOTADA_UTIL = "medida anotada (ya útil)"
+
+
+def medidas_de_hoja(catalogo: Catalogo) -> set[tuple[int, int]]:
+    """Las medidas de hoja entera que se conocen (hojas.csv y `medidas_conocidas`)."""
+    salida = {(p.ancho, p.largo) for mat in catalogo.materiales.values() for p in mat.planchas}
+    return salida | {(a, l) for _, a, l in medidas_conocidas(catalogo)}
+
+
+def _posible(piezas: list[dict], medidas: list[tuple[int, int, int]], hojas: int) -> bool:
+    """¿Pueden entrar las piezas en esas hojas (cantidad, ancho útil, largo)?"""
+    if any(w <= 0 or h <= 0 for _, w, h in medidas):
+        return False
+    if len(medidas) == 1:
+        return minimo_planchas(piezas, medidas[0][1], medidas[0][2]) <= hojas
+    return all(_entran(piezas, w, h) for _, w, h in medidas)
 
 
 def control(caso: CasoExportado, catalogo: Catalogo) -> dict:
-    """¿Con qué plancha cierra el % de Corte Certo? Se prueban:
+    """¿Con qué plancha calculó Corte Certo? Se prueban:
     - las medidas anotadas en la leyenda (`detalle_hojas`) si las hay; si no, las del material en
       hojas.csv y, si ninguna cierra, otras medidas conocidas (se avisa: falta en hojas.csv);
-    - con la banda de Corte Certo (20 mm) y con la hoja entera: los casos muestran las dos cosas
-      (pregunta 28), y el % casi nunca alcanza para distinguirlas;
+    - con la banda de 20 mm y con la hoja entera (pregunta 28). Una medida anotada que no es de
+      hoja entera (3190, 3280…) ya es la plancha útil: va tal cual;
     - primero con el +3 del pulido recto y, si no cierra, sin (pregunta 25).
     Una plancha en la que las piezas no pueden entrar en las hojas de Corte Certo (por la cota de
-    `minimo_planchas`) se descarta.
+    `minimo_planchas`, con las piezas con o sin el +3) se descarta.
+    Entre las que cierran gana, en este orden: con el +3; la de hojas.csv (o la anotada) antes que
+    una deducida; la que da el % **redondeando** (lo normal según Juan, pregunta 24) antes que la que
+    solo da truncando; banda 20 antes que hoja entera; la más cercana.
     Devuelve {"plancha", "planchas" (la lista para `optimizar`; None = la del material en
-    hojas.csv), "variante", "con_pulido", "supuesta", "medida_nueva", "ambigua", "alternativa"
-    (la hoja entera, si también es posible), "detalle"}; "plancha" None si no cierra."""
+    hojas.csv), "variante", "con_pulido", "redondea", "supuesta", "medida_nueva", "ambigua",
+    "alternativa" (la otra variante con la misma medida, si también cierra), "unica" (la otra
+    variante no cierra con ninguna medida), "detalle"};
+    "plancha" None si no cierra."""
     mat = catalogo.material(caso.material, "H0", usar_locales=False)
-    con, sin = _piezas(caso, True), _piezas(caso, False)
-    mm2 = {True: _mm2(con), False: _mm2(sin)}
+    piezas = {True: _piezas(caso, True), False: _piezas(caso, False)}
+    mm2 = {k: _mm2(v) for k, v in piezas.items()}
     hay_pulido = mm2[True] != mm2[False]
     opciones = []
-    for orden_v, (variante, banda) in enumerate(VARIANTES):
-        if caso.detalle_hojas:
-            planchas = [{"ancho": a, "largo": l, "corte_banda": banda} for _, a, l in caso.detalle_hojas]
+    if caso.detalle_hojas:
+        utiles = all((a, l) not in medidas_de_hoja(catalogo) for _, a, l in caso.detalle_hojas)
+        for orden_v, (variante, banda) in enumerate(((ANOTADA_UTIL, 0),) if utiles else VARIANTES):
             opciones.append({"prioridad": 0, "orden_v": orden_v, "variante": variante,
                              "clave": "+".join(f"{n}x{a}x{l}" for n, a, l in caso.detalle_hojas),
-                             "util": sum(n * (a - banda) * l for n, a, l in caso.detalle_hojas), "planchas": planchas,
-                             "supuesta": False,
-                             "posible": all(_entran(con, a - banda, l) for _, a, l in caso.detalle_hojas)
-                             and (len(caso.detalle_hojas) > 1 or minimo_planchas(
-                                 con, caso.detalle_hojas[0][1] - banda, caso.detalle_hojas[0][2]) <= caso.hojas)})
-            continue
-        propias = set()
-        for pl in mat.planchas:
-            propias.add((pl.ancho, pl.largo))
-            w, h = pl.ancho - banda, pl.largo
-            opciones.append({"prioridad": 0, "orden_v": orden_v, "variante": variante, "clave": pl.clave(),
-                             "util": caso.hojas * w * h,
-                             "planchas": None if banda == BANDA_CORTE_CERTO_MM and not pl.supuesta else
-                             [{"ancho": pl.ancho, "largo": pl.largo, "corte_banda": banda}],
-                             "supuesta": pl.supuesta, "posible": minimo_planchas(con, w, h) <= caso.hojas})
-        for prioridad, a, l in medidas_conocidas(catalogo, caso.material):
-            if (a, l) not in propias:
-                opciones.append({"prioridad": prioridad, "orden_v": orden_v, "variante": variante, "clave": f"{a}x{l}",
-                                 "util": caso.hojas * (a - banda) * l,
-                                 "planchas": [{"ancho": a, "largo": l, "corte_banda": banda}], "supuesta": False,
-                                 "posible": minimo_planchas(con, a - banda, l) <= caso.hojas})
-    salida = {"plancha": None, "planchas": None, "variante": None, "con_pulido": True, "supuesta": False,
-              "medida_nueva": False, "ambigua": [], "alternativa": None, "detalle": "",
-              "no_entran": not any(o["posible"] for o in opciones)}
+                             "medidas": [(n, a - banda, l) for n, a, l in caso.detalle_hojas],
+                             "planchas": [{"ancho": a, "largo": l, "corte_banda": banda}
+                                          for _, a, l in caso.detalle_hojas], "supuesta": False})
+    else:
+        for orden_v, (variante, banda) in enumerate(VARIANTES):
+            propias = set()
+            for pl in mat.planchas:
+                propias.add((pl.ancho, pl.largo))
+                opciones.append({"prioridad": 0, "orden_v": orden_v, "variante": variante, "clave": pl.clave(),
+                                 "medidas": [(caso.hojas, pl.ancho - banda, pl.largo)],
+                                 "planchas": None if banda == BANDA_CORTE_CERTO_MM and not pl.supuesta else
+                                 [{"ancho": pl.ancho, "largo": pl.largo, "corte_banda": banda}],
+                                 "supuesta": pl.supuesta})
+            for prioridad, a, l in medidas_conocidas(catalogo, caso.material):
+                if (a, l) not in propias:
+                    opciones.append({"prioridad": prioridad, "orden_v": orden_v, "variante": variante,
+                                     "clave": f"{a}x{l}", "medidas": [(caso.hojas, a - banda, l)],
+                                     "planchas": [{"ancho": a, "largo": l, "corte_banda": banda}],
+                                     "supuesta": False})
+    salida = {"plancha": None, "planchas": None, "variante": None, "con_pulido": True, "redondea": False,
+              "supuesta": False, "medida_nueva": False, "ambigua": [], "alternativa": None, "unica": False,
+              "detalle": "", "no_entran": True}
     pruebas = []
     for o in opciones:
-        if not o["posible"] or o["util"] <= 0:
-            continue
+        util = sum(n * w * h for n, w, h in o["medidas"])
         for con_pulido in ((True, False) if hay_pulido else (True,)):
-            calc = mm2[con_pulido] / o["util"] * 100
-            pruebas.append({**o, "con_pulido": con_pulido, "calc": calc,
-                            "orden": (not con_pulido, o["prioridad"], o["orden_v"], abs(calc - caso.aprovechamiento), o["clave"])})
+            if util <= 0 or not _posible(piezas[con_pulido], o["medidas"], caso.hojas):
+                continue
+            if con_pulido:
+                salida["no_entran"] = False
+            calc = mm2[con_pulido] / util * 100
+            red = comparar.redondea(calc, caso.aprovechamiento, caso.decimales)
+            pruebas.append({**o, "con_pulido": con_pulido, "calc": calc, "redondea": red,
+                            "orden": (not con_pulido, o["prioridad"], not red, o["orden_v"],
+                                      abs(calc - caso.aprovechamiento), o["clave"])})
     pruebas.sort(key=lambda x: x["orden"])
     salida["detalle"] = ", ".join(f"{x['clave']} ({x['variante']}){'' if x['con_pulido'] else ' sin +3'}: {x['calc']:.2f} %"
                                   for x in pruebas[:4])
     cierran = [x for x in pruebas if comparar.cierra(x["calc"], caso.aprovechamiento, caso.decimales)]
-    if cierran:
-        x = cierran[0]
-        salida.update({"plancha": x["clave"], "planchas": x["planchas"], "variante": x["variante"],
-                       "supuesta": x["supuesta"], "con_pulido": x["con_pulido"], "medida_nueva": x["prioridad"] > 0,
-                       "ambigua": sorted({y["clave"] for y in cierran[1:] if y["orden"][:3] == x["orden"][:3]
-                                          and y["clave"] != x["clave"]})})
-        if x["variante"] == VARIANTES[0][0]:
-            otra = next((y for y in cierran if y["variante"] == VARIANTES[1][0] and y["clave"] == x["clave"]
-                         and y["con_pulido"] == x["con_pulido"]), None)
-            if otra is not None:
-                salida["alternativa"] = {"plancha": otra["clave"], "planchas": otra["planchas"],
-                                         "variante": otra["variante"]}
+    if not cierran:
+        return salida
+    x = cierran[0]
+    salida.update({"plancha": x["clave"], "planchas": x["planchas"], "variante": x["variante"],
+                   "supuesta": x["supuesta"], "con_pulido": x["con_pulido"], "redondea": x["redondea"],
+                   "medida_nueva": x["prioridad"] > 0,
+                   "ambigua": sorted({y["clave"] for y in cierran if y["clave"] != x["clave"]
+                                      and (y["con_pulido"], y["prioridad"], y["variante"])
+                                      == (x["con_pulido"], x["prioridad"], x["variante"])})})
+    # La otra variante (banda 20 ↔ hoja entera) con la misma medida de hoja, si también cierra: no se
+    # sabe cuál de las dos tenía Corte Certo y se calculan las dos, con las mismas piezas. Se sabe
+    # cuál usó ("unica") solo si la otra no cierra con ninguna medida igual de confiable.
+    otras = [y for y in cierran if y["variante"] != x["variante"] and y["variante"] != ANOTADA_UTIL
+             and y["con_pulido"] == x["con_pulido"] and y["prioridad"] <= x["prioridad"]]
+    salida["unica"] = not otras
+    misma = next((y for y in otras if y["clave"] == x["clave"]), None)
+    if misma is not None and x["variante"] != ANOTADA_UTIL:
+        salida["alternativa"] = {"plancha": misma["clave"], "planchas": misma["planchas"],
+                                 "variante": misma["variante"], "redondea": misma["redondea"]}
     return salida
+
+
+def _clave_problema(piezas: list[dict], plancha: str, variante: str, hojas: int, aprov: float) -> tuple:
+    """Lo que define el problema de corte: dos casos con lo mismo son el mismo cálculo."""
+    return (tuple(sorted((p["cantidad"], p["ancho"], p["largo"]) for p in piezas)), plancha, variante, hojas, aprov)
 
 
 def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict], dict]:
     """Los casos que se pueden comparar ("trabajos" para `comparar.correr`) y la cobertura."""
     cob = {"casos": len(casos), "sin_hojas": [], "con_bandas": [], "area_no": [], "sin_piezas": [],
-           "no_cierran": [], "control_ok": 0, "sin_mas3": 0, "plancha_supuesta": 0, "plancha_ambigua": 0,
-           "con_detalle": 0, "con_avisos": 0, "medida_nueva": {}, "hoja_entera": 0, "con_alternativa": 0}
+           "varias_medidas": [], "no_cierran": [], "duplicados": [], "control_ok": 0, "sin_mas3": 0,
+           "plancha_supuesta": 0, "plancha_ambigua": 0, "con_detalle": 0, "con_avisos": 0, "medida_nueva": {},
+           "variantes": {}, "solo_truncando": 0, "con_alternativa": 0}
     trabajos = []
+    vistos: dict[tuple, dict] = {}
     for caso in casos:
         ref = {"numero": caso.numero, "material": caso.material}
         if not caso.piezas:
@@ -322,6 +361,11 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
         if caso.area_ok == "NO":
             cob["area_no"].append(ref)  # el exportador ya vio que la leyenda o el vidrio no cierran
             continue
+        if len(caso.detalle_hojas) > 1:
+            # Varias medidas de hoja: el programa no puede limitar cuántas usa de cada una, así que
+            # contar hojas no sería justo.
+            cob["varias_medidas"].append(ref)
+            continue
         if caso.aprovechamiento > 100:
             cob["no_cierran"].append({**ref, "motivo": "imposible", "leyenda": f"{caso.hojas} hojas {caso.aprovechamiento:g}%",
                                       "probado": "más de 100 %", "avisos": []})
@@ -332,8 +376,24 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
                                       "leyenda": f"{caso.hojas} hojas {caso.aprovechamiento:g}%",
                                       "probado": c["detalle"], "avisos": []})
             continue
+        piezas = _piezas(caso, c["con_pulido"])
+        clave = _clave_problema(piezas, c["plancha"], c["variante"], caso.hojas, caso.aprovechamiento)
+        if clave in vistos:
+            # Las mismas piezas, la misma plancha y lo mismo de Corte Certo que otro caso (el mismo
+            # pedido cotizado en otro vidrio): se compara una sola vez.
+            cob["duplicados"].append({**ref, "igual_a": f"{vistos[clave]['numero']} {vistos[clave]['material']}"})
+            continue
+        vistos[clave] = ref
         cob["control_ok"] += 1
-        avisos = [] if c["variante"] == VARIANTES[0][0] else ["con banda 20 no cierra o no entra: se usó la hoja entera"]
+        cob["variantes"][c["variante"]] = cob["variantes"].get(c["variante"], 0) + 1
+        avisos = []
+        if c["variante"] == "hoja entera":
+            avisos.append("se usó la hoja entera (sin corte banda): es con la que cierra el % de Corte Certo")
+        elif c["variante"] == ANOTADA_UTIL:
+            avisos.append("la medida anotada en la leyenda ya es la plancha útil: se usó tal cual")
+        if not c["redondea"]:
+            avisos.append("el % de Corte Certo cierra solo truncando, no redondeando")
+            cob["solo_truncando"] += 1
         if not c["con_pulido"]:
             avisos.append("la leyenda cierra solo SIN el +3 mm del pulido recto: se calcula sin el +3")
             cob["sin_mas3"] += 1
@@ -352,11 +412,8 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
             cob["con_detalle"] += 1
         if avisos:
             cob["con_avisos"] += 1
-        if c["variante"] != VARIANTES[0][0]:
-            cob["hoja_entera"] += 1
         if c["alternativa"]:
             cob["con_alternativa"] += 1
-        piezas = _piezas(caso, c["con_pulido"])
         t = {"numero": caso.numero, "material": caso.material, "abreviado": caso.etiqueta,
              "relacion": caso.criterio, "cc_hojas": caso.hojas, "cc_aprov": caso.aprovechamiento,
              "plancha": c["plancha"], "planchas": c["planchas"], "con_pulido": c["con_pulido"],
@@ -364,25 +421,76 @@ def preparar(casos: list[CasoExportado], catalogo: Catalogo) -> tuple[list[dict]
              "n_piezas": sum(p["cantidad"] for p in piezas), "grupo": comparar._grupo(caso.material, catalogo),
              "calibracion": comparar.es_calibracion(caso.numero),
              "extra": {"fecha": caso.fecha, "tipos": len(piezas), "plancha_origen": origen_plancha,
-                       "variante": c["variante"], "alternativa": False, "tiene_alternativa": bool(c["alternativa"])}}
+                       "variante": c["variante"], "redondea": c["redondea"], "alternativa": False,
+                       "tiene_alternativa": bool(c["alternativa"]), "unica": c["unica"]}}
         t["firma"] = comparar._firma(t)
         trabajos.append(t)
         if c["alternativa"]:
-            # La misma comparación con la hoja entera (si Corte Certo no tenía banda en ese vidrio).
-            alt = {**t, "plancha": c["alternativa"]["plancha"], "planchas": c["alternativa"]["planchas"],
-                   "extra": {**t["extra"], "variante": c["alternativa"]["variante"], "alternativa": True}}
+            # La otra variante (banda 20 ↔ hoja entera), con las mismas piezas.
+            a = c["alternativa"]
+            alt = {**t, "plancha": a["plancha"], "planchas": a["planchas"],
+                   "avisos": [f"variante: {a['variante']} con {a['plancha']} (también cierra)"],
+                   "extra": {**t["extra"], "variante": a["variante"], "redondea": a["redondea"], "alternativa": True}}
             alt["firma"] = comparar._firma(alt)
             trabajos.append(alt)
     return trabajos, cob
 
 
-VISTAS = {"banda": "Banda 20 donde cierran las dos (la cuenta principal)",
-          "entera": "Hoja entera donde cierran las dos",
-          "seguros": "Solo los casos donde cierra una sola de las dos (se sabe cuál usó Corte Certo)"}
+VISTAS = {"probable": "La plancha con la que mejor cierra el % (redondeando primero): **la cuenta principal**",
+          "banda": "Banda 20 (3580) siempre que cierre",
+          "entera": "Hoja entera (3600) siempre que cierre",
+          "seguros": "Solo los casos donde la otra no cierra con ninguna medida de hoja"}
+
+ANCHOS_EVIDENCIA = (("3600 (hoja entera)", 3600), ("3580 (banda 20)", 3580), ("3570 (banda 30)", 3570),
+                    ("3550 (banda 50)", 3550))
+
+
+def _periodo(fecha: str) -> str:
+    """Trimestres hasta junio de 2026; después, meses (ahí cambia, pregunta 28)."""
+    anio, mes = fecha[:4], int(fecha[5:7] or 1)
+    if fecha[:7] < "2026-07":
+        return f"{anio} T{(mes - 1) // 3 + 1}"
+    return fecha[:7]
+
+
+def evidencia_banda(casos: list[CasoExportado], catalogo: Catalogo) -> list[dict]:
+    """¿Corte Certo cortaba sobre 3600 o sobre 3580? Por período, en los casos más limpios (% entero,
+    vidrio con hoja de 3600 × 2500 en hojas.csv, sin medidas anotadas ni bandas, y que cierran con
+    3600 o 3580): cuántos dan el % **redondeando** con cada ancho y la diferencia media
+    (leyenda − calculado). Si la oficina redondeaba, el ancho bueno da diferencia media cerca de 0."""
+    por: dict[str, list[dict[str, float]]] = {}
+    for c in casos:
+        if not c.hojas or c.bandas or c.area_ok == "NO" or c.detalle_hojas or c.decimales or c.aprovechamiento is None:
+            continue
+        mat = catalogo.material(c.material, "H0", usar_locales=False)
+        if not any((p.ancho, p.largo) == (3600, 2500) for p in mat.planchas):
+            continue
+        mm2 = _mm2(_piezas(c, True))
+        dif = {nombre: c.aprovechamiento - mm2 / (c.hojas * w * 2500) * 100 for nombre, w in ANCHOS_EVIDENCIA}
+        if min(abs(dif[ANCHOS_EVIDENCIA[0][0]]), abs(dif[ANCHOS_EVIDENCIA[1][0]])) > 1.0:
+            continue  # no cierra con ninguna de las dos: es otro problema (otra plancha, otro pedido)
+        por.setdefault(_periodo(c.fecha), []).append(dif)
+    salida = []
+    for periodo in sorted(por):
+        fs = por[periodo]
+        fila = {"periodo": periodo, "casos": len(fs)}
+        for nombre, _ in ANCHOS_EVIDENCIA:
+            fila[nombre] = {"redondea_%": round(sum(comparar.redondea(-f[nombre], 0) for f in fs) / len(fs) * 100),
+                            "dif_media": round(sum(f[nombre] for f in fs) / len(fs), 2)}
+        a, b = ANCHOS_EVIDENCIA[0][0], ANCHOS_EVIDENCIA[1][0]
+        fila["solo_3600"] = sum(comparar.redondea(-f[a], 0) and not comparar.redondea(-f[b], 0) for f in fs)
+        fila["solo_3580"] = sum(comparar.redondea(-f[b], 0) and not comparar.redondea(-f[a], 0) for f in fs)
+        salida.append(fila)
+    return salida
+
+
+def _fila_vista(nombre: str, r: dict) -> str:
+    return (f"| {nombre} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | {r['peores_%']} % | "
+            f"{r['diferencia_media']:+} | {r['peor_diferencia']:+} |")
 
 
 def markdown(cob: dict, prueba: dict, opciones: comparar.Opciones, origen: str, por_origen: dict | None = None,
-             vistas: dict | None = None) -> str:
+             vistas: dict | None = None, evidencia: list[dict] | None = None, repaso: dict | None = None) -> str:
     lineas = [f"Datos: `{origen}` (exportados de Metrix el 25/10/2026). Esfuerzo: {opciones.esfuerzo}. "
               + ("Todos los casos." if opciones.muestra is None else f"Muestra de {opciones.muestra} casos.")
               + " Configuración: H0 (solo el corte banda, sin separación ni destaque: así se usaba Corte "
@@ -392,32 +500,70 @@ def markdown(cob: dict, prueba: dict, opciones: comparar.Opciones, origen: str, 
               f"| Sin cantidad de hojas (solo bandas o solo el %) | {len(cob['sin_hojas'])} |",
               f"| Corte Certo usó además bandas o recortes (no se puede repetir igual) | {len(cob['con_bandas'])} |",
               f"| El área de la hoja que se deduce no cierra (leyenda o vidrio mal anotado) | {len(cob['area_no'])} |",
+              f"| Varias medidas de hoja anotadas (el programa no limita cuántas usa de cada una) | "
+              f"{len(cob['varias_medidas'])} |",
               f"| Sin piezas | {len(cob['sin_piezas'])} |"]
     motivos: dict[str, int] = {}
     for x in cob["no_cierran"]:
         motivos[x["motivo"]] = motivos.get(x["motivo"], 0) + 1
     for motivo, n in sorted(motivos.items()):
         lineas.append(f"| No cierran: {comparar.MOTIVOS_NO_CIERRAN.get(motivo, motivo)} | {n} |")
-    lineas += [f"| **Pasaron el control y se compararon** | **{cob['control_ok']}** |",
-               f"| … de esos, cierran solo SIN el +3 mm del pulido (se calcularon sin el +3) | {cob['sin_mas3']} |",
+    variantes = cob.get("variantes", {})
+    lineas += [f"| Iguales a otro caso (mismas piezas, plancha y resultado de Corte Certo): se cuentan una vez | "
+               f"{len(cob['duplicados'])} |",
+               f"| **Pasaron el control y se compararon** | **{cob['control_ok']}** |",
+               f"| … calculados con la hoja entera / con banda 20 / con la medida útil anotada | "
+               f"{variantes.get('hoja entera', 0)} / {variantes.get('banda 20', 0)} / {variantes.get(ANOTADA_UTIL, 0)} |",
+               f"| … donde también cierra la otra (banda 20 ↔ hoja entera): se calcularon las dos | {cob['con_alternativa']} |",
+               f"| … donde el % cierra solo truncando, no redondeando | {cob['solo_truncando']} |",
+               f"| … que cierran solo SIN el +3 mm del pulido (se calcularon sin el +3) | {cob['sin_mas3']} |",
                f"| … con las medidas de hoja anotadas en la leyenda | {cob['con_detalle']} |",
                f"| … con plancha supuesta (el material no está en hojas.csv) | {cob['plancha_supuesta']} |",
                f"| … con una medida de hoja que hojas.csv no tiene para ese material (ver abajo) | "
                f"{sum(sum(v.values()) for v in cob['medida_nueva'].values())} |",
-               f"| … con más de una medida de plancha que cierra (se usó la más cercana) | {cob['plancha_ambigua']} |",
-               f"| … donde con banda 20 no cierra o las piezas no entran, y se usó la hoja entera | {cob['hoja_entera']} |",
-               f"| … donde cierran las dos (banda 20 y hoja entera): ver la línea de abajo | {cob['con_alternativa']} |", ""]
+               f"| … con más de una medida de plancha que cierra (se usó la más cercana) | {cob['plancha_ambigua']} |", ""]
     if cob["medida_nueva"]:
         lineas += ["**Medidas de hoja que Corte Certo usó y no están en `hojas.csv`** (habría que sumarlas a "
                    "`Medidas_hojas.xlsx`; pregunta 29)", "", "| Material | Medida (casos) |", "|---|---|"]
         for mat, medidas in sorted(cob["medida_nueva"].items(), key=lambda x: -sum(x[1].values())):
             lineas.append(f"| {mat} | " + ", ".join(f"{m} ({n})" for m, n in sorted(medidas.items(), key=lambda x: -x[1])) + " |")
         lineas.append("")
+    if evidencia:
+        nombres = [n for n, _ in ANCHOS_EVIDENCIA]
+        lineas += ["**¿Corte Certo cortaba sobre 3600 o sobre 3580?** (pregunta 28). Casos con % entero y hoja de "
+                   "3600 × 2500 en hojas.csv que cierran con alguna de las dos: cuántos dan el % **redondeando** "
+                   "con cada ancho, y la diferencia media leyenda − calculado (con el ancho que usó Corte Certo, "
+                   "si la oficina redondeaba, tiene que dar cerca de 0).", "",
+                   "| Período | Casos | " + " | ".join(nombres) + " | Solo 3600 | Solo 3580 |",
+                   "|---|---|" + "---|" * len(nombres) + "---|---|"]
+        for f in evidencia:
+            celdas = " | ".join(f"{f[n]['redondea_%']} % ({f[n]['dif_media']:+.2f})" for n in nombres)
+            lineas.append(f"| {f['periodo']} | {f['casos']} | {celdas} | {f['solo_3600']} | {f['solo_3580']} |")
+        lineas.append("")
+    if vistas:
+        lineas += ["**Según qué plancha tenía Corte Certo**: si el % cierra con la banda de 20 y con la hoja entera, "
+                   "se calcularon las dos. La cuenta principal usa la que mejor cierra (redondeando primero); las "
+                   "otras filas muestran los dos extremos.", "",
+                   "| Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |",
+                   "|---|---|---|---|---|---|---|"]
+        lineas += [_fila_vista(nombre, vistas[clave]) for clave, nombre in VISTAS.items()
+                   if (vistas.get(clave) or {}).get("casos")]
+        lineas.append("")
+    if repaso and repaso.get("casos"):
+        lineas += [f"**Con esfuerzo máximo** en los {repaso['casos']} casos donde el normal da más hojas que Corte "
+                   f"Certo (más {repaso['alternativas']} variantes de plancha): mejoran {repaso['mejoran']} casos "
+                   f"(y {repaso['mejoran_alternativas']} variantes); el más lento tardó {repaso['segundos_max']:g} s. "
+                   "Así quedan:", "",
+                   "| Plancha | Casos | Iguales | Menos planchas | Más planchas | Dif. media | Peor |",
+                   "|---|---|---|---|---|---|---|"]
+        lineas += [_fila_vista(nombre, repaso["vistas"][clave]) for clave, nombre in VISTAS.items()
+                   if (repaso["vistas"].get(clave) or {}).get("casos")]
+        lineas.append("")
     if por_origen:
         nombres = {"hojas.csv": "la medida de hoja del material en hojas.csv",
                    "leyenda": "las medidas de hoja anotadas en la leyenda",
                    "deducida": "una medida deducida (hojas.csv no la tiene para ese material)"}
-        lineas += ["**Según de dónde salió la medida de hoja**", "",
+        lineas += ["**Según de dónde salió la medida de hoja** (cuenta principal)", "",
                    "| Medida de hoja | Casos | Iguales | Menos planchas | Más planchas | Dif. media |",
                    "|---|---|---|---|---|---|"]
         for clave, r in por_origen.items():
@@ -425,18 +571,6 @@ def markdown(cob: dict, prueba: dict, opciones: comparar.Opciones, origen: str, 
                 lineas.append(f"| {nombres[clave]} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | "
                               f"{r['peores_%']} % | {r['diferencia_media']:+} |")
         lineas.append("")
-    if vistas:
-        lineas += ["**Banda 20 u hoja entera** (pregunta 28): en la mayoría de los casos el % de Corte Certo cierra "
-                   "con las dos, así que se calcularon las dos y se muestran los dos extremos. La tercera fila son "
-                   "los casos donde se sabe cuál usó (cierra una sola, o las piezas no entran en la otra).", "",
-                   "| Supuesto sobre Corte Certo | Casos | Iguales | Menos planchas | Más planchas | Dif. media | "
-                   "Peor |", "|---|---|---|---|---|---|---|"]
-        for clave, nombre in VISTAS.items():
-            r = vistas.get(clave) or {}
-            if r.get("casos"):
-                lineas.append(f"| {nombre} | {r['casos']} | {r['iguales_%']} % | {r['mejores_%']} % | "
-                              f"{r['peores_%']} % | {r['diferencia_media']:+} | {r['peor_diferencia']:+} |")
-        lineas.append("")
-    lineas += comparar.resultados_md({}, prueba, titulo="Resultado con banda 20 (todos los casos comparados)",
+    lineas += comparar.resultados_md({}, prueba, titulo="Resultado de la cuenta principal (todos los casos comparados)",
                                      con_eleccion=False)
     return "\n".join(lineas)

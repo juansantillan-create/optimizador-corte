@@ -3,15 +3,17 @@
 Cada lote es una corrida de Optima: varios pedidos del mismo vidrio, cortados en planta. Se sabe
 qué hojas se usaron (cantidad × medida) y los m² de piezas (ver el `LEEME.txt` de la carpeta).
 
-Cómo se compara (Juan, 25/10/2026: "los de Optima sí llevan la distancia mínima para destaque y
-la de la hoja", los de Corte Certo no):
+Cómo se compara (Juan, 25/10/2026: "los de Optima sí llevan la configuración de la distancia mínima
+para destaque y entre hojas"; los de Corte Certo no):
 - mismas piezas (ya con el +3 mm del pulido recto) y las **mismas medidas de hoja** que usó Optima;
-- configuración de producción: corte banda y **destaque mínimo** de la regla de Lucas
-  (preset `lucas`: si entre dos piezas queda una tira de sobrante, mide al menos 20/30/50 mm);
-- el programa puede usar todas las hojas que quiera de cada medida (Optima tenía las que había en
-  stock), así que lo justo es comparar los **m² de hoja** que usa cada uno.
+- configuración de producción: corte banda y **destaque mínimo** de la regla de Lucas (preset
+  `lucas`). "Entre hojas" se interpretó como el corte banda de la hoja (pregunta 31);
+- el programa no sabe cuántas hojas de cada medida había en stock: puede usar todas las que quiera
+  de cada medida. Optima usó las que había (y en un lote, retazos). Por eso se comparan los **m² de
+  hoja**, con esfuerzo normal (el de la oficina) y con el máximo.
 
-Además se calcula como se cotizaría ("Como Corte Certo hoy", sin destaque), para ver cuánto cambia.
+Además se calcula como se cotizaría ("Como Corte Certo hoy", sin destaque, con la plancha por
+defecto del vidrio), para ver cuánto cambia.
 """
 
 from __future__ import annotations
@@ -90,14 +92,16 @@ def _banda(lote: Lote, catalogo: Catalogo, preset: str) -> int:
     return int(regla["corte_banda_mm"]) if regla else 20
 
 
-def calcular(lote: Lote, catalogo: Catalogo, preset: str = "lucas", esfuerzo: str = "maximo") -> dict:
-    """Las piezas del lote con las medidas de hoja que usó Optima."""
+def calcular(lote: Lote, catalogo: Catalogo, preset: str = "lucas", esfuerzo: str = "normal",
+             medidas_de_optima: bool = True) -> dict:
+    """Las piezas del lote con las medidas de hoja que usó Optima (o, con `medidas_de_optima`
+    falso, con la plancha por defecto del vidrio, como se cotizaría)."""
     banda = _banda(lote, catalogo, preset)
     medidas = sorted({(a, l) for _, a, l in lote.hojas})
+    materiales = ({lote.material: {"planchas": [{"ancho": a, "largo": l, "corte_banda": banda} for a, l in medidas]}}
+                  if medidas_de_optima else {})
     entrada = {"proyecto": {"codigo": f"lote {lote.lote}", "descripcion": "comparación con Optima"},
-               "preset": preset, "piezas": lote.piezas, "fecha": "histórico",
-               "materiales": {lote.material: {"planchas": [{"ancho": a, "largo": l, "corte_banda": banda}
-                                                           for a, l in medidas]}},
+               "preset": preset, "piezas": lote.piezas, "fecha": "histórico", "materiales": materiales,
                "opciones": {"esfuerzo": esfuerzo}}
     res = optimizar(entrada, catalogo=catalogo)
     m = res["materiales"][0]
@@ -115,11 +119,15 @@ def calcular(lote: Lote, catalogo: Catalogo, preset: str = "lucas", esfuerzo: st
             "destaque": m["configuracion"]["destaque_min_mm"], "banda": banda}
 
 
-def comparar_todo(carpeta: Path, catalogo: Catalogo, esfuerzo: str = "maximo", mostrar=print) -> list[dict]:
+ESFUERZOS = ("normal", "maximo")
+NOMBRE_ESFUERZO = {"rapido": "rápido", "normal": "normal", "maximo": "máximo"}
+
+
+def comparar_todo(carpeta: Path, catalogo: Catalogo, esfuerzos=ESFUERZOS, mostrar=print) -> list[dict]:
     filas = []
     for lote in leer(carpeta):
-        nuestro = calcular(lote, catalogo, "lucas", esfuerzo)
-        cotizado = calcular(lote, catalogo, "corte_certo", esfuerzo)
+        nuestro = {e: calcular(lote, catalogo, "lucas", e) for e in esfuerzos}
+        cotizado = calcular(lote, catalogo, "corte_certo", esfuerzos[0], medidas_de_optima=False)
         fila = {"lote": lote.lote, "material": lote.material, "piezas": sum(p["cantidad"] for p in lote.piezas),
                 "optima": {"hojas": "; ".join(f"{n}×{a}×{l}" for n, a, l in lote.hojas),
                            "retazos": "; ".join(f"{n}×{a}×{l}" for n, a, l in lote.retazos),
@@ -129,49 +137,63 @@ def comparar_todo(carpeta: Path, catalogo: Catalogo, esfuerzo: str = "maximo", m
                            "desperdicio_real": lote.desperdicio_real},
                 "nuestro": nuestro, "como_cotizacion": cotizado}
         filas.append(fila)
-        mostrar(f"lote {lote.lote} {lote.material}: Optima {fila['optima']['m2_hojas']} m² de hoja; "
-                f"nuestro {nuestro['m2_hojas']} m² ({nuestro['planchas']} hojas); "
-                f"como cotización {cotizado['m2_hojas']} m²")
+        mostrar(f"lote {lote.lote} {lote.material}: Optima {fila['optima']['m2_hojas']} m² de hoja; nuestro "
+                + ", ".join(f"{e} {r['m2_hojas']} m² ({r['planchas']} hojas)" for e, r in nuestro.items())
+                + f"; como cotización {cotizado['m2_hojas']} m²")
     return filas
 
 
-def markdown(filas: list[dict], carpeta: str, esfuerzo: str) -> str:
-    lineas = [f"Datos: `{carpeta}` (5 lotes cortados en planta con Optima). Esfuerzo: {esfuerzo}. "
-              "Mismas piezas y mismas medidas de hoja que usó Optima; corte banda y destaque mínimo de la "
-              "regla de Lucas (preset \"Reglas de corte (Lucas, como Optima)\"). Optima usó las hojas que "
-              "había (y en un lote, retazos); el programa puede usar todas las que quiera de cada medida, así "
-              "que se comparan los **m² de hoja**.", "",
-              "| Lote | Vidrio | Piezas | Optima: hojas | Optima: m² de hoja | Nuestro: hojas | Nuestro: m² de hoja "
-              "| Diferencia | Aprov. bruto Optima → nuestro | Como cotización (m²) |",
-              "|---|---|---|---|---|---|---|---|---|---|"]
-    tot_o = tot_n = 0.0
+def _hojas(r: dict) -> str:
+    return "; ".join(f"{v}×{k.replace('x', '×')}" for k, v in sorted(r["hojas"].items(), reverse=True))
+
+
+def _dif(n: float, o: float) -> str:
+    return f"{n - o:+.2f} m² ({(n - o) / o * 100:+.1f} %)" if o else "—"
+
+
+def markdown(filas: list[dict], carpeta: str) -> str:
+    esfuerzos = list(filas[0]["nuestro"]) if filas else list(ESFUERZOS)
+    lineas = [f"Datos: `{carpeta}` (5 lotes cortados en planta con Optima). Mismas piezas y mismas medidas de "
+              "hoja que usó Optima; corte banda y destaque mínimo de la regla de Lucas (preset \"Reglas de corte "
+              "(Lucas, como Optima)\"). El programa no sabe qué había en stock: puede usar todas las hojas que "
+              "quiera de cada medida (Optima usó las que había y, en un lote, retazos). Por eso se comparan los "
+              "**m² de hoja**. \"Como cotización\": \"Como Corte Certo hoy\" con la plancha por defecto del vidrio.", "",
+              "| Lote | Vidrio | Piezas | Optima: hojas | Optima: m² | " +
+              " | ".join(f"Nuestro ({NOMBRE_ESFUERZO[e]}): hojas | m² | diferencia" for e in esfuerzos) + " | Como cotización |",
+              "|---|---|---|---|---|" + "---|---|---|" * len(esfuerzos) + "---|"]
+    tot_o = 0.0
+    tot = {e: 0.0 for e in esfuerzos}
     for f in filas:
-        o, n, c = f["optima"], f["nuestro"], f["como_cotizacion"]
+        o, c = f["optima"], f["como_cotizacion"]
         tot_o += o["m2_hojas"]
-        tot_n += n["m2_hojas"]
-        hojas_n = "; ".join(f"{v}×{k.replace('x', '×')}" for k, v in sorted(n["hojas"].items(), reverse=True))
+        celdas = []
+        for e in esfuerzos:
+            n = f["nuestro"][e]
+            tot[e] += n["m2_hojas"]
+            celdas.append(f"{_hojas(n)} | {n['m2_hojas']:.2f} | {_dif(n['m2_hojas'], o['m2_hojas'])}")
         hojas_o = o["hojas"] + (f" + retazos {o['retazos']}" if o["retazos"] else "")
-        dif = n["m2_hojas"] - o["m2_hojas"]
         lineas.append(f"| {f['lote']} | {f['material']} | {f['piezas']} | {hojas_o} | {o['m2_hojas']:.2f} | "
-                      f"{hojas_n} | {n['m2_hojas']:.2f} | {dif:+.2f} m² ({dif / o['m2_hojas'] * 100:+.1f} %) | "
-                      f"{o['aprovechamiento_bruto']:g} % → {n['aprovechamiento_bruto']:g} % | {c['m2_hojas']:.2f} |")
+                      + " | ".join(celdas) + f" | {_hojas(c)}: {c['m2_hojas']:.2f} m² |")
     if tot_o:
-        lineas += ["", f"Total: Optima {tot_o:.2f} m² de hoja; nuestro {tot_n:.2f} m² "
-                       f"({(tot_n - tot_o) / tot_o * 100:+.1f} %). Negativo = el programa usa menos vidrio."]
-    no_ok = [f["lote"] for f in filas if not (f["nuestro"]["verificado"] and f["nuestro"]["completo"])]
+        lineas += ["", f"Total: Optima {tot_o:.2f} m² de hoja; nuestro "
+                   + "; ".join(f"{tot[e]:.2f} m² con esfuerzo {NOMBRE_ESFUERZO[e]} "
+                               f"({(tot[e] - tot_o) / tot_o * 100:+.1f} %)"
+                               for e in esfuerzos)
+                   + ". Negativo = el programa usa menos vidrio."]
+    no_ok = sorted({f["lote"] for f in filas for n in f["nuestro"].values() if not (n["verificado"] and n["completo"])})
     if no_ok:
         lineas.append(f"Lotes con problemas (no validados o incompletos): {', '.join(no_ok)}")
     return "\n".join(lineas)
 
 
-def ejecutar(carpeta: Path, salida: Path, esfuerzo: str = "maximo", docs: bool = False, mostrar=print) -> list[dict]:
+def ejecutar(carpeta: Path, salida: Path, docs: bool = False, mostrar=print) -> list[dict]:
     from .principal import actualizar_validacion, ruta_para_docs
 
     catalogo = Catalogo(usar_locales=False)
-    filas = comparar_todo(carpeta, catalogo, esfuerzo, mostrar)
+    filas = comparar_todo(carpeta, catalogo, mostrar=mostrar)
     salida.mkdir(parents=True, exist_ok=True)
     (salida / "resultados.json").write_text(json.dumps(filas, ensure_ascii=False, indent=1), encoding="utf-8")
-    texto = markdown(filas, ruta_para_docs(carpeta), esfuerzo)
+    texto = markdown(filas, ruta_para_docs(carpeta))
     (salida / "resumen.md").write_text(texto + "\n", encoding="utf-8")
     if docs:
         actualizar_validacion(texto, marca="OPTIMA")

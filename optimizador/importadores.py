@@ -346,6 +346,9 @@ def _interfaz_desde_filas(filas: list[list], origen: str = "Interfaz",
                 # DVH escalonado: el vidrio 2 lleva ANCHO2 × LARGO2 (si están).
                 a2, l2 = numero_mm(celda("ancho2")), numero_mm(celda("largo2"))
                 escalonado = bool(a2 and l2 and a2 > 0 and l2 > 0)
+                if not escalonado and ((a2 and a2 > 0) or (l2 and l2 > 0)):
+                    imp.avisos.append(f"{origen} fila {n}: tiene ANCHO2 o LARGO2 pero no los dos; el vidrio 2 "
+                                      f"({v2}) va con la medida del vidrio 1")
                 if escalonado and (a2, l2) != (ancho, largo):
                     imp.avisos.append(f"{origen} fila {n}: DVH escalonado: el vidrio 2 ({v2}) va con "
                                       f"{a2:g} × {l2:g}")

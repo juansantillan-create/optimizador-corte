@@ -50,6 +50,12 @@ def cierra(calculado: float, leyenda: float, decimales: int = 0) -> bool:
     return leyenda - paso / 2 - MARGEN_CORTE_CERTO <= calculado < leyenda + paso + MARGEN_CORTE_CERTO
 
 
+def redondea(calculado: float, leyenda: float, decimales: int = 0) -> bool:
+    """¿Da el % de la leyenda redondeando (lo normal, pregunta 24)? Más estricto que `cierra`."""
+    paso = 10 ** -decimales
+    return abs(calculado - leyenda) <= paso / 2 + MARGEN_CORTE_CERTO
+
+
 # Palabras de las leyendas -> cómo aparecen en los códigos y descripciones de Metrix.
 ALIAS = {
     "NLIGHT": ["NL", "NEUTRO LIGHT", "NEU LIGHT", "NEUTRAL"], "NL": ["NL", "NEUTRO LIGHT"],
@@ -183,6 +189,7 @@ class Opciones:
     muestra: int | None = 50  # None = todos
     hipotesis: tuple[str, ...] = HIPOTESIS
     procesos: int = 1  # casos que se calculan a la vez (en la nube, varios; en la PC, 1)
+    repaso_maximo: bool = False  # casos exportados: repetir con esfuerzo máximo los que dan más hojas
 
 
 def _firma(t: dict) -> str:
@@ -421,7 +428,12 @@ def _solo(t: dict, catalogo: Catalogo) -> dict:
 def _muestra(trabajos: list[dict], n: int) -> list[dict]:
     """Una muestra fija (por número de presupuesto y material), con casos de calibración y de
     prueba intercalados (7 de calibración por cada 3 de prueba, como el reparto)."""
-    orden = sorted(trabajos, key=lambda t: hashlib.sha1(f"{t['numero']}|{t['material']}".encode()).hexdigest())
+    # Se eligen casos (presupuesto + material), no trabajos: si un caso tiene una variante (la hoja
+    # entera en los casos exportados), va entera con él y no cuenta como otro caso.
+    primeros: dict[tuple[str, str], dict] = {}
+    for t in trabajos:
+        primeros.setdefault((t["numero"], t["material"]), t)
+    orden = sorted(primeros.values(), key=lambda t: hashlib.sha1(f"{t['numero']}|{t['material']}".encode()).hexdigest())
     calib = [t for t in orden if t["calibracion"]]
     prueba = [t for t in orden if not t["calibracion"]]
     elegidos = []
@@ -430,7 +442,11 @@ def _muestra(trabajos: list[dict], n: int) -> list[dict]:
             for _ in range(cuantos):
                 if lista and len(elegidos) < n:
                     elegidos.append(lista.pop(0))
-    return elegidos
+    claves = [(t["numero"], t["material"]) for t in elegidos]
+    por_clave: dict[tuple[str, str], list[dict]] = {}
+    for t in trabajos:
+        por_clave.setdefault((t["numero"], t["material"]), []).append(t)
+    return [t for clave in claves for t in por_clave[clave]]
 
 
 def cuenta(f: dict) -> bool:

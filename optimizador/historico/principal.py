@@ -109,27 +109,23 @@ def ejecutar_exportados(carpeta: Path, salida: Path, opciones: comparar.Opciones
             f"con bandas: {len(cob['con_bandas'])} · área no cierra: {len(cob['area_no'])} · "
             f"no cierran: {len(cob['no_cierran'])}")
     opciones = comparar.Opciones(esfuerzo=opciones.esfuerzo, muestra=opciones.muestra, hipotesis=("H0",),
-                                 procesos=opciones.procesos)
+                                 procesos=opciones.procesos, repaso_maximo=opciones.repaso_maximo)
     salida.mkdir(parents=True, exist_ok=True)
     (salida / "cobertura.json").write_text(json.dumps(cob, ensure_ascii=False, indent=1), encoding="utf-8")
     todas = comparar.correr(trabajos, salida / f"resultados_{opciones.esfuerzo}.jsonl", opciones, catalogo, mostrar)
-    # Cada caso una vez (con banda 20 si cierra); aparte, la misma cuenta con la hoja entera en los
-    # casos donde también cierra (no se sabe cuál de las dos tenía Corte Certo: pregunta 28).
-    filas = [f for f in todas if not (f.get("extra") or {}).get("alternativa")]
-    alternativas = {(f["numero"], f["material"]): f for f in todas if (f.get("extra") or {}).get("alternativa")}
-    con_entera = [alternativas.get((f["numero"], f["material"]), f) for f in filas]
-    seguros = [f for f in filas if not (f.get("extra") or {}).get("tiene_alternativa")]
+    filas, vistas = vistas_exportados(todas)
     prueba = comparar.informe_prueba(filas, {}, solo_prueba=False)
-    prueba_entera = comparar.informe_prueba(con_entera, {}, solo_prueba=False)
-    prueba_seguros = comparar.informe_prueba(seguros, {}, solo_prueba=False)
-    vistas = {"banda": prueba["total"], "entera": prueba_entera["total"], "seguros": prueba_seguros["total"]}
     por_origen = {o: comparar.informe_prueba([f for f in filas if (f.get("extra") or {}).get("plancha_origen") == o],
                                              {}, solo_prueba=False)["total"]
                   for o in ("hojas.csv", "leyenda", "deducida")}
-    texto = exportados.markdown(cob, prueba, opciones, ruta_para_docs(carpeta), por_origen, vistas)
+    repaso = None
+    if opciones.repaso_maximo and opciones.esfuerzo != "maximo":
+        repaso = repaso_maximo(trabajos, todas, salida, opciones, catalogo, mostrar)
+    evidencia = exportados.evidencia_banda(casos, catalogo)
+    texto = exportados.markdown(cob, prueba, opciones, ruta_para_docs(carpeta), por_origen, vistas, evidencia, repaso)
     (salida / "resumen.md").write_text(texto + "\n", encoding="utf-8")
-    (salida / "resumen.json").write_text(json.dumps({"prueba": prueba, "prueba_hoja_entera": prueba_entera,
-                                                     "prueba_seguros": prueba_seguros, "por_origen": por_origen},
+    (salida / "resumen.json").write_text(json.dumps({"prueba": prueba, "vistas": vistas, "por_origen": por_origen,
+                                                     "evidencia_banda": evidencia, "repaso_maximo": repaso},
                                                     ensure_ascii=False, indent=1), encoding="utf-8")
     montajes = {}
     for f in filas:
@@ -153,8 +149,55 @@ def ejecutar_exportados(carpeta: Path, salida: Path, opciones: comparar.Opciones
         actualizar_validacion(texto)
         mostrar("docs/VALIDACION.md actualizado (sección 1)")
     mostrar(texto)
-    return {"cobertura": cob, "prueba": prueba, "prueba_hoja_entera": prueba_entera, "prueba_seguros": prueba_seguros,
-            "por_origen": por_origen}
+    return {"cobertura": cob, "prueba": prueba, "vistas": vistas, "por_origen": por_origen,
+            "evidencia_banda": evidencia, "repaso_maximo": repaso}
+
+
+def vistas_exportados(todas: list[dict]) -> tuple[list[dict], dict]:
+    """Las filas de la cuenta principal (un resultado por caso: la plancha con la que mejor cierra
+    el %) y los totales de cada vista de `exportados.VISTAS`. Las variantes (la otra de banda 20 ↔
+    hoja entera) solo entran en las vistas "banda" y "entera"."""
+    filas = [f for f in todas if not (f.get("extra") or {}).get("alternativa")]
+    otras = {(f["numero"], f["material"]): f for f in todas if (f.get("extra") or {}).get("alternativa")}
+
+    def con(variante: str) -> list[dict]:
+        salida = []
+        for f in filas:
+            alt = otras.get((f["numero"], f["material"]))
+            usar_alt = alt is not None and f["extra"].get("variante") != variante and alt["extra"].get("variante") == variante
+            salida.append(alt if usar_alt else f)
+        return salida
+
+    grupos = {"probable": filas, "banda": con("banda 20"), "entera": con("hoja entera"),
+              "seguros": [f for f in filas if f["extra"].get("unica")]}
+    return filas, {k: comparar.informe_prueba(v, {}, solo_prueba=False)["total"] for k, v in grupos.items()}
+
+
+def repaso_maximo(trabajos: list[dict], todas: list[dict], salida: Path, opciones: comparar.Opciones,
+                  catalogo: Catalogo, mostrar=print) -> dict:
+    """Repite con esfuerzo máximo los cálculos (casos y variantes) donde el esfuerzo de la corrida
+    dio más hojas que Corte Certo, y arma las vistas con esos resultados en lugar de los otros."""
+    por_firma = {(f["numero"], f["material"], f["firma"]): f for f in todas}
+    peores = [t for t in trabajos if (f := por_firma.get((t["numero"], t["material"], t["firma"])))
+              and comparar.cuenta(f) and f["planchas"] > t["cc_hojas"]]
+    mostrar(f"Repaso con esfuerzo máximo: {len(peores)} cálculos donde el {opciones.esfuerzo} da más hojas")
+    opciones_max = comparar.Opciones(esfuerzo="maximo", muestra=None, hipotesis=opciones.hipotesis,
+                                     procesos=opciones.procesos)
+    maximos = {(f["numero"], f["material"], f["firma"]): f
+               for f in comparar.correr(peores, salida / "resultados_maximo.jsonl", opciones_max, catalogo, mostrar)}
+    mezcla = []
+    for f in todas:
+        m = maximos.get((f["numero"], f["material"], f["firma"]))
+        mezcla.append({**m, "extra": f["extra"]} if m is not None and comparar.cuenta(m) else f)
+    _, vistas = vistas_exportados(mezcla)
+    def es_alt(f):
+        return bool((f.get("extra") or {}).get("alternativa"))
+    mejoran = [f for f in mezcla if (k := (f["numero"], f["material"], f["firma"])) in maximos
+               and comparar.cuenta(maximos[k]) and maximos[k]["planchas"] < por_firma[k]["planchas"]]
+    return {"casos": sum(not t["extra"]["alternativa"] for t in peores),
+            "alternativas": sum(bool(t["extra"]["alternativa"]) for t in peores),
+            "mejoran": sum(not es_alt(f) for f in mejoran), "mejoran_alternativas": sum(es_alt(f) for f in mejoran),
+            "segundos_max": max((f["segundos"] for f in maximos.values()), default=0), "vistas": vistas}
 
 
 def es_inventado(casos: datos.Casos) -> bool:

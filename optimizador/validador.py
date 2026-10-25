@@ -269,6 +269,10 @@ def _validar_material(mat: dict, esperados: list[dict]) -> list[str]:
     _comparar(errores, codigo, "m² de planchas", mat.get("m2_planchas"), m2_planchas, TOLERANCIA_M2)
     # Los números con 2 decimales se comparan contra el valor exacto: vale cualquier redondeo bien
     # hecho (en un empate como 89,755 el informe pone 89,76 y el round de Python daría 89,75).
+    for campo, nombre in (("perimetro_m", "perímetro"), ("aprovechamiento", "aprovechamiento"), ("perdida", "pérdida")):
+        valor = mat.get(campo)
+        if isinstance(valor, (int, float)) and abs(valor * 100 - round(valor * 100)) > 1e-6:
+            errores.append(f"{codigo}: {nombre} informado {valor} no está redondeado a 2 decimales")
     _comparar(errores, codigo, "perímetro", mat.get("perimetro_m"), perimetro, TOLERANCIA_2_DECIMALES)
     if m2_planchas > 0:
         aprov = m2_piezas / m2_planchas * 100

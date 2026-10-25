@@ -79,6 +79,20 @@ def test_numeros_del_informe(bueno):
         assert validar(ent, r), campo
 
 
+def test_aprovechamiento_mal_redondeado(bueno):
+    # Aprovechamiento y pérdida movidos juntos (suman 100 igual): lo tiene que agarrar la tolerancia.
+    ent, res = bueno
+    for delta in (0.01, -0.01):
+        r = copy.deepcopy(res)
+        m = r["materiales"][0]
+        m["aprovechamiento"] = round(m["aprovechamiento"] + delta, 2)
+        m["perdida"] = round(100 - m["aprovechamiento"], 2)
+        assert any("aprovechamiento informado" in e for e in validar(ent, r)), delta
+    r = copy.deepcopy(res)
+    r["materiales"][0]["aprovechamiento"] += 0.001  # cerca, pero no es un número con 2 decimales
+    assert any("2 decimales" in e for e in validar(ent, r))
+
+
 def test_empate_de_redondeo_no_es_error():
     # 1003 × 1350 en una hoja de 3600 × 2500 sin banda: 15,045 % justo. El informe pone 15,05
     # (redondeo de toda la vida); el round de Python da 15,04. Las dos cosas están bien.
