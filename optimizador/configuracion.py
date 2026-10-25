@@ -160,7 +160,8 @@ class Catalogo:
             separacion = self.separacion_regla.get(codigo, 0)
             fuente = self.fuente_separacion.get(codigo, "")
             if conf["separacion"] == "regla" and fuente.startswith("supuesto"):
-                mat.avisos.append(f"separación entre piezas de {codigo} supuesta ({fuente})")
+                que = "separación entre piezas" if conf["como"] == "sierra" else "destaque mínimo"
+                mat.avisos.append(f"{que} de {codigo} supuesto ({fuente})")
         else:
             mat, separacion = self._material_supuesto(codigo)
         if conf.get("banda_mm") is not None:

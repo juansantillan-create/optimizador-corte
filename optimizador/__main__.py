@@ -4,7 +4,8 @@
     python -m optimizador servidor [--puerto 8520] [--no-abrir]
     python -m optimizador materiales [CODIGO]
     python -m optimizador banco [--esfuerzo rapido] [--filtro CP-] [--guardar]
-    python -m optimizador historico [--todo] [--datos datos/casos] [--docs] [--publicar]
+    python -m optimizador historico [--todo] [--datos datos/casos] [--docs] [--publicar] [--procesos 3]
+    python -m optimizador optima [--esfuerzo maximo] [--docs]
     python -m optimizador --version
 
 `calcular` lee la entrada (JSON de `docs/API.md`), calcula y escribe el resultado en JSON. Al final
@@ -75,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
     h.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="normal")
     h.add_argument("--docs", action="store_true", help="actualizar docs/VALIDACION.md")
     h.add_argument("--publicar", action="store_true", help="copiar la página a docs/validacion/")
+    h.add_argument("--procesos", type=int, default=1, help="casos que se calculan a la vez (por defecto 1)")
+    o = sub.add_parser("optima", help="comparar contra los lotes cortados con Optima")
+    o.add_argument("--datos", type=Path, help="carpeta (por defecto datos/casos/optima)")
+    o.add_argument("--salida", type=Path, help="dónde guardar (por defecto salida/optima)")
+    o.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="maximo")
+    o.add_argument("--docs", action="store_true", help="actualizar docs/VALIDACION.md")
     b = sub.add_parser("banco", help="correr el banco de pruebas sintético (sirve de benchmark)")
     b.add_argument("--esfuerzo", choices=["rapido", "normal", "maximo"], default="normal")
     b.add_argument("--filtro", default="", help="solo los casos cuyo nombre contiene esto")
@@ -90,10 +97,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.comando == "historico":
         from .configuracion import RAIZ
         from .historico import comparar, principal
-        opciones = comparar.Opciones(esfuerzo=args.esfuerzo, muestra=None if args.todo else args.muestra)
+        opciones = comparar.Opciones(esfuerzo=args.esfuerzo, muestra=None if args.todo else args.muestra,
+                                     procesos=max(1, args.procesos))
         res = principal.ejecutar(args.datos or RAIZ / "datos" / "casos", args.salida or RAIZ / "salida" / "historico",
                                  opciones, docs=args.docs, publicar=args.publicar)
         return 0 if res else 2
+
+    if args.comando == "optima":
+        from .configuracion import RAIZ
+        from .historico import optima
+        carpeta = args.datos or RAIZ / "datos" / "casos" / "optima"
+        if not (Path(carpeta) / "lotes_optima.csv").exists():
+            print(f"No están los lotes de Optima en {carpeta}")
+            return 2
+        optima.ejecutar(Path(carpeta), args.salida or RAIZ / "salida" / "optima", args.esfuerzo, docs=args.docs)
+        return 0
 
     if args.comando == "banco":
         from . import banco

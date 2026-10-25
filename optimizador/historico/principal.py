@@ -18,7 +18,7 @@ import unicodedata
 from pathlib import Path
 
 from ..configuracion import RAIZ, Catalogo
-from . import comparar, datos, revision
+from . import comparar, datos, exportados, revision
 
 MARCA_INICIO = "<!-- HISTORICO: lo escribe `python -m optimizador historico --docs` -->"
 MARCA_FIN = "<!-- /HISTORICO -->"
@@ -26,6 +26,11 @@ MARCA_FIN = "<!-- /HISTORICO -->"
 
 def ejecutar(carpeta_datos: Path, salida: Path, opciones: comparar.Opciones, docs: bool = False,
              publicar: bool = False, mostrar=print) -> dict:
+    carpeta_datos = Path(carpeta_datos)
+    if (carpeta_datos / "corte_certo").is_dir():
+        carpeta_datos = carpeta_datos / "corte_certo"  # datos/casos/corte_certo (exportados por vidrio)
+    if exportados.es_carpeta_exportada(carpeta_datos):
+        return ejecutar_exportados(carpeta_datos, salida, opciones, docs, publicar, mostrar)
     catalogo = Catalogo(usar_locales=False)
     casos = datos.leer(carpeta_datos)
     for d in casos.diferencias:
@@ -83,6 +88,75 @@ def ejecutar(carpeta_datos: Path, salida: Path, opciones: comparar.Opciones, doc
     return {"cobertura": cobertura, "eleccion": eleccion, "prueba": prueba}
 
 
+def ruta_para_docs(carpeta: Path) -> str:
+    """La carpeta como se escribe en los documentos: relativa al repo si está adentro (sin la ruta
+    de la PC donde se corrió)."""
+    try:
+        return Path(carpeta).resolve().relative_to(RAIZ).as_posix()
+    except ValueError:
+        return Path(carpeta).name
+
+
+def ejecutar_exportados(carpeta: Path, salida: Path, opciones: comparar.Opciones, docs: bool = False,
+                        publicar: bool = False, mostrar=print) -> dict:
+    """Los casos exportados por vidrio (`exportados.py`): una sola hipótesis, H0 (Corte Certo se
+    usaba sin separación ni destaque), así que no hay calibración y los números son sobre todos
+    los casos comparados."""
+    catalogo = Catalogo(usar_locales=False)
+    casos = exportados.leer(carpeta)
+    trabajos, cob = exportados.preparar(casos, catalogo)
+    mostrar(f"Casos: {cob['casos']} · se pueden comparar: {cob['control_ok']} · sin hojas: {len(cob['sin_hojas'])} · "
+            f"con bandas: {len(cob['con_bandas'])} · área no cierra: {len(cob['area_no'])} · "
+            f"no cierran: {len(cob['no_cierran'])}")
+    opciones = comparar.Opciones(esfuerzo=opciones.esfuerzo, muestra=opciones.muestra, hipotesis=("H0",),
+                                 procesos=opciones.procesos)
+    salida.mkdir(parents=True, exist_ok=True)
+    (salida / "cobertura.json").write_text(json.dumps(cob, ensure_ascii=False, indent=1), encoding="utf-8")
+    todas = comparar.correr(trabajos, salida / f"resultados_{opciones.esfuerzo}.jsonl", opciones, catalogo, mostrar)
+    # Cada caso una vez (con banda 20 si cierra); aparte, la misma cuenta con la hoja entera en los
+    # casos donde también cierra (no se sabe cuál de las dos tenía Corte Certo: pregunta 28).
+    filas = [f for f in todas if not (f.get("extra") or {}).get("alternativa")]
+    alternativas = {(f["numero"], f["material"]): f for f in todas if (f.get("extra") or {}).get("alternativa")}
+    con_entera = [alternativas.get((f["numero"], f["material"]), f) for f in filas]
+    seguros = [f for f in filas if not (f.get("extra") or {}).get("tiene_alternativa")]
+    prueba = comparar.informe_prueba(filas, {}, solo_prueba=False)
+    prueba_entera = comparar.informe_prueba(con_entera, {}, solo_prueba=False)
+    prueba_seguros = comparar.informe_prueba(seguros, {}, solo_prueba=False)
+    vistas = {"banda": prueba["total"], "entera": prueba_entera["total"], "seguros": prueba_seguros["total"]}
+    por_origen = {o: comparar.informe_prueba([f for f in filas if (f.get("extra") or {}).get("plancha_origen") == o],
+                                             {}, solo_prueba=False)["total"]
+                  for o in ("hojas.csv", "leyenda", "deducida")}
+    texto = exportados.markdown(cob, prueba, opciones, ruta_para_docs(carpeta), por_origen, vistas)
+    (salida / "resumen.md").write_text(texto + "\n", encoding="utf-8")
+    (salida / "resumen.json").write_text(json.dumps({"prueba": prueba, "prueba_hoja_entera": prueba_entera,
+                                                     "prueba_seguros": prueba_seguros, "por_origen": por_origen},
+                                                    ensure_ascii=False, indent=1), encoding="utf-8")
+    montajes = {}
+    for f in filas:
+        ruta = salida / "montajes" / comparar.nombre_montajes(f["numero"], f["material"], f["hipotesis"], f["esfuerzo"])
+        if ruta.exists():
+            montajes[f"{f['numero']}|{f['material']}"] = json.loads(ruta.read_text(encoding="utf-8"))
+    corrida = f"{carpeta.name}|{opciones.esfuerzo}"
+    (salida / "revision.html").write_text(revision.html(filas, {}, prueba, cob, montajes, corrida=corrida),
+                                          encoding="utf-8")
+    mostrar(f"Página de revisión: {salida / 'revision.html'}")
+    if publicar:
+        publica = revision.html(filas, {}, prueba, cob, montajes, publicable=True, corrida=corrida)
+        if len(publica.encode()) >= 5_000_000:
+            mostrar("La página pesa más de 5 MB: queda solo en salida/historico/ (no va a git)")
+        else:
+            destino = RAIZ / "docs" / "validacion" / "revision.html"
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            destino.write_text(publica, encoding="utf-8")
+            mostrar(f"Copiada a {destino}")
+    if docs:
+        actualizar_validacion(texto)
+        mostrar("docs/VALIDACION.md actualizado (sección 1)")
+    mostrar(texto)
+    return {"cobertura": cob, "prueba": prueba, "prueba_hoja_entera": prueba_entera, "prueba_seguros": prueba_seguros,
+            "por_origen": por_origen}
+
+
 def es_inventado(casos: datos.Casos) -> bool:
     """El caso de juguete (y cualquier dato de prueba) lo dice en su LEEME."""
     return bool(re.search(r"TODO INVENTADO|CASO DE JUGUETE", casos.leeme.upper()))
@@ -119,15 +193,27 @@ def palabras_sospechosas(pagina: str, casos: datos.Casos) -> set[str]:
     return (_palabras(texto) & libres) - nuestras
 
 
-def actualizar_validacion(texto: str, ruta: Path | None = None) -> None:
+def actualizar_validacion(texto: str, ruta: Path | None = None, marca: str = "HISTORICO") -> None:
+    """Reemplaza en `docs/VALIDACION.md` el bloque entre las marcas (`HISTORICO`: la sección 1,
+    contra Corte Certo; `OPTIMA`: la 1.b, contra Optima)."""
     ruta = ruta or RAIZ / "docs" / "VALIDACION.md"
     contenido = ruta.read_text(encoding="utf-8")
-    bloque = f"{MARCA_INICIO}\n{texto}\n{MARCA_FIN}"
-    if MARCA_INICIO in contenido and MARCA_FIN in contenido:
-        antes = contenido.split(MARCA_INICIO)[0]
-        despues = contenido.split(MARCA_FIN, 1)[1]
-        contenido = antes + bloque + despues
+    if marca == "HISTORICO":
+        inicio, fin = MARCA_INICIO, MARCA_FIN
+        titulo = "## 1. Contra Corte Certo (casos históricos)\n"
+        nuevo_titulo = None
     else:
-        contenido = contenido.replace("## 1. Contra Corte Certo (casos históricos)\n",
-                                      "## 1. Contra Corte Certo (casos históricos)\n\n" + bloque + "\n", 1)
+        inicio = f"<!-- {marca}: lo escribe `python -m optimizador optima --docs` -->"
+        fin = f"<!-- /{marca} -->"
+        titulo = "## 2. Banco sintético"
+        nuevo_titulo = "## 1.b Contra Optima (cortes reales en planta)\n\n"
+    bloque = f"{inicio}\n{texto}\n{fin}"
+    if inicio in contenido and fin in contenido:
+        antes = contenido.split(inicio)[0]
+        despues = contenido.split(fin, 1)[1]
+        contenido = antes + bloque + despues
+    elif nuevo_titulo is None:
+        contenido = contenido.replace(titulo, titulo + "\n" + bloque + "\n", 1)
+    else:
+        contenido = contenido.replace(titulo, nuevo_titulo + bloque + "\n\n" + titulo, 1)
     ruta.write_text(contenido, encoding="utf-8")
