@@ -1,5 +1,13 @@
 # Contrato de datos: los casos históricos para validar
 
+> **Lo que llegó (25/10/2026)**: los casos no vinieron en el zip de este contrato sino ya
+> **exportados por vidrio**, en `datos/casos/corte_certo/` (`resultados_corte_certo.csv` +
+> `piezas.csv`: la leyenda ya leída, las piezas ya reconstruidas y con el +3 mm del pulido recto
+> sumado; ver su `LEEME.txt`), más 5 lotes reales de Optima en `datos/casos/optima/`. La leyenda
+> estaba en `PRESUP.NOTAS_SITUACION` (no `NOTAS_CAUSA`). El programa lee los dos formatos
+> (`optimizador/historico/exportados.py` y `optima.py`); lo de abajo queda para una exportación
+> completa futura.
+
 **Versión 2 — 25/10/2026** (la 1 era del 21/10). Cambió dónde está la leyenda: no en
 `TV_DESCRIP` sino en "Situación de Presupuesto → Observaciones" (dato de Juan del 25/10); por eso
 `presupuestos.csv` trae ahora todas las columnas de texto. Qué trae el zip de casos históricos, cómo se arma en la PC de Juan y
