@@ -38,7 +38,13 @@ próxima sesión lee las respuestas, las aplica, anota la decisión en `DECISION
 
 **5. En los montajes de Corte Certo, ¿qué quieren decir los colores bordó, verde y oliva?**
 - El amarillo es sobrante.
-- **Por defecto**: bordó = pieza, verde = pieza girada, oliva = retazo aprovechable.
+- Lo que se ve midiendo la captura (25/10): son los colores 2, 3 y 4 de la paleta clásica de
+  Windows, en orden. En el montaje 8 hay una pieza oliva y dos verdes **de la misma medida y en la
+  misma orientación**, así que oliva no parece "retazo" ni verde "girada". Lo más probable: un
+  color por tipo de pieza (o por renglón del proyecto).
+- **Por defecto** (cambió el 25/10): un color por tipo de pieza, recorriendo la misma paleta
+  (bordó, verde, oliva, azul marino, violeta, verde azulado…); amarillo = sobrante; un tono más
+  claro de amarillo = sobrante que sirve como retazo.
 - Respuesta:
 
 **6. "Cálculo especial de perímetro": ¿se usa? ¿para qué?**
@@ -100,6 +106,25 @@ float o del laminado del mismo espesor?**
 **17. Corte Certo usa códigos de material propios (5 = "5 mm Incoloro", 2004 = ?). ¿Hay una
 tabla que los relacione con los códigos de Metrix?**
 - Sirve si las leyendas viejas nombran el material con el código de Corte Certo.
+- Respuesta:
+
+**18. Con textura (veta), ¿qué lado de la pieza va con la veta?**
+- En Metrix, LARGO y ANCHO de una pieza no dicen la orientación. Con rotación permitida da igual;
+  con veta, no.
+- **Por defecto**: veta "Horizontal" = el **largo** de la pieza va a lo largo de la plancha (el
+  lado de 3580); "Vertical" = el largo va a lo ancho (el lado de 2500). La pieza no se gira.
+- Respuesta:
+
+**19. Cuando se mezclan planchas de distinta medida en un material, ¿alcanza con que el
+programa elija la combinación de menos m²?**
+- Ejemplo: 3 planchas de 3600 × 2500 o 2 de 3600 × 2500 + 1 de 3600 × 2200.
+- **Por defecto**: sí, gana la de menos m² de plancha útil; si empatan, la de menos montajes.
+- Respuesta:
+
+**20. ¿Qué Python tiene (o puede tener) la PC de la oficina?**
+- El programa anda con Python 3.10 o más nuevo, pero los resultados son idénticos a los de la
+  nube solo con 3.12 o más nuevo (mismas versiones de las librerías de cálculo).
+- **Por defecto**: la instalación recomienda Python 3.12 o 3.13 de python.org.
 - Respuesta:
 
 ## Respondidas

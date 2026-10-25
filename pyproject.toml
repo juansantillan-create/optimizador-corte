@@ -1,0 +1,10 @@
+[project]
+name = "optimizador-corte"
+description = "Optimizador de corte de vidrio de Cristalux, para cotizar (reemplazo de Corte Certo)"
+requires-python = ">=3.10"
+dynamic = ["version"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]

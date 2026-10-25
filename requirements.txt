@@ -1,0 +1,12 @@
+# Dependencias del optimizador (todas tienen paquetes para Windows: no se compila nada).
+# Versiones fijas para que los resultados sean reproducibles. Con Python 3.12 o más nuevo se
+# usan las mismas versiones que en la nube (resultados idénticos); con 3.10 y 3.11, las últimas
+# que tienen paquetes para esas versiones.
+numpy==2.5.4; python_version >= "3.12"
+scipy==1.18.1; python_version >= "3.12"
+numpy==2.2.6; python_version < "3.12"
+scipy==1.15.3; python_version < "3.12"
+fastapi==0.162.0
+uvicorn==0.54.0
+openpyxl==3.1.5
+xlrd==2.0.2

@@ -3,6 +3,23 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026: fase F0 cerrada (inventario y entendimiento)
+
+**Hecho**
+- Repo ordenado según el mapa de `CLAUDE.md` (los archivos habían llegado sueltos en la raíz).
+- `docs/INVENTARIO.md`: qué es cada archivo y para qué sirve.
+- `docs/ENTENDIMIENTO.md`: qué se entendió, dudas y plan del motor.
+- Análisis de la captura de montajes en píxeles: primer corte vertical, 3 etapas, sobrante arriba
+  y a la derecha, colores de la paleta de Windows (por tipo de pieza; pregunta 5 actualizada).
+- Preguntas nuevas: 18 (textura), 19 (mezclar medidas de plancha), 20 (Python de la PC).
+- Esqueleto del paquete `optimizador/`, `requirements.txt` (versiones fijas con paquetes para
+  Windows) y un test mínimo. `pytest -q` en verde.
+- Se verificó que `herramientas/importar_medidas_hojas.py` regenera `config/hojas.csv` idéntico.
+
+**Todavía no hay motor.** **Datos históricos**: no llegaron (`datos/casos/` vacío).
+
+**Siguiente paso**: fase F1 (motor + validador + banco sintético + CLI).
+
 ## 21/10/2026: repo creado (sesión de armado, Claude + Juan)
 
 **Hecho**

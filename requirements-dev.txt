@@ -1,0 +1,4 @@
+# Solo para desarrollo (tests). No hace falta en la PC de la oficina.
+-r requirements.txt
+pytest==9.1.1
+hypothesis==6.170.9
