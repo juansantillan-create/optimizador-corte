@@ -3,6 +3,16 @@
 Cada sesión, al cerrar una etapa, actualiza este archivo para que la siguiente pueda retomar sin
 leer toda la conversación. Lo más nuevo, arriba.
 
+## 25/10/2026 (más tarde): primera prueba en la PC de la oficina
+
+- Instalado con `.venv` propio y Python 3.14.6 (no compiló nada). `pytest`: 123 pasaron. Banco
+  normal: 85 de 85 validados, **idénticos a la nube**, 269,5 s en total (la nube tarda 297,5 s), el
+  caso más lento 8,55 s, 105 MB. El servidor y un cálculo por la API anduvieron.
+- Falsa alarma: `banco --esfuerzo rapido` dice "EMPEORÓ" en 13 casos porque compara contra
+  `esperado.json`, que es de esfuerzo normal. Hay que arreglarlo en el banco o en `INSTALACION.md`.
+- Detalle completo y lo que no se probó (el `.bat`, con el ciclo de Metrix corriendo):
+  `docs/PRUEBA_PC_OFICINA.md`.
+
 ## 25/10/2026 (noche): respuestas 28–31, medidas del stock e informe
 
 - Respuestas aplicadas: se cotiza con banda 20 (28); medidas de hoja del stock y de los casos en
